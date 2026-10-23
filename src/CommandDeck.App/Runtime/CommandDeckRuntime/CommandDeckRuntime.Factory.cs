@@ -11,6 +11,7 @@ public sealed partial class CommandDeckRuntime
             RuntimeConstructionOptions constructionOptions, CancellationToken cancellationToken )
         {
             RuntimeResources resources = new( );
+            var startup = constructionOptions.Startup;
 
             try
             {
@@ -18,6 +19,7 @@ public sealed partial class CommandDeckRuntime
                     .LoadAsync( configPath, cancellationToken )
                     .ConfigureAwait( false );
 
+                startup?.Mark( StartupStages.Configuration );
                 var executable = Environment.ProcessPath;
                 if ( executable is null )
                 {
@@ -47,6 +49,8 @@ public sealed partial class CommandDeckRuntime
                     .ConfigureQuicklinksAsync( options.Quicklinks, cancellationToken )
                     .ConfigureAwait( false );
 
+                startup?.Mark( StartupStages.Catalog );
+
                 var extensions = await ExtensionPackageRegistry
                     .OpenAsync( catalog, new ExtensionArtifactStore( PathExpansion.Expand( options.Storage.DatabasePath ) + ".extensions" ), cancellationToken )
                     .ConfigureAwait( false );
@@ -61,6 +65,8 @@ public sealed partial class CommandDeckRuntime
                 catalog.History.ApplyRead( await catalog
                     .LauncherPreferences.GetPreferencesAsync( cancellationToken )
                     .ConfigureAwait( false ), historyVersion );
+
+                startup?.Mark( StartupStages.Extensions );
 
                 IExtensionLauncher extensionLauncher = new ExtensionSupervisor( executable, executablePrefix );
                 var extensionJournal = new FileRemoteEffectJournal( Path.Combine( extensions.ArtifactRoot, EffectJournalDirectory ) );
@@ -85,6 +91,8 @@ public sealed partial class CommandDeckRuntime
                         .ConfigureAwait( false );
                 }
 
+                startup?.Mark( StartupStages.Indexer );
+
                 ClipboardHistoryStore? clipboardStore = null;
                 ClipboardCapture? clipboardCapture = null;
                 ClipboardHistoryProvider? clipboardProvider = null;
@@ -104,6 +112,8 @@ public sealed partial class CommandDeckRuntime
                     clipboardProvider = new( clipboardStore, ( ) => clipboardCapture.Status,
                         ( offers, token ) => clipboardCapture.ServeAsync( offers, token ) );
                 }
+
+                startup?.Mark( StartupStages.ClipboardStore );
 
                 CommandDeckRuntime? runtime = null;
                 var extensionSearch = new ExtensionSearchService( extensions, new ExtensionSearchWorker( extensions, extensionLauncher ) );
@@ -221,6 +231,7 @@ public sealed partial class CommandDeckRuntime
 
                 runtime._clipboardCapture = clipboardCapture;
                 runtime.AttachAgent( catalog, search );
+                startup?.Mark( StartupStages.Services );
 
                 return runtime;
             }

@@ -16,4 +16,7 @@ internal sealed class RuntimeConstructionOptions
     internal TimeProvider? AgentClock { get; init; }
 
     internal TimeSpan OpenWithWait { get; init; } = OpenWithDetection.DefaultWait;
+
+    // The daemon's startup stages; other commands leave it unset.
+    internal StartupTimeline? Startup { get; init; }
 }

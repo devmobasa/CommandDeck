@@ -103,6 +103,36 @@ public static partial class Program
         }
     }
 
+    // SQLite's async calls finish before they return, so supplements started one
+    // after another used to run one after another. Each supplement here blocks,
+    // like a SQLite query, until the other one has started too.
+    private static async Task CatalogSupplementsForDifferentSourcesOverlapAsync( )
+    {
+        var database = SpecTemporaryFiles.PathFor( $"commanddeck-supplement-overlap-{Guid.NewGuid( ):N}.db" );
+        FixedTimeProvider clock = new( PromotionNow );
+
+        try
+        {
+            await using SqliteCatalog catalog = new( new StorageOptions { DatabasePath = database }, clock );
+            await catalog.InitializeAsync( default );
+            await catalog.ReplaceAllAsync( SupplementFixtureItems( ), null, default );
+
+            using RendezvousCatalogStore store = new( catalog );
+            var results = await new CatalogSearchProvider( store, catalog )
+                .SearchAsync( QueryParser.Parse( "r" ), new SearchRequest { Query = "r", Limit = 50 }, default );
+
+            Equal( 2, store.Supplements );
+            True( !store.TimedOut, "each supplement waited for the other one to start" );
+            True( results.Any( static result => result.SourceId == SourceIds.Applications ) &&
+                  results.Any( static result => result.SourceId == SourceIds.Configuration ) );
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools( );
+            DeleteDatabase( database );
+        }
+    }
+
     private static SearchCoordinator CatalogCoordinator( ICatalogQueryStore store, SqliteCatalog catalog, TimeProvider clock ) => new(
         [new ApplicationSearchProvider( store ), new CatalogSearchProvider( store, catalog )], new SearchOptions { ProviderTimeoutMilliseconds = 10_000 },
         catalog, catalog, catalog.UsageHistory, clock );
@@ -167,6 +197,46 @@ public static partial class Program
                 SourceId = SourceIds.Configuration
             };
         }
+    }
+
+    // A single-source search is a supplement. It blocks its thread until two
+    // supplements have arrived, or for five seconds when the second never comes.
+    private sealed class RendezvousCatalogStore( SqliteCatalog inner ) : ICatalogQueryStore, IDisposable
+    {
+        private readonly CountdownEvent _arrivals = new( 2 );
+        private int _supplements;
+        private int _timedOut;
+
+        public int Supplements => Volatile.Read( ref _supplements );
+
+        public bool TimedOut => Volatile.Read( ref _timedOut ) != 0;
+
+        public ValueTask<IReadOnlyList<SearchResult>> SearchAsync( ParsedQuery query, int limit, CancellationToken cancellationToken ) =>
+            inner.SearchAsync( query, limit, cancellationToken );
+
+        public ValueTask<IReadOnlyList<SearchResult>> SearchSourcesAsync( ParsedQuery query, IReadOnlyList<string> sourceIds, int limit,
+            CancellationToken cancellationToken )
+        {
+            if ( sourceIds.Count == 1 )
+            {
+                Interlocked.Increment( ref _supplements );
+                _arrivals.Signal( );
+                if ( !_arrivals.Wait( TimeSpan.FromSeconds( 5 ), cancellationToken ) )
+                {
+                    Interlocked.Exchange( ref _timedOut, 1 );
+                }
+            }
+
+            return inner.SearchSourcesAsync( query, sourceIds, limit, cancellationToken );
+        }
+
+        public ValueTask<IReadOnlyList<SearchResult>> GetHomeResultsAsync( LauncherPreferences preferences, int limit, CancellationToken cancellationToken ) =>
+            inner.GetHomeResultsAsync( preferences, limit, cancellationToken );
+
+        public ValueTask<IReadOnlySet<string>> GetPopulatedSourcesAsync( IReadOnlyList<string> sourceIds, CancellationToken cancellationToken ) =>
+            inner.GetPopulatedSourcesAsync( sourceIds, cancellationToken );
+
+        public void Dispose( ) => _arrivals.Dispose( );
     }
 
     private sealed class CountingCatalogStore( SqliteCatalog inner, bool reportPopulatedSources ) : ICatalogQueryStore

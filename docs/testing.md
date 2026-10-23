@@ -474,6 +474,50 @@ or the toggle deadline. These checks require the toggle process to exit before
 the protected hide starts, and require the measurement to finish cleanup.
 The picker and the HUD use `commanddeck-picker` and `commanddeck-hud`.
 
+### Daemon startup readiness
+
+`scripts/measure-daemon-startup.cs` is a manual performance check for a
+published Native AOT daemon. CI does not run it.
+
+```bash
+dotnet scripts/measure-daemon-startup.cs --self-test
+dotnet scripts/measure-daemon-startup.cs --binary artifacts/publish/linux-x64/commanddeck --samples 15
+dotnet scripts/measure-daemon-startup.cs --binary OLD --compare NEW --samples 15 --directories 10000
+```
+
+The script builds an isolated fixture: its own XDG folders, a configuration,
+and an optional index root of `--directories` empty folders. It removes the
+desktop session variables, so the daemon cannot reach the installed daemon or
+the desktop. For each executable it reindexes once and runs one warm-up start.
+Each sample then starts `commanddeck daemon` and measures two times from
+process start:
+
+- the first accepted socket connection;
+- the end of a successful Home search on that connection.
+
+An error reply, an incomplete search (a provider failed or missed its
+deadline), an early exit or a missed deadline fails the run. The daemon is
+always stopped. With `--compare`, the two executables alternate, so neither
+always runs on a warmer cache. The output gives nearest-rank p50 and p95, the
+minimum, the maximum and the sample count.
+
+The managed `status` timing in the quality gate is a different endpoint, and
+these numbers do not replace it. Each daemon start also logs one
+`event=daemon.startup` line with its stage durations; see
+[install.md](install.md#check-and-troubleshoot).
+
+#### Recorded baseline
+
+2026-10-23, on the maintainer's desktop (Ryzen 9 7950X), warm cache,
+15 alternating samples per executable. A is the `a67890c` build. B adds the
+policy-restore cache.
+
+| Fixture | A: socket accepted p50 | B: socket accepted p50 | A: Home done p50 | B: Home done p50 |
+| --- | --- | --- | --- | --- |
+| No index root | 13.1 ms | 13.2 ms | 24.0 ms | 24.3 ms |
+| 1,000 directories | 36.9 ms | 33.3 ms | 48.2 ms | 44.7 ms |
+| 10,000 directories | 257.6 ms | 215.4 ms | 268.7 ms | 226.4 ms |
+
 ## C# formatting
 
 Run `dotnet format CommandDeck.slnx --no-restore` to repair solution formatting

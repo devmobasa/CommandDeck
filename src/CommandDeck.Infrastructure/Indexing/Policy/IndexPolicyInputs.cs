@@ -125,14 +125,30 @@ internal sealed class IndexPolicyInputs
 
     public bool RestoreIfCurrent( IReadOnlyList<PolicyInputStamp> stamps, CancellationToken cancellationToken = default )
     {
+        Dictionary<string, CachedMarkers> markers = new( StringComparer.Ordinal );
+        Dictionary<string, CachedText> texts = new( StringComparer.Ordinal );
+
         foreach ( var stamp in stamps )
         {
             cancellationToken.ThrowIfCancellationRequested( );
-            var current = ReadCurrentFingerprint( stamp );
+            var current = ReadCurrentFingerprint( stamp, markers, texts );
             if ( !string.Equals( current, stamp.Fingerprint, StringComparison.Ordinal ) )
             {
                 return false;
             }
+        }
+
+        // Startup then walks the same directories and rule files, so a current
+        // snapshot keeps what it read. A stale one keeps nothing: its rules may
+        // now exclude paths the walk never asks for again.
+        foreach ( (var path, var cached) in markers )
+        {
+            _directories[path] = cached;
+        }
+
+        foreach ( (var path, var cached) in texts )
+        {
+            _files[path] = cached;
         }
 
         foreach ( var stamp in stamps )
@@ -277,14 +293,24 @@ internal sealed class IndexPolicyInputs
         return name == IndexingConstants.GitDirectoryName || (attributes & FileAttributes.Directory) == 0;
     }
 
-    private static string ReadCurrentFingerprint( PolicyInputStamp stamp )
+    // Reads one input as Markers and ReadText would cache it: under the version
+    // taken before the read, so a change made since is read again.
+    private static string ReadCurrentFingerprint( PolicyInputStamp stamp, Dictionary<string, CachedMarkers> markers, Dictionary<string, CachedText> texts )
     {
+        var version = LinuxMountIdentity.GetVersion( stamp.Path );
         if ( stamp.Directory )
         {
-            return MarkerFingerprint( ReadMarkers( stamp.Path ) );
+            var names = ReadMarkers( stamp.Path );
+            CachedMarkers cachedMarkers = new( version, names, MarkerFingerprint( names ) );
+            markers[stamp.Path] = cachedMarkers;
+
+            return cachedMarkers.Fingerprint;
         }
 
-        return ReadBoundedText( stamp.Path ).Fingerprint;
+        CachedText cachedText = new( version, ReadBoundedText( stamp.Path ) );
+        texts[stamp.Path] = cachedText;
+
+        return cachedText.Text.Fingerprint;
     }
 
     private static bool Within( string path, string root ) =>

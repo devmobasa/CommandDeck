@@ -54,7 +54,9 @@ text or controls scale down. Settings keeps its own size. The choices persist
 as `width=PERCENT` and `height=PERCENT` in `launcher-layout`, alongside compact
 layout and preview visibility. Each slider has a Reset button for 100%.
 `ui.width` and `ui.maximumVisibleRows` are not used by the launcher; use
-Settings > Customization > Layout. They remain accepted for existing configs.
+Settings > Customization > Layout. `ui.debounceMilliseconds` is not used
+either: the launcher sets its own search delay. They remain accepted for
+existing configs.
 
 The separate `display-sizing` file versions this model. Before first opening a
 catalog, the CLI records `logical-v1` for a fresh installation, or `legacy-v1`

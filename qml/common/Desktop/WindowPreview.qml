@@ -16,7 +16,8 @@ Item {
   property string settledAddress: ""
   property bool captureTimedOut: false
   // Temporary diagnostics for alternating frames after switching windows.
-  property bool debugCapture: true
+  // Off by default: set it to true while investigating, it logs [CD-PREVIEW].
+  property bool debugCapture: false
   property int debugEvents: 0
   property int captureSerial: 0
   readonly property var captureItem: captureLoader.item

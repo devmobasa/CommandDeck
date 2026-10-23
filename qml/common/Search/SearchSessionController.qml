@@ -58,8 +58,10 @@ QtObject {
   signal failed(string error)
   signal divertRequested()
 
+  // About one frame: edits that land together still send one search, while
+  // each typed key no longer waits 45 ms before its search starts.
   readonly property Timer debounce: Timer {
-    interval: 45
+    interval: 16
     onTriggered: session.search()
   }
   // Streamed rows are published in batches, not one repaint per row.

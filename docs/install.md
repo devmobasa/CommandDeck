@@ -308,6 +308,10 @@ only warn or skip, so they never fail `doctor`. Each warning prints a `Fix:` lin
   not loaded the plugin; run `omarchy restart shell`.
 - AI failure: review [AI prerequisites](ai.md). Never print a key
   while checking systemd credential/environment setup.
+- Slow daemon start: each start logs one `event=daemon.startup` line. It gives
+  the milliseconds spent in each startup stage, and `ready_ms` from the start
+  of the command to just before the socket opens. It has no paths or content.
+  Read it with `journalctl --user -u commanddeck.service -g daemon.startup`.
 
 Test open/type, arrows, Enter, actions, Escape, reopen, and immediate typing
 after a mouse click. Multi-monitor focus, real clipboard ownership, compositor

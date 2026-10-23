@@ -36,6 +36,7 @@ public static partial class Program
         await RunAsync( "file selection admits only the selecting client's result snapshots", FileSelectionAdmitsOnlyOwnedSnapshotsAsync );
         await RunAsync( "invocation undo reference survives the refresh that replaces its row", InvocationUndoSurvivesTheRefreshAsync );
         await RunAsync( "runtime startup rollback releases owners and continues after cleanup failures", RuntimeResourcesUnwindAfterFailureAsync );
+        Run( "daemon startup timeline logs stage names and durations only", StartupTimelineLogsStageNamesAndDurationsOnly );
         await RunAsync( "provider capacity counts late work without starving a fast provider", ProviderCapacityRetainsLateWorkAsync );
         await RunAsync( "cancelled catalog search interrupts SQLite and frees its provider slot", CancelledCatalogSearchReleasesProviderSlotsAsync );
         await RunAsync( "search outcome distinguishes failed providers from empty results", SearchOutcomeDistinguishesFailedProviderAsync );
@@ -173,6 +174,7 @@ public static partial class Program
         await RunAsync( "relevance corpus rejects malformed fixtures", RelevanceCorpusRejectsMalformedFixturesAsync );
         await RunAsync( "catalog supplements skip sources without catalog rows and keep the same order", CatalogSupplementsSkipSourcesWithoutRowsAsync );
         await RunAsync( "relevance corpus order is identical without queries for empty sources", RelevanceCorpusIsIdenticalWithoutEmptySourceQueriesAsync );
+        await RunAsync( "catalog supplements for different sources run at the same time", CatalogSupplementsForDifferentSourcesOverlapAsync );
         await RunAsync( "ranked catalog search returns the rows of the single-statement query", RankedCatalogSearchMatchesTheSingleStatementQueryAsync );
         await RunAsync( "ranked catalog query seeks catalog items only for the Home-only scope", RankedCatalogQuerySeeksItemsOnlyForTheHomeScopeAsync );
 

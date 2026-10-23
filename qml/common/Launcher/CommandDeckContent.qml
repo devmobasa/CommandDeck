@@ -120,6 +120,10 @@ ColumnLayout {
       spacing: launcherContent.host.part_appTheme.rowGap
       model: launcherContent.host.host.part_rows
       highlightMoveDuration: launcherContent.host.part_appTheme.highlightMoveDuration
+      // The view keeps an invisible default highlight. Resized at the default
+      // 400 px/s, it animated for about two seconds whenever the list width
+      // changed, as on every open, and each step repainted the launcher.
+      highlightResizeDuration: 0
 
       // Track headers, gaps and empty space too; row layout changes alone
       // must never turn a resting pointer into a new selection.

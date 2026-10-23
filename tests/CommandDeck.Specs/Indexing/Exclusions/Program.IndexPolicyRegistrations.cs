@@ -52,6 +52,7 @@ public static partial class Program
         await RunAsync( "repository ignore edits reconcile stale rows and preserve explicit inclusions", RepositoryIgnoreEditsReconcileExistingRowsAsync );
         await RunAsync( "project marker changes and renames across exclusions converge", ProjectMarkerChangesAndExcludedRenamesConvergeAsync );
         await RunAsync( "configuration and ignore changes made while stopped reconcile the catalog", ExclusionChangesWhileStoppedAreReconciledAsync );
+        await RunAsync( "policy restore keeps markers and rule text current for the watch walk", PolicyRestoreKeepsMarkersAndRulesCurrentAsync );
         await RunAsync( "background policy reconciliation failure pauses indexing and warns", ReconciliationFailurePausesIndexingAndWarnsAsync );
         await RunAsync( "full reindex does not queue a second background reconciliation", FullReindexDoesNotQueueBackgroundReconciliationAsync );
         await RunAsync( "dispose while reconciliation waits for the index lock completes", DisposeWhileReconciliationWaitsForTheIndexLockAsync );

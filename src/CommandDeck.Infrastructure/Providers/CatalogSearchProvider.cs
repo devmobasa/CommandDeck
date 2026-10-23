@@ -272,13 +272,17 @@ public sealed class CatalogSearchProvider : ICommandProvider
             .ToArray( );
     }
 
+    // SQLite's async methods complete synchronously, so without Task.Run each
+    // source's query would finish before the next one started. Each query opens
+    // its own connection; the batches keep their source order for the merge.
+    // There is at most one query per catalog source, which bounds the workers.
     private Task<IReadOnlyList<SearchResult>>[] StartSupplementSearches( ParsedQuery query, int perSourceLimit, string[] underrepresented,
         CancellationToken cancellationToken )
     {
         return underrepresented
-            .Select( source => _catalog
+            .Select( source => Task.Run( ( ) => _catalog
                 .SearchSourcesAsync( query, [source], perSourceLimit, cancellationToken )
-                .AsTask( ) )
+                .AsTask( ), cancellationToken ) )
             .ToArray( );
     }
 

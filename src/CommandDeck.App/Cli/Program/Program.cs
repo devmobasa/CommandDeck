@@ -115,13 +115,17 @@ public static partial class Program
     {
         var configPath = arguments.GetOption( CliOptionNames.Config );
         var command = arguments.Command.ToLowerInvariant( );
+        var startup = command is DaemonCommand or ServeCommand ? new StartupTimeline( ) : null;
 
         await DisplaySizingMigration
             .InitializeAsync( configPath, cancellationToken )
             .ConfigureAwait( false );
 
+        startup?.Mark( StartupStages.DisplaySizing );
+
         await using var runtime = await CommandDeckRuntime
-            .CreateAsync( configPath, new RuntimeConstructionOptions { StartIndexer = command is not (CatalogCommand or QuicklinksCommand) },
+            .CreateAsync( configPath,
+                new RuntimeConstructionOptions { StartIndexer = command is not (CatalogCommand or QuicklinksCommand), Startup = startup },
                 includeClipboardHistory: command is DaemonCommand or ServeCommand, cancellationToken )
             .ConfigureAwait( false );
 
@@ -139,7 +143,7 @@ public static partial class Program
 
         return command switch
         {
-            DaemonCommand or ServeCommand => await RunDaemonAsync( runtime, arguments, cancellationToken )
+            DaemonCommand or ServeCommand => await RunDaemonAsync( runtime, arguments, startup!, cancellationToken )
                 .ConfigureAwait( false ),
             "search" => await RunSearchAsync( runtime, arguments, cancellationToken )
                 .ConfigureAwait( false ),
@@ -176,7 +180,8 @@ public static partial class Program
         };
     }
 
-    private static async Task<int> RunDaemonAsync( CommandDeckRuntime runtime, CliArguments arguments, CancellationToken cancellationToken )
+    private static async Task<int> RunDaemonAsync( CommandDeckRuntime runtime, CliArguments arguments, StartupTimeline startup,
+        CancellationToken cancellationToken )
     {
         var executable = Environment.ProcessPath;
         if ( executable is null )
@@ -184,8 +189,12 @@ public static partial class Program
             throw new InvalidOperationException( "Cannot locate CommandDeck executable." );
         }
 
+        startup.Mark( StartupStages.SchemaCheck );
         runtime.StartClipboardCapture( executable, GetProcessPrefix( executable ) );
+        startup.Mark( StartupStages.ClipboardCapture );
         UnixProtocolServer server = new( runtime, arguments.GetOption( CliOptionNames.Socket ) );
+        startup.Mark( StartupStages.Server );
+        AppLog.Info( startup.Format( ) );
 
         await server
             .RunAsync( cancellationToken )
