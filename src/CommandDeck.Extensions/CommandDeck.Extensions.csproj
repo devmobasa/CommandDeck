@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <IsAotCompatible>true</IsAotCompatible>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <Version>0.1.0-preview.6</Version>
+    <Description>Experimental C# commands and native views for CommandDeck extensions.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CommandDeck.ExtensionProtocol/CommandDeck.ExtensionProtocol.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+  <Target Name="GenerateSdkVersion" BeforeTargets="CoreCompile">
+    <WriteLinesToFile File="$(IntermediateOutputPath)SdkVersion.g.cs"
+                      Lines="namespace CommandDeck.Extensions%3B public static partial class ExtensionApp { internal const string SdkVersion = &quot;$(Version)&quot;%3B }"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+  <ItemGroup>
+    <Compile Include="$(IntermediateOutputPath)SdkVersion.g.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,299 @@
+import "../../common"
+import QtQuick
+import Quickshell
+import "../../common" as CommandDeck
+
+QtObject {
+  required property var host
+  function run(context) {
+    const regularTokens = host.part_theme
+    host.part_motionTheme.tokens = regularTokens
+    host.expect(host.part_motionTheme.panelPadding === Math.round(regularTokens.panelPadding * 1.5 * 0.75)
+        && host.part_motionTheme.rowPaddingX === Math.round(regularTokens.rowPaddingX * 1.5 * 0.75)
+        && host.part_motionTheme.gap === Math.round(regularTokens.gap * 1.5 * 0.75),
+      "compact density also scales padding and spacing from shell tokens")
+    host.part_motionTheme.tokens = null
+    host.part_motionTheme.densityScale = 1
+    host.part_motionTheme.displayScale = 1
+
+    // The scrim strength is a tunable, opaque-by-default floor.
+    host.expect(host.part_motionTheme.scrimStrength >= 0.6,
+      "the scrim defaults to a strongly opaque strength")
+    host.expect(host.part_motionTheme.scrimColor.a >= host.part_motionTheme.scrimStrength - 0.001,
+      "the scrim color never renders more transparent than the strength floor")
+    host.part_motionTheme.scrimStrength = 0.9
+    host.expect(Math.abs(host.part_motionTheme.scrimColor.a - 0.9) < 0.001,
+      "the scrim strength is tunable and applied to the scrim color")
+    host.part_motionTheme.scrimStrength = 0.72
+
+    // The display-size percentage composes with the current profile's baseline.
+    host.expect(host.part_integratedDeck.displaySizePercent === 100
+        && Math.abs(host.part_integratedDeck.displaySizeMultiplier - 1.0) < 0.001,
+      "the display size defaults to 100 percent with a 1x multiplier")
+    host.part_integratedDeck.applyDisplaySizePercent(115)
+    host.expect(host.part_integratedDeck.displaySizePercent === 115
+        && Math.abs(host.part_integratedDeck.displaySizeMultiplier - 1.15) < 0.001,
+      "selecting 115 percent applies a 1.15 multiplier")
+    host.part_integratedDeck.applyDisplaySizePercent(100)
+
+    // Zoom moves by ten points, holds at the bounds, and resets to 100 percent.
+    const zoomed = []
+    for (const direction of [1, 1, 1, 1, 1, 1, 0, -1, -1, -1, -1]) {
+      host.part_integratedDeck.stepDisplaySize(direction)
+      zoomed.push(host.part_integratedDeck.displaySizePercent)
+    }
+    host.expect(zoomed.join(",") === "110,120,130,140,150,150,100,90,80,75,75"
+        && Math.abs(host.part_integratedDeck.displaySizeMultiplier - 0.75) < 0.001
+        && host.part_integratedDeck.statusText === "Display size: 75%",
+      "zoom moves in ten-percent steps and holds at both ends (" + zoomed.join(",") + ")")
+    host.part_integratedDeck.stepDisplaySize(1)
+    host.expect(host.part_integratedDeck.displaySizePercent === 85,
+      "zoom from 75 percent preserves the five-percent grid")
+    host.part_integratedDeck.stepDisplaySize(0)
+    host.expect(host.part_integratedDeck.statusText === "Display size: 100% (Recommended)",
+      "resetting zoom selects Recommended")
+
+    // Settings reflects the live percentage and emits slider/reset choices.
+    const sizeControl = host.part_settings.displaySizeControl
+    host.expect(sizeControl.from === 75 && sizeControl.to === 150 && sizeControl.stepSize === 5,
+      "settings offers display sizes from 75 to 150 percent in steps of five")
+    host.expect(!host.part_settings.displaySizeResetControl.enabled,
+      "Recommended is disabled at 100 percent in the logical sizing profile")
+    host.part_settings.displaySizePercent = 115
+    host.expect(sizeControl.value === 115 && host.part_settings.displaySizeResetControl.enabled,
+      "the settings slider reflects the current percentage and enables Recommended")
+    host.part_settings.displaySizePercentChosen = -1
+    sizeControl.value = 120
+    sizeControl.moved()
+    host.expect(host.part_settings.displaySizePercentChosen === 120,
+      "moving the display-size slider emits the percentage for QML-only persistence")
+    host.part_settings.displaySizeResetControl.click()
+    host.expect(host.part_settings.displaySizePercentChosen === 100,
+      "Recommended emits 100 percent")
+    host.part_settings.displaySizePercent = 100
+
+    // The compact layout: a QML-only store, the host flag, and its Settings toggle.
+    const layout = host.part_integratedDeck.part_layoutStore
+    host.expect(!layout.parse("").compact && layout.parse("compact=on\n").compact
+        && !layout.parse("compact=maybe").compact && layout.parse(" Compact = ON ").compact,
+      "the layout file reads as the default layout unless compact is on")
+    host.part_integratedDeck.applyCompactLayout(true)
+    host.expect(host.part_integratedDeck.compactLayout && layout.serialize() === "compact=on\npreview=on\nwidth=100\nheight=100\n",
+      "choosing the compact layout applies it to the launcher at once")
+    host.part_integratedDeck.applyCompactLayout(false)
+    host.expect(!host.part_integratedDeck.compactLayout, "turning it off restores the default layout")
+    host.part_settings.compactLayout = false
+    host.part_settings.compactLayoutControl.click()
+    host.expect(host.part_settings.compactLayoutChosen === true,
+      "the Settings toggle emits the compact layout choice")
+    host.part_settings.compactLayout = false
+    host.expect(layout.parse("").preview && !layout.parse("preview=off").preview
+        && layout.parse("preview=maybe").preview,
+      "the layout file shows the preview pane unless it is off")
+    for (const entry of [
+      ["", 100], [null, 100], [undefined, 100], ["NaN", 100], ["Infinity", 100],
+      ["102.5", 100], ["1e2", 100], ["100%", 100], ["+123", 125],
+      [" 138 ", 140], ["82", 80], ["-999", 80], ["999", 140]
+    ]) {
+      host.expect(layout.normalize(entry[0]) === entry[1], "layout percentage normalizes " + entry[0])
+    }
+    const parsedSize = layout.parse(" WIDTH = 123\nheight=999\ncompact=on\npreview=off\nunknown=30")
+    host.expect(parsedSize.widthPercent === 125 && parsedSize.heightPercent === 140
+        && parsedSize.compact && !parsedSize.preview,
+      "layout size uses named, case-insensitive lines alongside existing choices")
+    host.expect(layout.parse("width=bad\nheight=").widthPercent === 100
+        && layout.parse("width=bad\nheight=").heightPercent === 100,
+      "invalid and absent layout percentages default to 100")
+    layout.setSize(123, 138)
+    host.expect(host.part_integratedDeck.launcherWidthPercent === 125
+        && host.part_integratedDeck.launcherHeightPercent === 140,
+      "normalized panel choices reach launcher state")
+    layout.setPreview(false)
+    layout.setCompact(true)
+    host.expect(layout.widthPercent === 125 && layout.heightPercent === 140,
+      "changing existing layout toggles preserves panel choices")
+    layout.setSize(100, 100)
+    layout.setPreview(true)
+    layout.setCompact(false)
+
+    for (const axis of ["Width", "Height"]) {
+      const control = host.part_settings["layout" + axis + "Control"]
+      const reset = host.part_settings["layout" + axis + "ResetControl"]
+      host.expect(control.from === 80 && control.to === 140 && control.stepSize === 5 && control.value === 100,
+        "Settings " + axis + " offers 80 to 140 percent, default 100, step 5")
+      host.expect(control.sliderControl.Accessible.name === "Launcher " + axis.toLowerCase()
+          && control.sliderControl.Accessible.description.indexOf("Text and control size stay unchanged") >= 0,
+        "Settings " + axis + " explains independent panel sizing")
+      host.expect(!reset.enabled, axis + " reset is disabled at 100")
+      host.part_settings["launcher" + axis + "Percent"] = 120
+      host.expect(control.value === 120 && reset.enabled, axis + " reflects the live choice")
+      control.value = 125
+      control.moved()
+      host.expect(host.part_settings.launcherSizeChosen[axis === "Width" ? 0 : 1] === 125,
+        axis + " emits its selected percentage")
+      reset.click()
+      host.expect(host.part_settings.launcherSizeChosen[axis === "Width" ? 0 : 1] === 100,
+        axis + " reset emits the default")
+      host.part_settings["launcher" + axis + "Percent"] = 100
+    }
+
+    const behavior = host.part_integratedDeck.part_behaviorStore
+    const parsed = behavior.parse("escape=clear\nkeep=120\n")
+    host.expect(parsed.escapeClears && parsed.keepSeconds === 120
+        && !behavior.parse("").escapeClears && behavior.parse("").keepSeconds === 0
+        && behavior.parse("keep=45").keepSeconds === 0 && !behavior.parse("escape=maybe").escapeClears,
+      "the behaviour file reads only the offered choices, else closes at once and keeps nothing")
+    host.part_settings.escapeClearsSearch = false
+    host.part_settings.keepSearchSeconds = 30
+    host.part_settings.behaviorChosen = null
+    host.part_settings.escapeClearsControl.click()
+    host.expect(host.part_settings.behaviorChosen !== null && host.part_settings.behaviorChosen.escapeClears === true
+        && host.part_settings.behaviorChosen.keepSeconds === 30,
+      "the Escape toggle emits its choice with the kept-search time")
+    host.part_settings.keepSearchControl.activated(3)
+    host.expect(host.part_settings.behaviorChosen.keepSeconds === 600,
+      "choosing how long to keep the last search emits it")
+    host.part_settings.keepSearchSeconds = 0
+
+    // History and Omarchy state choices show the configuration's value until
+    // made, then the choice; a click saves it with the other preferences.
+    const settingsSnapshot = host.part_settings.snapshot
+    const withChoices = Object.assign({}, settingsSnapshot, {
+      preferences: Object.assign({}, settingsSnapshot.preferences, { learnFromUse: false }),
+      defaults: { rememberSearches: true, learnFromUse: true, omarchyMenuState: false, topMatches: true }
+    })
+    host.part_settings.snapshot = withChoices
+    host.expect(host.part_settings.rememberSearchesControl.checked
+        && !host.part_settings.learnFromUseControl.checked
+        && !host.part_settings.omarchyMenuStateControl.checked,
+      "history toggles show the configuration until a choice is made, then the choice")
+    host.part_settings.changedPreferences = null
+    host.part_settings.rememberSearchesControl.click()
+    host.expect(host.part_settings.changedPreferences !== null
+        && host.part_settings.changedPreferences.rememberSearches === false
+        && host.part_settings.changedPreferences.learnFromUse === false
+        && host.part_settings.changedPreferences.topMatches === null,
+      "turning Remember searches off saves its choice and leaves Top Matches unset")
+    host.part_settings.changedPreferences = null
+    host.part_settings.omarchyMenuStateControl.click()
+    host.expect(host.part_settings.changedPreferences !== null
+        && host.part_settings.changedPreferences.omarchyMenuState === true,
+      "turning Omarchy menu state on saves the choice")
+    const topMatches = host.part_hostEvents.findChild(host.part_settings, "topMatchesToggle")
+    host.expect(topMatches !== null && topMatches.checked && topMatches.Accessible.name === "Top Matches",
+      "Top Matches shows its configuration default and accessible name")
+    host.part_settings.changedPreferences = null
+    topMatches.click()
+    host.expect(host.part_settings.changedPreferences !== null
+        && host.part_settings.changedPreferences.topMatches === false
+        && host.part_settings.changedPreferences.learnFromUse === false,
+      "turning Top Matches off emits the choice with the other preferences")
+    host.part_settings.snapshot = Object.assign({}, withChoices, {
+      preferences: Object.assign({}, withChoices.preferences, { topMatches: true }),
+      defaults: Object.assign({}, withChoices.defaults, { topMatches: false })
+    })
+    host.expect(topMatches.checked, "an explicit Top Matches choice overrides its configuration default")
+    host.part_settings.snapshot = settingsSnapshot
+    host.part_settings.previewPaneVisible = true
+    host.part_settings.previewPaneControl.click()
+    host.expect(host.part_settings.previewPaneChosen === false,
+      "the Settings toggle emits hiding the preview pane")
+    host.part_settings.previewPaneVisible = true
+
+    // Panel transparency: theme, live launcher color, and settings controls.
+    host.expect(!host.part_motionTheme.panelTransparencyEnabled
+        && Math.abs(host.part_motionTheme.panelBackground.a - 1) < 0.001
+        && Math.abs(host.part_motionTheme.overlayScrimColor.a - host.part_motionTheme.scrimColor.a) < 0.001,
+      "panel transparency off forces an opaque panel and keeps the C8 scrim")
+    host.part_motionTheme.panelTransparencyEnabled = true
+    host.part_motionTheme.panelTransparency = 0.5
+    host.expect(Math.abs(host.part_motionTheme.panelBackground.a - 0.5) < 0.001
+        && host.part_motionTheme.panelBackground.r === host.part_motionTheme.background.r,
+      "enabling transparency applies the amount to the panel alpha")
+    host.expect(Math.abs(host.part_motionTheme.overlayScrimColor.a
+        - host.part_motionTheme.scrimColor.a * 0.5) < 0.001,
+      "enabling transparency scales the overlay scrim so wallpaper can show through")
+    host.part_motionTheme.panelTransparency = 0.95
+    host.expect(Math.abs(host.part_motionTheme.panelBackground.a - 0.2) < 0.001,
+      "panel transparency clamps so the launcher cannot disappear")
+    host.part_motionTheme.panelTransparencyEnabled = false
+    host.part_motionTheme.panelTransparency = 0
+
+    host.expect(!host.part_integratedDeck.panelTransparencyEnabled
+        && host.part_integratedDeck.panelTransparencyPercent === 20,
+      "the launcher defaults to a solid panel at 20 percent standby amount")
+    host.part_integratedDeck.applyPanelTransparency(true, 40)
+    host.expect(host.part_integratedDeck.panelTransparencyEnabled
+        && host.part_integratedDeck.panelTransparencyPercent === 40
+        && Math.abs(host.part_integratedDeck.appliedPanelBackground.a - 0.6) < 0.001,
+      "applying transparency updates the live panel color")
+    host.part_integratedDeck.applyPanelTransparency(false, 20)
+    host.expect(!host.part_integratedDeck.panelTransparencyEnabled
+        && Math.abs(host.part_integratedDeck.appliedPanelBackground.a - 1) < 0.001,
+      "turning transparency off restores an opaque panel")
+
+    host.expect(host.part_settings.panelTransparencyControl.text === "Transparent background",
+      "settings offers a transparency enable toggle")
+    host.expect(!host.part_settings.panelTransparencyAmountControl.enabled,
+      "the transparency slider stays disabled while the toggle is off")
+    host.part_settings.panelTransparencyChosenEnabled = false
+    host.part_settings.panelTransparencyChosenPercent = -1
+    host.part_settings.panelTransparencyControl.click()
+    host.expect(host.part_settings.panelTransparencyChosenEnabled === true
+        && host.part_settings.panelTransparencyChosenPercent === 20,
+      "enabling transparency emits the toggle for QML-only persistence")
+    host.part_settings.panelTransparencyEnabled = true
+    host.expect(host.part_settings.panelTransparencyAmountControl.enabled,
+      "the transparency slider enables once the toggle is on")
+    host.part_settings.panelTransparencyChosenPercent = -1
+    host.part_settings.panelTransparencyAmountControl.value = 45
+    host.part_settings.panelTransparencyAmountControl.moved()
+    host.expect(host.part_settings.panelTransparencyChosenPercent === 45,
+      "moving the transparency slider emits the amount for QML-only persistence")
+    host.part_settings.panelTransparencyChosenPercent = -1
+    host.part_settings.panelTransparencyAmountControl.value = 21
+    host.part_settings.panelTransparencyAmountControl.sliderControl.moved()
+    host.expect(host.part_settings.panelTransparencyChosenPercent === 21,
+      "the inner slider moved signal forwards through the wrapper")
+    host.part_settings.panelTransparencyEnabled = false
+    host.part_settings.panelTransparencyPercent = 20
+
+    // The QML-only colour preference and the themes that follow it.
+    const colorStore = host.part_colorThemeStoreSpec
+    host.expect(colorStore.filePath === "/home/example/.local/state/commanddeck/color-theme",
+      "the colour store targets a file under $XDG_STATE_HOME/commanddeck")
+    colorStore.load()
+    host.expect(colorStore.source === "omarchy" && !colorStore.overridesHost
+        && colorStore.colors.accent === "#8ab4f8",
+      "a missing colour file follows the Omarchy theme with the default palette")
+    colorStore.set({ source: "commanddeck", colors: { accent: "#F5C26B", text: "not a color" } })
+    host.expect(colorStore.overridesHost && colorStore.colors.accent === "#f5c26b"
+        && colorStore.colors.text === "#f1f1f1",
+      "the colour store records the override and valid colours only")
+    colorStore.resetColors()
+    host.expect(colorStore.overridesHost && colorStore.colors.accent === "#8ab4f8",
+      "resetting restores the palette but keeps the chosen theme")
+
+    const deckColors = host.part_integratedDeck.part_colorThemeStore
+    deckColors.set({ source: "commanddeck", colors: { accent: "#a3d977", background: "#1c1d22" } })
+    host.expect(host.part_integratedDeck.part_appTheme.overrideHostColors
+        && Qt.colorEqual(host.part_integratedDeck.part_appTheme.accent, "#a3d977")
+        && Qt.colorEqual(host.part_integratedDeck.part_appTheme.popupBackground, "#1c1d22")
+        && Qt.colorEqual(host.part_integratedDeck.part_settingsTheme.accent, "#a3d977"),
+      "the launcher and Settings themes apply the stored CommandDeck palette")
+    deckColors.set({ source: "omarchy", colors: { accent: "#8ab4f8", background: "#0e0e11" } })
+    host.expect(!host.part_integratedDeck.part_appTheme.overrideHostColors,
+      "choosing the Omarchy theme again stops overriding its colours")
+
+    host.expect(host.part_pane.renderedDetailCount === 0, "detail pane renders an empty field list")
+    host.expect(!host.part_pane.visible, "detail pane hides without fields, body, or preview")
+
+    host.part_pane.result = ({
+      title: "One field",
+      subtitle: "Structured metadata",
+      details: [{ label: "Path", value: "/tmp/test.txt", monospace: true }]
+    })
+
+    Object.assign(context, { regularTokens })
+  }
+}

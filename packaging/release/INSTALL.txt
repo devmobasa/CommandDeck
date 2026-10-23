@@ -1,0 +1,35 @@
+CommandDeck
+===========
+
+CommandDeck is a keyboard-first launcher for Omarchy and Hyprland.
+This folder holds a ready-to-run build. You do not need .NET.
+
+Requirements
+------------
+- Omarchy with shell plugins (Quattro) on Hyprland. Run the installer
+  inside your desktop session, as your own user, not as root.
+- A systemd user manager, jq, and the icu library.
+- glibc 2.39 or later. Arch and Omarchy have a newer glibc.
+
+Install or update
+-----------------
+  ./install.sh --dry-run    Check the requirements and the hotkey. This
+                            changes nothing.
+  ./install.sh              Install CommandDeck, or update an earlier install.
+
+Then press Ctrl+Space to open CommandDeck.
+
+Options
+-------
+  --hotkey="SUPER + SPACE"  Bind a different chord.
+  --reset-config            Move your configuration to a backup first, and
+                            start from the defaults.
+  --help                    Show all options.
+
+The installer restarts the Omarchy shell. It keeps your configuration, and it
+backs up the plugin and binding files that it changes under
+~/.local/state/commanddeck. If a step fails, it restores the previous
+installation.
+
+Uninstall and more help:
+https://github.com/devmobasa/CommandDeck/blob/main/docs/install.md

@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  # A manual run is a dry run: it builds and uploads the archives as workflow
+  # artifacts and creates no release.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.rid }}
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            runner: ubuntu-24.04
+          - rid: linux-arm64
+            runner: ubuntu-24.04-arm
+    # Native AOT links against the runner's glibc. Ubuntu 24.04 has glibc 2.39,
+    # the oldest glibc that docs/install.md promises. Change both together.
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      RID: ${{ matrix.rid }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - name: Install the Native AOT toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang zlib1g-dev
+      - name: Choose the release version
+        id: version
+        env:
+          EVENT: ${{ github.event_name }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [[ $EVENT == push ]]; then
+            app_version=$(dotnet msbuild src/CommandDeck.App/CommandDeck.App.csproj -getProperty:Version)
+            if [[ $TAG != "v$app_version" ]]; then
+              echo "::error::Tag $TAG does not match the app version $app_version. Push the tag v$app_version, or change VersionPrefix and VersionSuffix in src/CommandDeck.App/CommandDeck.App.csproj."
+              exit 1
+            fi
+            echo "version=$TAG" >>"$GITHUB_OUTPUT"
+          else
+            echo "version=dev-${GITHUB_SHA::7}" >>"$GITHUB_OUTPUT"
+          fi
+      - name: Publish Native AOT
+        # Fails on IL trimming or AOT warnings, then smoke-tests the binary.
+        run: ./scripts/publish-aot.sh "$RID"
+      - name: Package the release archive
+        env:
+          # Not VERSION: MSBuild reads environment variables as properties, and Version=v0.1.0-preview.1
+          # is not a NuGet version, so restoring the file-based script would fail.
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        # The commit time stamps every file, so the same commit gives the same archive.
+        run: |
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          export SOURCE_DATE_EPOCH
+          dotnet scripts/package-release.cs "$RID" "$RELEASE_VERSION"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.rid }}
+          if-no-files-found: error
+          path: |
+            artifacts/release/*.tar.gz
+            artifacts/release/*.tar.gz.sha256
+
+  publish:
+    name: Create the GitHub release
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # Only the release notes are read from the repository.
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: docs/releases
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: release
+          merge-multiple: true
+      - name: Verify the checksums
+        working-directory: release
+        run: sha256sum -c ./*.sha256
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # Every release has written notes, docs/releases/<tag>.md; the install steps follow them.
+          release_notes=docs/releases/$TAG.md
+          if [[ ! -s $release_notes ]]; then
+            echo "::error::Write $release_notes before tagging $TAG."
+            exit 1
+          fi
+          { cat "$release_notes"; echo; } >notes.md
+          cat >>notes.md <<'EOF'
+          ## Install (no .NET needed)
+
+          Run these commands in your Omarchy session. On an ARM computer, use
+          `linux-arm64` instead of `linux-x64`.
+
+          ```bash
+          curl -fLO https://github.com/@REPO@/releases/download/@TAG@/commanddeck-@TAG@-linux-x64.tar.gz
+          curl -fLO https://github.com/@REPO@/releases/download/@TAG@/commanddeck-@TAG@-linux-x64.tar.gz.sha256
+          sha256sum -c commanddeck-@TAG@-linux-x64.tar.gz.sha256
+          tar -xzf commanddeck-@TAG@-linux-x64.tar.gz
+          cd commanddeck-@TAG@-linux-x64
+          ./install.sh
+          ```
+
+          The installer needs Omarchy with shell plugins on Hyprland, a systemd
+          user session, `jq`, `icu`, and glibc 2.39 or later. Run
+          `./install.sh --dry-run` first to check them. It changes nothing.
+
+          To update, install the new release in the same way. Your configuration
+          is kept. The [installation guide](https://github.com/@REPO@/blob/main/docs/install.md)
+          tells how to uninstall.
+          EOF
+          sed -i "s|@REPO@|$GH_REPO|g; s|@TAG@|$TAG|g" notes.md
+
+          prerelease=()
+          if [[ $TAG == *-* ]]; then
+            prerelease=(--prerelease)
+          fi
+          gh release create "$TAG" release/* --verify-tag --title "CommandDeck $TAG" \
+            --notes-file notes.md --generate-notes "${prerelease[@]}"

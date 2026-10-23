@@ -1,0 +1,33 @@
+# Build and publish output.
+**/bin/
+**/obj/
+artifacts/
+.publish/
+coverage/
+TestResults/
+
+# Editor and OS files.
+*.user
+*.suo
+*.swp
+.DS_Store
+.idea/
+.vscode/
+
+# Local databases.
+commanddeck.db
+commanddeck.db-shm
+commanddeck.db-wal
+
+# Local validation output and credentials do not belong in source control.
+/build/
+.env
+.env.*
+!.env.example
+
+# Per-run backend fixtures (including SQLite WAL files).
+/tmp/*
+# Keep the run boundary traversable for repository-policy fixtures, while Git
+# still ignores every generated file beneath it.
+!/tmp/run-*/
+/tmp/run-*/**

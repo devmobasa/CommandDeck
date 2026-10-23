@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "CommandDeck.Extensions": {
+        "type": "Direct",
+        "requested": "[0.1.0-preview.6, )",
+        "resolved": "0.1.0-preview.6",
+        "contentHash": "ffUNuUSu1a13/+rbjjP6y00cmYae5dm5qxmO3N3x1sqCAcX1P3j3+2XgAiFjIzLUFvGSCWXQ8rdHE+Qnswfz/A==",
+        "dependencies": {
+          "CommandDeck.ExtensionProtocol": "0.1.0-preview.6"
+        }
+      },
+      "Microsoft.NET.ILLink.Tasks": {
+        "type": "Direct",
+        "requested": "[10.0.13, )",
+        "resolved": "10.0.13",
+        "contentHash": "40yrBMsLEcjixBR4G+FiUaBPvxXIPSKJ2OgSrbOZcmSDBda4Sb0k7BWrfDpIvn3IvvDzwOL/tEPa6gDQfh6aRw=="
+      },
+      "CommandDeck.ExtensionProtocol": {
+        "type": "Transitive",
+        "resolved": "0.1.0-preview.6",
+        "contentHash": "WDzg8UlHA4upTq8mXY2sD26TLFjyyJui02m0XoeZeOaEVuSTekr5CANgFXDZ7yL6QBH7oZeuCtcz9rupGXdbGA=="
+      }
+    }
+  }
+}

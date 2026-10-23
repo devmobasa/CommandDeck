@@ -1,0 +1,106 @@
+import QtQuick
+import QtTest
+import "../../../qml/common" as Deck
+
+TestCase {
+  name: "InvocationController"
+  Deck.InvocationController { id: invocation }
+
+  function init() { invocation.clear() }
+
+  function test_confirmation_input_and_one_active_request() {
+    const result = { id: "document" }
+    const action = { id: "open" }
+    verify(invocation.requestConfirmation(result, action))
+    verify(!invocation.requestInput(result, action, false))
+    const confirmed = invocation.takeConfirmation()
+    compare(confirmed.result, result)
+    compare(confirmed.action, action)
+    compare(invocation.pendingConfirmationResult, null)
+
+    verify(invocation.requestInput(result, action, true))
+    verify(!invocation.requestConfirmation(result, action))
+    verify(invocation.actionInputOpen)
+    const input = invocation.takeInput()
+    compare(input.result, result)
+    compare(input.action, action)
+    verify(input.confirmed)
+    verify(!invocation.actionInputOpen)
+
+    verify(invocation.begin(41, true, true))
+    verify(invocation.busy)
+    verify(!invocation.begin(42, false, false))
+    verify(!invocation.requestInput(result, action, false))
+    verify(!invocation.requestConfirmation(result, action))
+    verify(!invocation.settle(42))
+    compare(invocation.requestId, 41)
+    const completion = invocation.complete(41, { succeeded: true, message: "Saved" }, true)
+    compare(completion.status, "Saved")
+    verify(completion.refresh)
+    verify(!completion.dismiss)
+    verify(!invocation.busy)
+    verify(!invocation.herdrEditPending)
+    verify(!invocation.refreshAfterAction)
+  }
+
+  function test_clear_discards_every_pending_transition() {
+    invocation.requestConfirmation({ id: "old" }, { id: "run" })
+    invocation.requestInput({ id: "old" }, { id: "run" }, true)
+    invocation.begin(51, true, true)
+    invocation.clear()
+    compare(invocation.requestId, 0)
+    compare(invocation.pendingConfirmationResult, null)
+    verify(!invocation.actionInputOpen)
+    verify(!invocation.refreshAfterAction)
+    verify(!invocation.herdrEditPending)
+    verify(!invocation.settle(51))
+  }
+
+  function test_outcome_policy_keeps_failures_and_output_visible() {
+    verify(invocation.begin(61, false, false))
+    const failed = invocation.complete(61, { succeeded: false, message: "Denied" }, true)
+    compare(failed.status, "Denied")
+    verify(!failed.refresh)
+    verify(!failed.dismiss)
+    compare(invocation.complete(61, { succeeded: true }, true), null)
+
+    verify(invocation.begin(62, false, false))
+    const output = invocation.complete(62, { succeeded: true, detailMarkdown: "details" }, true)
+    verify(output.output)
+    verify(!output.dismiss)
+
+    verify(invocation.begin(63, false, false))
+    verify(invocation.complete(63, { succeeded: true }, true).dismiss)
+  }
+
+  // Only a copy that closes the launcher leaves its message on screen; other
+  // actions, refreshes, output, failures and a kept-open launcher do not.
+  function test_a_copy_that_closes_the_launcher_names_its_message() {
+    const hudFor = (kind, outcome, hide, refresh) => {
+      verify(invocation.begin(60, refresh === true, false, kind))
+      return invocation.complete(60, outcome, hide).hud
+    }
+    compare(hudFor("copy-text", { succeeded: true, message: "Copied." }, true), "Copied.")
+    compare(hudFor("snippet-copy", { succeeded: true }, true), "Done")
+    compare(hudFor("launch-desktop", { succeeded: true, message: "Started" }, true), "")
+    compare(hudFor("copy-text", { succeeded: true, message: "Copied." }, false), "", "the launcher stays open")
+    compare(hudFor("copy-text", { succeeded: false, message: "Copy failed" }, true), "")
+    compare(hudFor("copy-text", { succeeded: true, message: "Copied.", detailMarkdown: "x" }, true), "")
+    compare(hudFor("copy-text", { succeeded: true, message: "Copied." }, true, true), "", "a refresh keeps it open")
+    verify(invocation.begin(61, false, false, "copy-text"))
+    invocation.clear()
+    compare(invocation.actionKind, "")
+  }
+
+  function test_actions_that_need_the_desktop_close_after_success_even_when_kept_open() {
+    verify(invocation.begin(70, false, false, "run-argv", true))
+    verify(invocation.complete(70, { succeeded: true }, false).dismiss,
+      "the picker must close the launcher even when Hide after opening an item is off")
+    verify(invocation.begin(71, false, false, "run-argv", true))
+    verify(!invocation.complete(71, { succeeded: false, message: "Could not start picker" }, false).dismiss,
+      "a failed picker launch keeps its error visible")
+    verify(invocation.begin(72, false, false, "run-argv"))
+    verify(!invocation.complete(72, { succeeded: true }, false).dismiss,
+      "ordinary commands still follow the user's setting")
+  }
+}

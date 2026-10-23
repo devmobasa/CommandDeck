@@ -1,0 +1,21 @@
+[Unit]
+Description=CommandDeck launcher daemon
+Documentation=https://github.com/devmobasa/CommandDeck
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/commanddeck daemon
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=10
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+# No PrivateTmp: Codex 0.157 and later links the unrestricted assistant's App
+# Server socket into /tmp, which the daemon must see to connect.
+ReadWritePaths=-%h/.config/commanddeck -%h/.local/state/commanddeck /tmp
+
+[Install]
+WantedBy=graphical-session.target
