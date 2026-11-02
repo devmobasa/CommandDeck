@@ -52,20 +52,19 @@ public sealed class TransientUnitCodexLauncher( string systemdRunPath, string sy
         }
 
         var arguments = BuildArguments( request );
-
-        var started = await ProcessRunner
-            .RunAsync( systemdRunPath, arguments, null, null, TimeSpan.FromSeconds( AgentLimits.StartupDeadlineSeconds ), cancellationToken )
-            .ConfigureAwait( false );
-
-        if ( started.ExitCode != 0 )
-        {
-            throw new AiOperationException( AiErrorCategories.Unavailable, safeSummary: "The user manager refused to start the unrestricted agent unit." );
-        }
-
         var unit = UnitName( request.Generation );
 
         try
         {
+            var started = await ProcessRunner
+                .RunAsync( systemdRunPath, arguments, null, null, TimeSpan.FromSeconds( AgentLimits.StartupDeadlineSeconds ), cancellationToken )
+                .ConfigureAwait( false );
+
+            if ( started.ExitCode != 0 )
+            {
+                throw new AiOperationException( AiErrorCategories.Unavailable, safeSummary: "The user manager refused to start the unrestricted agent unit." );
+            }
+
             await WaitForSocketAsync( socketPath, cancellationToken )
                 .ConfigureAwait( false );
 

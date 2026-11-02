@@ -101,7 +101,9 @@ public static partial class Program
         {
             await harness.ActAsync( "Update" );
         }
-        catch ( IOException ) { } // The old host closes a healthy peer for an application error.
+        catch ( IOException )
+        {
+        } // The old host closes a healthy peer for an application error.
 
         Equal( "ready", harness.Latest.Status );
         Equal( "The extension couldn't complete that action.", harness.Latest.Error );

@@ -499,6 +499,9 @@ PanelWindow {
     onDismissed: {
       launcherWindow.host.largeTypeText = ""
       launcherWindow.host.focusRevision++
+      // A click can be followed by typing before queued focus requests run.
+      if (launcherWindow.part_searchBar.focusRequestsEnabled)
+        launcherWindow.part_searchBar.inputControl.forceActiveFocus()
     }
   }
 

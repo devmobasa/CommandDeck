@@ -306,7 +306,8 @@ public static partial class Program
                 {
                     ExitCode = 0,
                     StandardOutput =
-                        "{\"status\":\"Resolved\",\"handlers\":[{\"desktopId\":\"../x.desktop\",\"label\":\"bad\\u0007\",\"rank\":\"default\",\"available\":true}],\"total\":1,\"moreAvailable\":false,\"revision\":\"r\"}",
+                        ((("{\"status\":\"Resolved\",\"handlers\":[{\"desktopId\":\"../x.desktop\",\"label\":\"bad\\u0007\",\"rank\":\"default\",\"a")) +
+                            "vailable\":true}],\"total\":1,\"moreAvailable\":false,\"revision\":\"r\"}"),
                     StandardError = ""
                 };
             }

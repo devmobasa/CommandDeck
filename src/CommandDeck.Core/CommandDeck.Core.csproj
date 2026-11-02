@@ -5,5 +5,9 @@
     <RootNamespace>CommandDeck</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../CommandDeck.ExtensionProtocol/Views/ExtensionItemIdLimits.cs" Link="Extensions/ExtensionItemIdLimits.cs" />
+  </ItemGroup>
 </Project>

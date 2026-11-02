@@ -222,7 +222,7 @@ internal sealed partial class IncrementalIndexEngine
             switch ( change.Kind )
             {
                 case IncrementalEventKind.Upsert:
-                    paths[change.Path] = false;
+                    paths.TryAdd( change.Path, false );
 
                     break;
                 case IncrementalEventKind.Delete:
@@ -236,7 +236,7 @@ internal sealed partial class IncrementalIndexEngine
                         paths[change.OldPath] = true;
                     }
 
-                    paths[change.Path] = false;
+                    paths.TryAdd( change.Path, false );
 
                     break;
             }

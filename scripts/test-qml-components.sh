@@ -58,6 +58,15 @@ spec_dir=$(mktemp -d "$repo_dir/build/qml-components.XXXXXX")
 trap 'rm -rf -- "$spec_dir"' EXIT
 cp "$repo_dir/tests/CommandDeck.QmlSpecs/"{shell,DeadlineTestCase}.qml "$spec_dir/"
 cp -R "$repo_dir/tests/CommandDeck.QmlSpecs/Assertions" "$spec_dir/"
+# Full launcher journeys live alongside the event tests. They also need their
+# shared fixture types when Quickshell loads them without running helper tests.
+cp "$repo_dir/tests/CommandDeck.QmlSpecs/"{EventPathFixture,EventPathTestCase,EventAgentSurface,EventSettingsPanel}.qml "$spec_dir/"
+mkdir -p "$spec_dir/Search"
+cp "$repo_dir/tests/CommandDeck.QmlSpecs/Search/"{tst_result_pointer_events,tst_large_type_events}.qml "$spec_dir/Search/"
+# Quickshell confines imports to the staged config root. Point event fixtures
+# at its copy of common rather than the repository-relative paths used by QtTest.
+sed -i 's#"\.\./\.\./qml/common#"common#g' "$spec_dir/"Event*.qml
+sed -i 's#"\.\./\.\./\.\./qml/common#"../common#g' "$spec_dir/Search/"*.qml
 cp -R "$repo_dir/qml/common" "$repo_dir/qml/omarchy" "$spec_dir/"
 
 component_started=$SECONDS

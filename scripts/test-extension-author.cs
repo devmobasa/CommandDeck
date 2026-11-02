@@ -34,7 +34,8 @@ try
     // Isolate both the SDK choice and the package cache from the checkout/user.
     await File.WriteAllTextAsync( Path.Combine( root, "global.json" ), "{\"sdk\":{\"version\":\"10.0.400\",\"rollForward\":\"disable\"}}" );
 
-    await Exec( ScriptExecutables.Dotnet, "tool", "install", "CommandDeck.ExtensionTools", "--version", "0.1.0-preview.6", "--tool-path", toolDirectory, "--add-source", feed );
+    await Exec( ScriptExecutables.Dotnet, "tool", "install", "CommandDeck.ExtensionTools", "--version", "0.1.0-preview.6", "--tool-path",
+         toolDirectory, "--add-source", feed );
     await Exec( tool, "new", "--directory", project, "--id", "org.example.author-draft", "--name", "Author draft", "--feed", feed );
 
     await Reject( tool, "new", "--directory", project, "--id", "org.example.other", "--name", "Other", "--feed", feed );
@@ -45,7 +46,9 @@ try
     {
         var warmup = Path.Combine( root, "WarmCache.csproj" );
 
-        await File.WriteAllTextAsync( warmup, "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"CommandDeck.Extensions\" Version=\"0.1.0-preview.1\" /></ItemGroup></Project>" );
+        await File.WriteAllTextAsync( warmup, ("<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></Property" +
+            "Group><ItemGroup><PackageReference Include=\"CommandDeck.Extensions\" Version=\"0.1.0-preview.1\" " +
+            "/></ItemGroup></Project>") );
 
         await Exec( ScriptExecutables.Dotnet, "restore", warmup, "--source", Path.GetFullPath( args[2] ), "--source", "https://api.nuget.org/v3/index.json" );
     }
@@ -87,7 +90,8 @@ try
     await Reject( tool, "update", "--host", host, "--archive", archive, "--digest", digest, "--socket", socket );
     await Reject( tool, "update", "--host", host, "--archive", archive, "--digest", new string( '0', 64 ), "--socket", socket, "--yes" );
 
-    await Exec( tool, "update", "--host", host, "--archive", archive, "--digest", digest, "--allow", "storage.read,storage.write", "--socket", socket, "--yes" );
+    await Exec( tool, "update", "--host", host, "--archive", archive, "--digest", digest, "--allow", "storage.read,storage.write", "--socket",
+         socket, "--yes" );
 
     var installed = await Inventory( "inspect", "org.example.author-draft" );
 
@@ -99,7 +103,8 @@ try
 
     await Exec( host, "extensions", "configure", "org.example.author-draft", "--settings-file", settings, "--expected-revision", revision, "--socket", socket );
 
-    await Reject( host, "extensions", "configure", "org.example.author-draft", "--settings-file", settings, "--expected-revision", revision, "--socket", socket );
+    await Reject( host, "extensions", "configure", "org.example.author-draft", "--settings-file", settings, "--expected-revision", revision,
+         "--socket", socket );
 
     var manifestPath = Path.Combine( project, CommandDeck.ExtensionProtocol.ExtensionPackageFiles.Manifest );
 
@@ -116,7 +121,8 @@ try
     await Exec( tool, "pack", "--directory", project, "--output", updatedArchive );
     var update = await Inventory( "inspect", "--archive", updatedArchive );
 
-    await Exec( tool, "update", "--host", host, "--archive", updatedArchive, "--digest", update["archiveDigest"]!.GetValue<string>( ), "--allow", "storage.read,storage.write", "--socket", socket, "--yes" );
+    await Exec( tool, "update", "--host", host, "--archive", updatedArchive, "--digest", update["archiveDigest"]!.GetValue<string>( ), "--allow",
+         "storage.read,storage.write", "--socket", socket, "--yes" );
 
     var replaced = await Inventory( "inspect", "org.example.author-draft" );
 
@@ -130,13 +136,15 @@ try
     AuthorCheck.That( rolledBack["packages"]![0]!["version"]!.GetValue<string>( ) == "0.1.0", "Rollback did not restore the package" );
     AuthorCheck.That( rolledBack["settings"]!["defaultTitle"]!.GetValue<string>( ) == "Author title", "Rollback lost settings" );
     // The external author's final archive also runs through the release sandbox journey.
-    await Exec( ScriptExecutables.Dotnet, Path.Combine( repo, "scripts/test-extension-draft.cs" ), host, updatedArchive, "--expected-title", "Updated local draft" );
+    await Exec( ScriptExecutables.Dotnet, Path.Combine( repo, "scripts/test-extension-draft.cs" ), host, updatedArchive, "--expected-title",
+         "Updated local draft" );
 
     var developmentArchive = Path.Combine( root, "development.cdext" );
     await Exec( tool, "dev", "--directory", project, "--output", developmentArchive );
     var development = await Inventory( "inspect", "--archive", developmentArchive );
 
-    await Exec( tool, "attach", "--host", host, "--archive", developmentArchive, "--digest", development["archiveDigest"]!.GetValue<string>( ), "--allow", "storage.read,storage.write", "--socket", socket, "--yes" );
+    await Exec( tool, "attach", "--host", host, "--archive", developmentArchive, "--digest", development["archiveDigest"]!.GetValue<string>( ),
+         "--allow", "storage.read,storage.write", "--socket", socket, "--yes" );
 
     var developmentId = "org.example.author-draft" + CommandDeck.ExtensionProtocol.ExtensionPackageFiles.DevelopmentIdSuffix;
     var firstDevelopment = await Inventory( "inspect", developmentId );
@@ -162,7 +170,8 @@ try
     await Exec( tool, "dev", "--directory", project, "--output", reloadedArchive );
     var reload = await Inventory( "inspect", "--archive", reloadedArchive );
 
-    await Exec( tool, "reload", "--host", host, "--archive", reloadedArchive, "--digest", reload["archiveDigest"]!.GetValue<string>( ), "--socket", socket, "--yes" );
+    await Exec( tool, "reload", "--host", host, "--archive", reloadedArchive, "--digest", reload["archiveDigest"]!.GetValue<string>( ),
+         "--socket", socket, "--yes" );
 
     var currentDevelopment = await Inventory( "inspect", developmentId );
 
@@ -172,11 +181,14 @@ try
 
     AuthorCheck.That( productionAfterReload["packages"]!
         .AsArray( )
-        .Single( n => n!["id"]!.GetValue<string>( ) == "org.example.author-draft" )!["digest"]!.GetValue<string>( ) == digest, "Development reload replaced production" );
+        .Single( n => n!["id"]!.GetValue<string>( ) == "org.example.author-draft" )!["digest"]!.GetValue<string>( ) == digest,
+             "Development reload replaced production" );
 
     await Exec( ScriptExecutables.Dotnet, Path.Combine( repo, "scripts/test-extension-development.cs" ), host, reloadedArchive );
 
-    Console.WriteLine( "PASS author workflow: isolated tool install, template, check, Native AOT build/pack, reviewed install/update, stale CLI settings rejection, preserved settings/rollback, release-sandbox Local Draft, failed development build, attachment/reload and native debugging." );
+    Console.WriteLine( ("PASS author workflow: isolated tool install, template, check, Native AOT build/pack, reviewed " +
+        "install/update, stale CLI settings rejection, preserved settings/rollback, release-sandbox Local " +
+        "Draft, failed development build, attachment/reload and native debugging.") );
 
     ProcessStartInfo Start( string executable, params string[] values )
     {

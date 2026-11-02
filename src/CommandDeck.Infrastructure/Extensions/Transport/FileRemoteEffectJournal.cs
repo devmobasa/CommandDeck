@@ -26,7 +26,9 @@ public sealed class FileRemoteEffectJournal : IRemoteEffectJournal, IDisposable
     private int _total;
     private bool _loaded;
 
-    public FileRemoteEffectJournal( string directory ) : this( directory, DefaultPackageLimit, DefaultJournalLimit ) { }
+    public FileRemoteEffectJournal( string directory ) : this( directory, DefaultPackageLimit, DefaultJournalLimit )
+    {
+    }
 
     internal FileRemoteEffectJournal( string directory, int packageLimit, int globalLimit )
     {

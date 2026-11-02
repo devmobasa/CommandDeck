@@ -92,8 +92,7 @@ public static partial class Program
 
         Equal( "chosen-item", service
             .Consume( "owner", row.Id, lease )
-            .Inputs["searchContext"]
-            .GetString( ) );
+            .Inputs["searchContext"].GetString( ) );
 
         Throws<InvalidOperationException>( ( ) => service.Consume( "owner", row.Id, lease ) );
         request = SearchInput( service, package );
@@ -240,7 +239,9 @@ public static partial class Program
                     {
                         await sdk;
                     }
-                    catch ( OperationCanceledException ) { }
+                    catch ( OperationCanceledException )
+                    {
+                    }
                 }
             }
         }

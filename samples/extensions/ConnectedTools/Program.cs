@@ -30,9 +30,11 @@ sealed class NotesCommand : IExtensionCommand
         }
         catch ( Exception exception ) when ( exception is ExtensionRpcException or BrokerOutcomeException )
         {
-            await context.Views.ReplaceAsync( new ListView { Id = NotesViewId, Title = "Select a notes root in Connections, then refresh", Items = [], Actions = [ViewAction.Callback( RefreshActionId, "Refresh" )] }, token );
+            await context.Views.ReplaceAsync( new ListView { Id = NotesViewId, Title = "Select a notes root in Connections, then refresh",
+                 Items = [], Actions = [ViewAction.Callback( RefreshActionId, "Refresh" )] }, token );
         }
     }
+
     public async ValueTask HandleAsync( CommandContext context, CommandEvent value, CancellationToken token )
     {
         if ( value is PageRequested page )
@@ -62,7 +64,8 @@ sealed class NotesCommand : IExtensionCommand
         }
         catch ( Exception exception ) when ( exception is ExtensionRpcException or BrokerOutcomeException or DecoderFallbackException or InvalidDataException )
         {
-            await context.Views.PushAsync( new DetailView { Id = NoteErrorViewId, Title = "Note unavailable", Body = "The file changed, was revoked, or exceeds the UTF-8 text view's 64 KiB limit. Go Back and refresh." }, token );
+            await context.Views.PushAsync( new DetailView { Id = NoteErrorViewId, Title = "Note unavailable",
+                 Body = "The file changed, was revoked, or exceeds the UTF-8 text view's 64 KiB limit. Go Back and refresh." }, token );
         }
     }
 
@@ -137,6 +140,7 @@ sealed class TasksCommand : IExtensionCommand
             await ListAsync( context, token );
         }
     }
+
     private static async ValueTask ListAsync( CommandContext context, CancellationToken token )
     {
         ImmutableArray<ListItem> items = [];
@@ -157,11 +161,13 @@ sealed class TasksCommand : IExtensionCommand
 
         await context.Views.ReplaceAsync( CreateTasksView( items, title ), token );
     }
+
     private async ValueTask FormAsync( CommandContext context, string title, string? error, CancellationToken token )
     {
         _form = CreateTaskForm( title, error );
         await context.Views.ReplaceAsync( _form, token );
     }
+
     public async ValueTask HandleAsync( CommandContext context, CommandEvent value, CancellationToken token )
     {
         if ( value is ActionInvoked { ActionId: RefreshActionId } )
@@ -194,7 +200,8 @@ sealed class TasksCommand : IExtensionCommand
     private async ValueTask SubmitTaskAsync( CommandContext context, FormSubmitted submit, FormView form, CancellationToken token )
     {
         var title = submit.Values[TitleFieldId].GetString( )!;
-        var pending = JsonElement.Parse( "{\"key\":" + JsonSerializer.Serialize( _key, SampleJson.Default.String ) + ",\"title\":" + JsonSerializer.Serialize( title, SampleJson.Default.String ) + "}" );
+        var pending = JsonElement.Parse( "{\"key\":" + JsonSerializer.Serialize( _key, SampleJson.Default.String ) + ",\"title\":" +
+             JsonSerializer.Serialize( title, SampleJson.Default.String ) + "}" );
 
         try
         {
@@ -202,7 +209,8 @@ sealed class TasksCommand : IExtensionCommand
             _revision = saved.Revision;
             var body = "{\"title\":" + JsonSerializer.Serialize( title, SampleJson.Default.String ) + "}";
 
-            var result = await context.Brokers.SendHttpAsync( TasksConnection, new( "POST", "/tasks", Convert.ToBase64String( Encoding.UTF8.GetBytes( body ) ), System.Net.Mime.MediaTypeNames.Application.Json, _key ), token );
+            var result = await context.Brokers.SendHttpAsync( TasksConnection, new( "POST", "/tasks",
+                 Convert.ToBase64String( Encoding.UTF8.GetBytes( body ) ), System.Net.Mime.MediaTypeNames.Application.Json, _key ), token );
             if ( result.StatusCode is >= 200 and < 300 )
             {
                 var cleared = await context.Data.DeleteAsync( PendingTaskKey, _revision, token );
@@ -219,7 +227,8 @@ sealed class TasksCommand : IExtensionCommand
             {
                 form = form with
                 {
-                    Error = "Request was rejected. Check the task list before creating another request. This request will not be retried automatically.",
+                    Error = ("Request was rejected. Check the task list before creating another request. This request will not be " +
+                        "retried automatically."),
                     ValidatedFormRevision = submit.FormRevision
                 };
             }
@@ -228,7 +237,8 @@ sealed class TasksCommand : IExtensionCommand
         {
             form = form with
             {
-                Error = "Outcome: " + exception.Outcome + ". Check the task list before creating another request. This request will not be retried automatically.",
+                Error = "Outcome: " + exception.Outcome +
+                     ". Check the task list before creating another request. This request will not be retried automatically.",
                 ValidatedFormRevision = submit.FormRevision
             };
         }
@@ -277,7 +287,9 @@ sealed class TasksCommand : IExtensionCommand
         {
             Id = TasksViewId,
             Title = "Create task",
-            Fields = [FormField.Text( TitleFieldId, "Title", true, 120 ) with { DefaultValue = string.IsNullOrEmpty( title ) ? null : JsonElement.Parse( JsonSerializer.Serialize( title, SampleJson.Default.String ) ) }],
+            Fields = [FormField.Text( TitleFieldId, "Title", true,
+                 120 ) with { DefaultValue = string.IsNullOrEmpty( title ) ? null : JsonElement.Parse( JsonSerializer.Serialize( title,
+                 SampleJson.Default.String ) ) }],
             Submit = ViewAction.Callback( CreateTaskActionId, "Create task" ),
             Actions = [ViewAction.Callback( RefreshActionId, "View tasks" )],
             Error = error

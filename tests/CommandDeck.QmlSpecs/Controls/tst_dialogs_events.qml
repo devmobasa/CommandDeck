@@ -6,10 +6,12 @@ import "../../../qml/common/Protocol.js" as Protocol
 import "../../../qml/common/UiConstants.js" as Ui
 import "../../../qml/common/Launcher/Actions/DeckHelpActions.js" as DeckHelpActions
 import "../../../qml/common/Launcher/Actions/DeckConfirmationActions.js" as DeckConfirmationActions
+import "../TabCycle.js" as TabCycle
 
 EventPathFixture {
   id: scene
   EventPathTestCase {
+    id: dialogTests
     fixture: scene
     name: "CommandDeck_dialogs"
     function test_confirmation_names_its_target_and_marks_destruction() {
@@ -127,6 +129,8 @@ EventPathFixture {
       mouseClick(fixture.part_queryHistory.entryItemAt(0).deleteControl)
       compare(fixture.part_queryHistory.pendingDeleteId, 7)
       waitForValue(fixture.part_queryHistory.confirmationControl.cancelControl, "activeFocus", true)
+      const confirmation = fixture.part_queryHistory.confirmationControl
+      TabCycle.verifyCycle(dialogTests, confirmation.Window.window, confirmation, confirmation.cancelControl, 4)
       keyClick(Qt.Key_Tab)
       keyClick(Qt.Key_Return)
       compare(fixture.part_queryHistory.deletedId, 7)

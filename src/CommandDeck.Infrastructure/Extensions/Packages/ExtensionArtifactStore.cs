@@ -29,7 +29,9 @@ public sealed class ExtensionArtifactStore( string root )
         {
             RecoverArtifactsCore( document );
         }
-        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException or System.Security.SecurityException ) { }
+        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException or System.Security.SecurityException )
+        {
+        }
     }
 
     private void RecoverArtifactsCore( ExtensionRegistryDocument document )
@@ -72,7 +74,9 @@ public sealed class ExtensionArtifactStore( string root )
         {
             CleanupInstallationArtifactsCore( document, key );
         }
-        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException or System.Security.SecurityException ) { }
+        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException or System.Security.SecurityException )
+        {
+        }
     }
 
     private void CleanupInstallationArtifactsCore( ExtensionRegistryDocument document, string key )
@@ -119,8 +123,7 @@ public sealed class ExtensionArtifactStore( string root )
     private static bool IsStagingDirectory( string value ) =>
         value.Length == StagingPrefix.Length + 32 &&
         value.StartsWith( StagingPrefix, StringComparison.Ordinal ) &&
-        value[StagingPrefix.Length..]
-            .All( char.IsAsciiHexDigit );
+        value[StagingPrefix.Length..].All( char.IsAsciiHexDigit );
 
     private static bool IsNonLinkDirectory( string path ) =>
         Directory.Exists( path ) &&
@@ -139,7 +142,9 @@ public sealed class ExtensionArtifactStore( string root )
 
             Directory.Delete( path, recursive: true );
         }
-        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException or System.Security.SecurityException ) { }
+        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException or System.Security.SecurityException )
+        {
+        }
     }
 
     private static bool IsUnretainedArtifact( HashSet<string> retained, string digest )

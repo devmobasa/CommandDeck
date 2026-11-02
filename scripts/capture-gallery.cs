@@ -35,7 +35,8 @@ sealed partial class GalleryCapture
 {
     private const int MaximumDimensionPixels = 7680;
     private const string OutputOption = "--output";
-    private const string Usage = "Usage: dotnet scripts/capture-gallery.cs [scene...] [--output DIR] [--width PX --height PX --dpr N --percent N --font-scale N --panel-width N --panel-height N]";
+    private const string Usage = ("Usage: dotnet scripts/capture-gallery.cs [scene...] [--output DIR] [--width PX --height PX --dpr N " +
+        "--percent N --font-scale N --panel-width N --panel-height N]");
     private const string RequestPreview =
         """{"model":"demo-model","stream":true,"messages":[{"role":"system","content":"Answer briefly."},{"role":"user","content":"Explain why the Moon has phases."}]}""";
 
@@ -60,7 +61,9 @@ sealed partial class GalleryCapture
         new( "herdr-tour", "herdr-tour.qml", 2, ["herdr-tour.gif", "herdr-tour.mp4"] ),
         new( "herdr-jump", "herdr-jump.qml", 2, ["herdr-jump.gif", "herdr-jump.mp4"] ),
         new( "settings", "settings.qml", 3,
-            ["settings-display.png", "settings-layout.png", "settings-search.png", "settings-folders.png", "settings-quicklinks.png", "settings-quicklink-edit.png", "settings-shortcuts-recording.png", "settings-shortcuts-conflict.png", "settings-shortcuts-changed.png", "settings-shortcuts-readonly.png", "settings-shortcuts-menu.png"] ),
+            ["settings-display.png", "settings-layout.png", "settings-search.png", "settings-folders.png", "settings-quicklinks.png",
+                 "settings-quicklink-edit.png", "settings-shortcuts-recording.png", "settings-shortcuts-conflict.png",
+                 "settings-shortcuts-changed.png", "settings-shortcuts-readonly.png", "settings-shortcuts-menu.png"] ),
         new( "social", "social.qml", 2, ["social-preview.png"] ),
         new( "showcase-shortcuts-chapters", "showcase.qml", 1, ["showcase-shortcuts-chapters.gif", "showcase-shortcuts-chapters.mp4"] ),
         new( "showcase-shortcuts-captions", "showcase.qml", 1, ["showcase-shortcuts-captions.gif", "showcase-shortcuts-captions.mp4"] ),
@@ -135,7 +138,8 @@ sealed partial class GalleryCapture
 
         Directory.CreateDirectory( _output );
 
-        foreach ( var scene in selected.Count > 0 ? selected : [.. Scenes.Where( value => value.Name != "sizing" && !value.Name.StartsWith( "showcase-", StringComparison.Ordinal ) )] )
+        foreach ( var scene in selected.Count > 0 ? selected : [.. Scenes.Where( value => value.Name != "sizing" &&
+             !value.Name.StartsWith( "showcase-", StringComparison.Ordinal ) )] )
         {
             await CaptureAsync( scene );
         }
@@ -238,7 +242,8 @@ sealed partial class GalleryCapture
                 start.Environment["COMMANDDECK_GALLERY_THEME"] = palette.ToJsonString( );
             }
 
-            await RunAsync( start, scene.Name is "demo" or "whats-new" or "herdr-tour" or "herdr-jump" ? TimeSpan.FromMinutes( 3 ) : TimeSpan.FromSeconds( 60 ) );
+            await RunAsync( start,
+                 scene.Name is "demo" or "whats-new" or "herdr-tour" or "herdr-jump" ? TimeSpan.FromMinutes( 3 ) : TimeSpan.FromSeconds( 60 ) );
         }
         finally
         {
@@ -282,7 +287,8 @@ sealed partial class GalleryCapture
         // The clipboard scene previews an earlier gallery image as its copied picture.
         var image = Path.Combine( _output, "calculator.png" );
 
-        File.Copy( File.Exists( image ) ? image : Path.Combine( _repository, "docs", "screenshots", "calculator.png" ), Path.Combine( fixture, "demo-image.png" ) );
+        File.Copy( File.Exists( image ) ? image : Path.Combine( _repository, "docs", "screenshots", "calculator.png" ), Path.Combine( fixture,
+             "demo-image.png" ) );
     }
 
     private static void Isolate( ProcessStartInfo start, string fixture )
@@ -297,7 +303,8 @@ sealed partial class GalleryCapture
 
         start.Environment[CommandDeck.EnvironmentVariableNames.DbusSessionBusAddress] = "unix:path=" + Path.Combine( fixture, "no-session-bus" );
 
-        foreach ( var key in new[] { CommandDeck.XdgEnvironmentNames.ConfigHome, CommandDeck.XdgEnvironmentNames.StateHome, CommandDeck.XdgEnvironmentNames.CacheHome, CommandDeck.XdgEnvironmentNames.DataHome, CommandDeck.XdgEnvironmentNames.RuntimeDirectory } )
+        foreach ( var key in new[] { CommandDeck.XdgEnvironmentNames.ConfigHome, CommandDeck.XdgEnvironmentNames.StateHome,
+             CommandDeck.XdgEnvironmentNames.CacheHome, CommandDeck.XdgEnvironmentNames.DataHome, CommandDeck.XdgEnvironmentNames.RuntimeDirectory } )
         {
             var directory = Path.Combine( fixture, key.ToLowerInvariant( ) );
             Directory.CreateDirectory( directory );
@@ -550,7 +557,8 @@ sealed partial class GalleryCapture
     {
         return string.Concat( output
             .Split( '\n' )
-            .Where( line => line.Contains( "Saved ", StringComparison.Ordinal ) || line.Contains( "WARN", StringComparison.Ordinal ) || line.Contains( "ERROR", StringComparison.Ordinal ) )
+            .Where( line => line.Contains( "Saved ", StringComparison.Ordinal ) || line.Contains( "WARN", StringComparison.Ordinal ) ||
+                 line.Contains( "ERROR", StringComparison.Ordinal ) )
             .Where( line => !line.Contains( "[CD-PREVIEW]", StringComparison.Ordinal ) )
             .Select( line => line.Trim( ) + "\n" ) );
     }

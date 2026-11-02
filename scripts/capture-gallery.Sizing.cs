@@ -55,6 +55,7 @@ sealed partial class GalleryCapture
     {
         return arguments[index] == OutputOption && index + 1 < arguments.Length;
     }
+
     private bool TrySetNextSizing( string key, string[] arguments, ref int index )
     {
         return ++index < arguments.Length && TrySetSizing( key, arguments[index] );

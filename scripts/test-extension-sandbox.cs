@@ -199,7 +199,10 @@ static class SandboxJourney
 
     static async Task<JsonObject> ProbeAsync( string binary, string package, string repository, string deployment, string cache )
     {
-        var environment = new Dictionary<string, string?>( StringComparer.Ordinal ) { [CommandDeck.ExtensionProbeContract.SecretEnvironmentVariable] = "synthetic-do-not-inherit" };
+        var environment = new Dictionary<string, string?>( StringComparer.Ordinal )
+        {
+            [CommandDeck.ExtensionProbeContract.SecretEnvironmentVariable] = "synthetic-do-not-inherit"
+        };
 
         var result = await RunAsync( binary, ["extension-probe", "--artifact", package], repository, TimeSpan.FromMinutes( 5 ), environment );
 
@@ -428,10 +431,12 @@ static class SandboxJourney
                !line[CommandDeck.ExtensionProbeContract.ReadyPrefix.Length..].StartsWith( "/user.slice/", StringComparison.Ordinal );
     }
 
-    private static bool IsParentMissing( [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] DirectoryInfo? firstParent, [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] DirectoryInfo? secondParent )
+    private static bool IsParentMissing( [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] DirectoryInfo? firstParent,
+         [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] DirectoryInfo? secondParent )
     {
         return firstParent is null || secondParent is null;
     }
+
     private static bool TryReadSampleCount( string value, out int result )
     {
         return int.TryParse( value, out result ) && result is >= 1 and <= 50;

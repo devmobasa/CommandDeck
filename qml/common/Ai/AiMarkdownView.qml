@@ -12,7 +12,6 @@ TextArea {
 
   required property var theme
   property string sourceText: ""
-  readonly property int maximumInlineSpan: 4096
   // Source characters the latest update rendered: newly settled blocks and
   // the tail. It stays near one block while an answer streams.
   property int lastRenderedLength: 0

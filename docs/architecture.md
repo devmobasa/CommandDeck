@@ -31,6 +31,9 @@ The backend targets `net11.0`; the public extension packages target `net10.0`.
 The app is designed for Native AOT. JSON wire types use explicit serialization
 contexts. `Directory.Packages.props` and lock files keep dependency versions
 reviewable.
+Core links the extension item-ID limit from ExtensionProtocol as shared source,
+without adding an assembly dependency. List item IDs have the same 256-byte
+UTF-8 limit when published and when sent back for activation.
 
 Extension runtime composition constructs one launcher, journal, connection service,
 secret resolver and development service. Management, sessions and search receive

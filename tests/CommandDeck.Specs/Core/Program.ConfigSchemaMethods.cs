@@ -119,7 +119,8 @@ public static partial class Program
                 ["$id"] = "https://local.commanddeck/schemas/commanddeck.schema.json",
                 ["title"] = "CommandDeck configuration",
                 ["description"] =
-                    "JSONC configuration for the CommandDeck daemon. Comments and trailing commas are allowed. The runtime ignores unknown properties; this schema flags them so editors can catch typos.",
+                    ("JSONC configuration for the CommandDeck daemon. Comments and trailing commas are allowed. The " +
+                        "runtime ignores unknown properties; this schema flags them so editors can catch typos."),
                 ["type"] = "object",
                 ["additionalProperties"] = false,
                 ["properties"] = ordered
@@ -202,16 +203,14 @@ public static partial class Program
 
         if ( IsList( type ) )
         {
-            var itemType = type
-                .GetGenericArguments( )[0];
+            var itemType = type.GetGenericArguments( )[0];
 
             return new JsonObject { ["type"] = "array", ["items"] = BuildTypeSchema( itemType, property: null ) };
         }
 
         if ( IsDictionaryType( type ) )
         {
-            var valueType = type
-                .GetGenericArguments( )[1];
+            var valueType = type.GetGenericArguments( )[1];
 
             return new JsonObject { ["type"] = "object", ["additionalProperties"] = BuildTypeSchema( valueType, property: null ) };
         }

@@ -103,8 +103,10 @@ public static partial class Program
     {
         public string Id => "failure-fixture";
 
-        public ValueTask<IReadOnlyList<SearchResult>> SearchAsync( ParsedQuery query, SearchRequest request, CancellationToken cancellationToken ) =>
+        public ValueTask<IReadOnlyList<SearchResult>> SearchAsync( ParsedQuery query, SearchRequest request, CancellationToken cancellationToken )
+        {
             throw new IOException( "private synthetic error" );
+        }
     }
 
     private static async Task HomeProviderDeadlineRetainsCapacityAsync( )

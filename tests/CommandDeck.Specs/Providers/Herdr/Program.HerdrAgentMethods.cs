@@ -59,8 +59,10 @@ public static partial class Program
         Equal( "Agent · Status unknown · CommandDeck", agents[4].Subtitle );
 
         // Text narrows by agent, tab, or space name and keeps the urgency order.
-        Equal( "herdr:agent:w1:p1|herdr:agent:w2:p1", string.Join( '|', (await SearchHerdrAsync( "agents: claude", AgentFake( ) )).Select( static result => result.Id ) ) );
-        Equal( "herdr:agent:w2:p2|herdr:agent:w2:p1", string.Join( '|', (await SearchHerdrAsync( "agents: notes", AgentFake( ) )).Select( static result => result.Id ) ) );
+        Equal( "herdr:agent:w1:p1|herdr:agent:w2:p1", string.Join( '|', (await SearchHerdrAsync( "agents: claude",
+             AgentFake( ) )).Select( static result => result.Id ) ) );
+        Equal( "herdr:agent:w2:p2|herdr:agent:w2:p1", string.Join( '|', (await SearchHerdrAsync( "agents: notes",
+             AgentFake( ) )).Select( static result => result.Id ) ) );
         Equal( "herdr:agent:w1:p3", (await SearchHerdrAsync( "agents: release", AgentFake( ) )).Single( ).Id );
         Equal( 0, (await SearchHerdrAsync( "agents: zzzz", AgentFake( ) )).Count );
 
@@ -93,8 +95,8 @@ public static partial class Program
                 string.Join( '|', listed.Select( static result => result.Id ) ) );
 
             // The alias works, and the filter admits no ordinary tab row.
-            True( (await coordinator.SearchAsync( new SearchRequest { Query = "hagents: codex", Limit = 20 }, CancellationToken.None ))
-                .All( HerdrSearch.IsAgentRow ) );
+            True( (await coordinator.SearchAsync( new SearchRequest { Query = "hagents: codex", Limit = 20 },
+                 CancellationToken.None )).All( HerdrSearch.IsAgentRow ) );
 
             var tabs = await coordinator.SearchAsync( new SearchRequest { Query = "htab: release", Limit = 20 }, CancellationToken.None );
             True( tabs.Count > 0 && !tabs.Any( HerdrSearch.IsAgentRow ) );

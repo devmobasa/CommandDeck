@@ -38,7 +38,9 @@ public static partial class Program
                 AssertBurstOrder( journal.ReadPending( ) );
             }
 
-            using ( var reopened = CreateCountingJournal( database, "boot-a", static ( ) => { } ) )
+            using ( var reopened = CreateCountingJournal( database, "boot-a", static ( ) =>
+            {
+            } ) )
             {
                 True( reopened.Initialize( ) );
                 True( !reopened.IsCorrupted );
@@ -77,7 +79,9 @@ public static partial class Program
 
         try
         {
-            using var running = CreateCountingJournal( database, "boot-a", static ( ) => { } );
+            using var running = CreateCountingJournal( database, "boot-a", static ( ) =>
+            {
+            } );
             True( running.Initialize( ) );
             running.Append( IncrementalEventKind.Upsert, "/window/a.txt", null );
             running.Append( IncrementalEventKind.Upsert, "/window/b.txt", null );
@@ -85,7 +89,9 @@ public static partial class Program
 
             // A process crash keeps written pages: the same boot replays every event.
             var afterProcessCrash = CopyJournalFiles( database, Path.Combine( root, "process-crash" ) );
-            using ( var restarted = CreateCountingJournal( afterProcessCrash, "boot-a", static ( ) => { } ) )
+            using ( var restarted = CreateCountingJournal( afterProcessCrash, "boot-a", static ( ) =>
+            {
+            } ) )
             {
                 True( restarted.Initialize( ) );
                 True( !restarted.IsCorrupted );
@@ -93,7 +99,9 @@ public static partial class Program
                 Equal( 3, restarted.ReadPending( ).Count );
             }
 
-            using ( var again = CreateCountingJournal( afterProcessCrash, "boot-b", static ( ) => { } ) )
+            using ( var again = CreateCountingJournal( afterProcessCrash, "boot-b", static ( ) =>
+            {
+            } ) )
             {
                 True( again.Initialize( ) );
                 True( !again.UnsyncedWindowLost );
@@ -102,14 +110,18 @@ public static partial class Program
             // An operating-system crash may drop the unflushed window. The next boot
             // cannot trust the journal and keeps that evidence until a reconcile.
             var afterReboot = CopyJournalFiles( database, Path.Combine( root, "reboot" ) );
-            using ( var rebooted = CreateCountingJournal( afterReboot, "boot-b", static ( ) => { } ) )
+            using ( var rebooted = CreateCountingJournal( afterReboot, "boot-b", static ( ) =>
+            {
+            } ) )
             {
                 True( rebooted.Initialize( ) );
                 True( rebooted.UnsyncedWindowLost );
                 rebooted.Append( IncrementalEventKind.Upsert, "/window/d.txt", null );
                 rebooted.Commit( );
                 var beforeReconcile = CopyJournalFiles( afterReboot, Path.Combine( root, "reboot-again" ) );
-                using ( var crashedAgain = CreateCountingJournal( beforeReconcile, "boot-b", static ( ) => { } ) )
+                using ( var crashedAgain = CreateCountingJournal( beforeReconcile, "boot-b", static ( ) =>
+                {
+                } ) )
                 {
                     True( crashedAgain.Initialize( ) );
                     True( crashedAgain.UnsyncedWindowLost );
@@ -119,7 +131,9 @@ public static partial class Program
                 True( !rebooted.UnsyncedWindowLost );
             }
 
-            using ( var reconciled = CreateCountingJournal( afterReboot, "boot-c", static ( ) => { } ) )
+            using ( var reconciled = CreateCountingJournal( afterReboot, "boot-c", static ( ) =>
+            {
+            } ) )
             {
                 True( reconciled.Initialize( ) );
                 True( !reconciled.UnsyncedWindowLost );
@@ -133,7 +147,9 @@ public static partial class Program
                 events.SetLength( events.Length - 3 );
             }
 
-            using ( var tornJournal = CreateCountingJournal( torn, "boot-a", static ( ) => { } ) )
+            using ( var tornJournal = CreateCountingJournal( torn, "boot-a", static ( ) =>
+            {
+            } ) )
             {
                 True( tornJournal.Initialize( ) );
                 True( tornJournal.IsCorrupted );

@@ -47,8 +47,8 @@ public static class AuthorProject
         new XDocument( new XElement( "configuration",
                 new XElement( "packageSources", new XElement( "clear" ), Source( PreviewPackageSource, feed ),
                     Source( NuGetPackageSource, "https://api.nuget.org/v3/index.json" ) ),
-                new XElement( "packageSourceMapping", Mapping( PreviewPackageSource, "CommandDeck.*" ), Mapping( NuGetPackageSource, "*" ) ) ) )
-            .Save( Path.Combine( directory, "NuGet.Config" ) );
+                new XElement( "packageSourceMapping", Mapping( PreviewPackageSource, "CommandDeck.*" ), Mapping( NuGetPackageSource,
+                     "*" ) ) ) ).Save( Path.Combine( directory, "NuGet.Config" ) );
     }
 
     public static ExtensionManifest Check( string directory )
@@ -74,7 +74,12 @@ public static class AuthorProject
     {
         var projects = Directory.GetFiles( directory, "*.csproj" );
 
-        return projects.Length == 1 ? projects[0] : throw new InvalidDataException( "The author directory must contain exactly one .csproj." );
+        if ( projects.Length != 1 )
+        {
+            throw new InvalidDataException( "The author directory must contain exactly one .csproj." );
+        }
+
+        return projects[0];
     }
 
     private static string Resource( string name )

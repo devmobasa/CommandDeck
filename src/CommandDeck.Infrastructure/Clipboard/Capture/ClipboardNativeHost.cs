@@ -65,7 +65,9 @@ public static class ClipboardNativeHost
                     .WhenAll( tasks )
                     .ConfigureAwait( false );
             }
-            catch ( Exception exception ) when ( exception is IOException or OperationCanceledException or ObjectDisposedException ) { }
+            catch ( Exception exception ) when ( exception is IOException or OperationCanceledException or ObjectDisposedException )
+            {
+            }
         }
 
         async Task ReadAsync( Stream stream, ChannelWriter<ClipboardHelperFrame> writer )

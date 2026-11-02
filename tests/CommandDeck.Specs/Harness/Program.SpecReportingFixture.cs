@@ -5,7 +5,10 @@ public static partial class Program
     private sealed class SpecSkippedException( string reason ) : Exception( reason );
 
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    private static void SkipSpec( string reason ) => throw new SpecSkippedException( reason );
+    private static void SkipSpec( string reason )
+    {
+        throw new SpecSkippedException( reason );
+    }
 
     private static async Task RunSpecStorageFixtureAsync( )
     {
@@ -20,7 +23,10 @@ public static partial class Program
         Console.WriteLine( $"SPEC_TEMP path={temporary.FullName} physical={physical}" );
 
         Run( "synchronous SQLite I/O diagnostic",
-            ( ) => throw new InvalidOperationException( "fixture storage failure", new Microsoft.Data.Sqlite.SqliteException( "disk I/O error", 10 ) ) );
+            ( ) =>
+            {
+                throw new InvalidOperationException( "fixture storage failure", new Microsoft.Data.Sqlite.SqliteException( "disk I/O error", 10 ) );
+            } );
 
         await RunAsync( "asynchronous SQLite full diagnostic", async ( ) =>
         {

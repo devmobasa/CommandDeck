@@ -31,9 +31,13 @@ public static partial class Program
 
         Throws<InvalidOperationException>( ( ) => fixture.Ledger.Publish( reservation, reservation
             .Completed.Select( static payload => payload.Id )
-            .ToHashSet( ), ( ) => true, ( _, _ ) => { } ) );
+            .ToHashSet( ), ( ) => true, ( _, _ ) =>
+            {
+            } ) );
 
-        Throws<InvalidOperationException>( ( ) => fixture.Ledger.Publish( reservation, new HashSet<Guid> { text.Id }, ( ) => false, ( _, _ ) => { } ) );
+        Throws<InvalidOperationException>( ( ) => fixture.Ledger.Publish( reservation, new HashSet<Guid> { text.Id }, ( ) => false, ( _, _ ) =>
+        {
+        } ) );
 
         Throws<IOException>( ( ) => fixture.Ledger.Publish( reservation, new HashSet<Guid> { text.Id }, ( ) => true, ( connection, _ ) =>
         {
@@ -159,7 +163,8 @@ public static partial class Program
             Connection.Open( );
             using var command = Connection.CreateCommand( );
 
-            command.CommandText = "PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; CREATE TABLE publication_probe(value INTEGER)";
+            command.CommandText = ("PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; CREATE TABLE " +
+                "publication_probe(value INTEGER)");
 
             command.ExecuteNonQuery( );
             Directory = new( Path.Combine( Root, "history.data" ) );

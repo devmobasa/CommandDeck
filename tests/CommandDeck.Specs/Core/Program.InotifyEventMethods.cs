@@ -46,7 +46,8 @@ public static partial class Program
             watcher.ProcessEvents( InotifyEvents( (rootWatch, InotifyMovedFrom, 7u, "draft.txt"), (rootWatch, InotifyMovedTo, 7u, "final.txt"),
                 (rootWatch, InotifyMovedFrom, 8u, "gone.txt"), (rootWatch, InotifyMovedTo, 9u, "came.txt"), (-1, InotifyQueueOverflow, 0u, "") ) );
 
-            Equal( $"Rename {root}/final.txt <- {root}/draft.txt; Delete {root}/gone.txt; Upsert {root}/came.txt; Overflow {root}",
+            Equal( ($"Rename {root}/final.txt <- {root}/draft.txt; Delete {root}/gone.txt; Upsert " +
+                $"{root}/came.txt; Overflow {root}"),
                 string.Join( "; ", sink.Take( ) ) );
 
             // A directory moved away stops being watched; a new one is watched
@@ -168,13 +169,25 @@ public static partial class Program
             }
         }
 
-        public int CreateWake( ) => throw new NotSupportedException( );
+        public int CreateWake( )
+        {
+            throw new NotSupportedException( );
+        }
 
-        public void Wake( int wake ) => throw new NotSupportedException( );
+        public void Wake( int wake )
+        {
+            throw new NotSupportedException( );
+        }
 
-        public int Poll( ReadOnlySpan<int> descriptors, Span<bool> readable ) => throw new NotSupportedException( );
+        public int Poll( ReadOnlySpan<int> descriptors, Span<bool> readable )
+        {
+            throw new NotSupportedException( );
+        }
 
-        public int Read( int descriptor, Span<byte> buffer ) => throw new NotSupportedException( );
+        public int Read( int descriptor, Span<byte> buffer )
+        {
+            throw new NotSupportedException( );
+        }
 
         public void Close( int descriptor )
         {

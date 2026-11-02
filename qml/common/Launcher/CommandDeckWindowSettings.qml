@@ -18,7 +18,12 @@ SettingsPanel {
   id: settingsPanel
   insetFrame: settingsPanel.host.part_palette.frameInset > 0
   visible: settingsPanel.presented && settingsPanel.host.host.settingsOpen && !settingsPanel.host.host.extensionManagementOpen
-  onVisibleChanged: Qt.callLater(settingsPanel.revealPendingSetting)
+  property var childFocus: null
+  property int childFocusGeneration: 0
+  onVisibleChanged: {
+    if (!visible) { childFocus = null; childFocusGeneration++ }
+    Qt.callLater(settingsPanel.revealPendingSetting)
+  }
   Component.onCompleted: Qt.callLater(settingsPanel.revealPendingSetting)
   onSnapshotChanged: Qt.callLater(settingsPanel.revealPendingSetting)
 
@@ -40,9 +45,38 @@ SettingsPanel {
     }
   }
 
+  function rememberChildFocus(kind) {
+    childFocus = { kind: kind, control: settingsPanel.Window.activeFocusItem, generation: ++childFocusGeneration }
+  }
+
+  function restoreChildFocus(kind) {
+    const pending = childFocus
+    if (!pending || pending.kind !== kind) return
+    childFocus = null
+    Qt.callLater(function() {
+      const deck = settingsPanel.host.host
+      if (pending.generation !== childFocusGeneration || !settingsPanel.visible || !deck.opened
+          || deck.confirmationOpen || deck.detailDialogRequested || deck.queryHistoryOpen
+          || deck.agentOpen || deck.helpOpen || deck.indexInspectorOpen || deck.filterPaletteOpen
+          || deck.part_clipboardController.opened || deck.extensionManagementOpen
+          || settingsPanel.aiProviderEditorControl.opened || settingsPanel.aiRemoveConfirmationControl.opened) return
+      const control = pending.control
+      if (control && control.visible && control.enabled && settingsPanel.containsFocusItem(control)) control.forceActiveFocus()
+    })
+  }
+
   Connections {
     target: settingsPanel.host.host
     function onPendingSettingIdChanged() { Qt.callLater(settingsPanel.revealPendingSetting) }
+    function onQueryHistoryOpenChanged() {
+      if (!settingsPanel.host.host.queryHistoryOpen) settingsPanel.restoreChildFocus("history")
+    }
+    function onDetailDialogRequestedChanged() {
+      if (!settingsPanel.host.host.detailDialogRequested) settingsPanel.restoreChildFocus("export")
+    }
+    function onConfirmationOpenChanged() {
+      if (!settingsPanel.host.host.confirmationOpen) settingsPanel.restoreChildFocus("confirmation")
+    }
   }
   onExtensionsRequested: settingsPanel.host.host.extensionManagementOpen = true
   opacity: visible ? 1 : 0
@@ -150,10 +184,12 @@ SettingsPanel {
   onDismissed: settingsPanel.host.host.closeSettings()
   onPreferencesChanged: preferences => settingsPanel.host.host.updatePreferences(preferences)
   onResetRequested: {
+    settingsPanel.rememberChildFocus("confirmation")
     settingsPanel.host.host.resetConfirmation = true
     settingsPanel.host.host.confirmationOpen = true
   }
   onExportRequested: {
+    settingsPanel.rememberChildFocus("export")
     settingsPanel.host.host.enqueuePersonalization(
       Protocol.Operations.CustomizationsExport, {}, { kind: Ui.MutationKind.Export })
   }
@@ -172,7 +208,10 @@ SettingsPanel {
       stableIds: stableIds
     }, { kind: Ui.MutationKind.Reorder })
   }
-  onHistoryRequested: settingsPanel.host.host.openQueryHistory()
+  onHistoryRequested: {
+    settingsPanel.rememberChildFocus("history")
+    settingsPanel.host.host.openQueryHistory()
+  }
   onFilterAliasSetRequested: (alias, filterId) => {
     settingsPanel.host.host.filterAliasError = ""
     settingsPanel.host.host.enqueuePersonalization(Protocol.Operations.FilterAliasSet, {
@@ -197,8 +236,12 @@ SettingsPanel {
   onAiSelectionUpdateRequested: (providerId, modelId) =>
     settingsPanel.host.host.updateAiSelection(providerId, modelId)
   onAiTemplateSaveRequested: template => settingsPanel.host.host.saveAiTemplate(template)
-  onAiTemplateDeleteRequested: template => settingsPanel.host.host.confirmDeleteAiTemplate(template)
+  onAiTemplateDeleteRequested: template => {
+    settingsPanel.rememberChildFocus("confirmation")
+    settingsPanel.host.host.confirmDeleteAiTemplate(template)
+  }
   onSavedSearchDeleteRequested: search => {
+    settingsPanel.rememberChildFocus("confirmation")
     settingsPanel.host.host.savedSearchDeleteTarget = search
     settingsPanel.host.host.confirmationOpen = true
   }

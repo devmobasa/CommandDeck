@@ -115,7 +115,9 @@ public sealed class ClipboardCapture( ClipboardHistoryStore store, ClipboardPayl
                 }
             }
         }
-        catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested ) { }
+        catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested )
+        {
+        }
     }
 
     // Returns the consent to capture with, or None while capture must not run.
@@ -159,7 +161,9 @@ public sealed class ClipboardCapture( ClipboardHistoryStore store, ClipboardPayl
                     .ConfigureAwait( false );
             }
         }
-        catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested ) { }
+        catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested )
+        {
+        }
     }
 
     // Only a session that stayed configured for thirty seconds resets a repeated failure backoff.
@@ -185,7 +189,9 @@ public sealed class ClipboardCapture( ClipboardHistoryStore store, ClipboardPayl
                 }, token )
                 .ConfigureAwait( false );
         }
-        catch ( OperationCanceledException ) when ( token.IsCancellationRequested ) { }
+        catch ( OperationCanceledException ) when ( token.IsCancellationRequested )
+        {
+        }
         catch ( Exception exception ) when ( exception is IOException
                                                 or InvalidOperationException
                                                 or OperationCanceledException

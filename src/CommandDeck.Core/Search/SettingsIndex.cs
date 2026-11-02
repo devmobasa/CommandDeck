@@ -71,12 +71,15 @@ public static class SettingsIndex
         new( SettingIds.FileSearch, SearchPage, "", "File search", "Limit file and configuration results to your home folder.",
             "search home folder only indexed files configuration" ),
         new( SettingIds.SearchSources, SearchPage, "", "Search sources", "Choose which sources answer searches and Home, and their order.",
-            "search sources extensions install packages applications files windows workspaces commands quicklinks clipboard snippets home order drag reorder checkbox keyboard" ),
+            ("search sources extensions install packages applications files windows workspaces commands " +
+                "quicklinks clipboard snippets home order drag reorder checkbox keyboard") ),
         new( SettingIds.HeyMail, SearchPage, "", "HEY mail", "How hey: and mail: results open: web, app, or terminal.",
             "hey mail email threads open web app terminal tui" ),
         new( SettingIds.SearchBehavior, SearchPage, "", "Behavior",
             "Inline calculator, Top Matches, web fallback, hiding after opening, and reduced motion.",
-            "search inline calculator arithmetic dates days weeks top matches ranking best grouped sections web fallback hide after opening item close copying reduce motion animation workspace layout previews snapshots" ),
+            ("search inline calculator arithmetic dates days weeks top matches ranking best grouped sections web " +
+                "fallback hide after opening item close copying reduce motion animation workspace layout previews " +
+                "snapshots") ),
         new( SettingIds.IndexedFolders, SearchPage, "", "Indexed folders", "Add folders to search or disable configuration folders.",
             "search indexed folders roots path add remove disable enable configuration missing folder" ),
         new( SettingIds.Quicklinks, SearchPage, "", "Quicklinks", "Add web searches or links; {query} is the search text.",
@@ -88,7 +91,8 @@ public static class SettingsIndex
         new( SettingIds.AssistantModel, AiPage, AssistantSection, "Model", "The assistant's model and reasoning effort.",
             "assistant codex claude cursor grok backend model reasoning effort refresh hidden" ),
         new( SettingIds.AssistantTrust, AiPage, AssistantSection, "Trust and context", "How much the assistant may do, and which folders it sees.",
-            "assistant codex trust level context policy approved folders ask every access web search unrestricted permission sandbox" ),
+            ("assistant codex trust level context policy approved folders ask every access web search " +
+                "unrestricted permission sandbox") ),
         new( SettingIds.AssistantLimits, AiPage, AssistantSection, "Limits", "Conversation retention and turn timeout.",
             "assistant codex conversation retention turn timeout duration" ),
         new( SettingIds.AssistantGrants, AiPage, AssistantSection, "Grants", "Review or revoke remembered permissions.",
@@ -96,7 +100,8 @@ public static class SettingsIndex
         new( SettingIds.AssistantDiagnostics, AiPage, AssistantSection, "Diagnostics", "Assistant status, helper package, and sandbox warnings.",
             "assistant codex diagnostics status package helper sandbox warnings" ),
         new( SettingIds.QuickAnswerProviders, AiPage, QuickAnswersSection, "Providers", "Ollama and OpenAI-compatible endpoints for ai: questions.",
-            "ai quick answers providers direct enable ollama openai grok xai endpoint api key credential model provider add edit remove test" ),
+            ("ai quick answers providers direct enable ollama openai grok xai endpoint api key credential model " +
+                "provider add edit remove test") ),
         new( SettingIds.QuickAnswerSelection, AiPage, QuickAnswersSection, "Selected provider and model", "Which provider and model answer ai: questions.",
             "ai providers model refresh selection save selected active" ),
         new( SettingIds.PromptTemplates, AiPage, QuickAnswersSection, "Prompt templates", "Reusable prompts for the direct providers.",
@@ -116,7 +121,8 @@ public static class SettingsIndex
         new( SettingIds.DisplaySize, CustomizationPage, "", "Display size", "Scale text and controls together.",
             "customization display size scale zoom percent larger smaller screen match recommended previous" ),
         new( SettingIds.Layout, CustomizationPage, "", "Layout", "Panel width and height, compact rows, and the preview pane.",
-            "customization layout width height panel percent reset compact dense rows one line badges footer shortcuts preview pane details" ),
+            ("customization layout width height panel percent reset compact dense rows one line badges footer " +
+                "shortcuts preview pane details") ),
         new( SettingIds.Closing, CustomizationPage, "", "Closing and reopening", "What Escape does and how a reopened launcher starts.",
             "customization escape close reopen keep last search home root timeout" ),
         new( SettingIds.Colors, CustomizationPage, "", "Colors", "Follow the Omarchy theme or use CommandDeck's own palette.",
@@ -132,7 +138,8 @@ public static class SettingsIndex
         new( SettingIds.Reset, CustomizationPage, "", "Reset", "Return sources, favorites, aliases, and grants to their defaults.",
             "customization reset defaults" ),
         new( SettingIds.Diagnostics, DiagnosticsPage, "", "Status and timings", "Version, socket, index, and recent search timings, ready to copy.",
-            "diagnostics debug info copy report bug version socket daemon process started index catalog database search timings slow latency providers timeout" )
+            ("diagnostics debug info copy report bug version socket daemon process started index catalog database " +
+                "search timings slow latency providers timeout") )
     ];
 
     public static SettingEntry? Find( string? id ) =>

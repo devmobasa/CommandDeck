@@ -244,7 +244,9 @@ public sealed class ClipboardServing( Func<ProcessStartInfo> start ) : IAsyncDis
                 }
             }
         }
-        catch ( Exception exception ) when ( exception is IOException or InvalidDataException or System.Threading.Channels.ChannelClosedException ) { }
+        catch ( Exception exception ) when ( exception is IOException or InvalidDataException or System.Threading.Channels.ChannelClosedException )
+        {
+        }
         finally
         {
             foreach ( var waiting in _waits.Values )

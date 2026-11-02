@@ -24,7 +24,8 @@ public sealed partial class ClipboardHistoryStore
             using var command = _connection.CreateCommand( );
 
             command.CommandText =
-                "SELECT o.payload_id FROM clipboard_offers o JOIN clipboard_selections s ON o.entry_id=s.entry_id AND o.mime=s.preferred_mime WHERE o.entry_id=$id";
+                ("SELECT o.payload_id FROM clipboard_offers o JOIN clipboard_selections s ON o.entry_id=s.entry_id " +
+                    "AND o.mime=s.preferred_mime WHERE o.entry_id=$id");
 
             command.Parameters.AddWithValue( "$id", id );
             var payloadId = command.ExecuteScalar( ) as string;

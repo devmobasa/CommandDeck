@@ -106,7 +106,11 @@ public sealed partial class ClipboardHistoryStore
 
         triggers.Close( );
 
-        string[] expectedTriggers = !current ? [] : searchIndex ? SearchIndexPayloadTriggers : PayloadTriggers;
+        string[] expectedTriggers = [];
+        if ( current )
+        {
+            expectedTriggers = searchIndex ? SearchIndexPayloadTriggers : PayloadTriggers;
+        }
         if ( !actualTriggers.SetEquals( expectedTriggers ) )
         {
             throw new IOException( "Unknown clipboard mutation triggers; existing data was preserved." );
@@ -192,7 +196,8 @@ public sealed partial class ClipboardHistoryStore
     {
         return Scalar( "SELECT count(*) FROM clipboard_fts" ) != Scalar( "SELECT count(*) FROM entries" ) ||
                Scalar(
-                   "SELECT count(*) FROM entries e LEFT JOIN clipboard_fts f ON e.rowid=f.rowid WHERE f.rowid IS NULL OR f.text!=e.text OR f.keywords!=e.keywords" ) !=
+                   ("SELECT count(*) FROM entries e LEFT JOIN clipboard_fts f ON e.rowid=f.rowid WHERE f.rowid IS NULL " +
+                       "OR f.text!=e.text OR f.keywords!=e.keywords") ) !=
                0;
     }
 
@@ -216,7 +221,9 @@ public sealed partial class ClipboardHistoryStore
         using var command = _connection.CreateCommand( );
 
         command.CommandText =
-            "SELECT e.id,cast(e.text AS blob),s.dedup_key,s.preferred_mime,o.mime FROM entries e JOIN clipboard_selections s ON e.id=s.entry_id JOIN clipboard_offers o ON e.id=o.entry_id ORDER BY e.id,o.mime";
+            ("SELECT e.id,cast(e.text AS blob),s.dedup_key,s.preferred_mime,o.mime FROM entries e JOIN " +
+                "clipboard_selections s ON e.id=s.entry_id JOIN clipboard_offers o ON e.id=o.entry_id ORDER BY " +
+                "e.id,o.mime");
 
         using var reader = command.ExecuteReader( );
         string? id = null;
@@ -266,8 +273,10 @@ public sealed partial class ClipboardHistoryStore
                             p.id IS NULL OR p.state!=1 OR p.actual!=length(cast(e.text AS blob)) OR p.digest!=lower(e.id)
                         """ ) !=
                0 ||
-               Scalar( "SELECT count(*) FROM entries e WHERE (SELECT count(*) FROM clipboard_offers o WHERE o.entry_id=e.id) NOT BETWEEN 1 AND 2" ) != 0 ||
-               Scalar( "SELECT count(*) FROM (SELECT entry_id,offer_index FROM clipboard_offers GROUP BY entry_id,offer_index HAVING count(*)>1)" ) != 0 ||
+               Scalar( ("SELECT count(*) FROM entries e WHERE (SELECT count(*) FROM clipboard_offers o WHERE " +
+                   "o.entry_id=e.id) NOT BETWEEN 1 AND 2") ) != 0 ||
+               Scalar( ("SELECT count(*) FROM (SELECT entry_id,offer_index FROM clipboard_offers GROUP BY " +
+                   "entry_id,offer_index HAVING count(*)>1)") ) != 0 ||
                Scalar( "SELECT count(*) FROM clipboard_selections" ) != Scalar( "SELECT count(*) FROM entries" ) ||
                Scalar( "SELECT count(*) FROM clipboard_payloads WHERE state=1 AND id NOT IN (SELECT payload_id FROM clipboard_offers)" ) != 0;
     }

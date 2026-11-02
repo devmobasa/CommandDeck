@@ -87,10 +87,19 @@ public static partial class Program
         await AssertDiscoveryCategoryAsync( options, _ => Json( HttpStatusCode.Unauthorized, "secret body" ), "authentication" );
         await AssertDiscoveryCategoryAsync( options, _ => Json( HttpStatusCode.Forbidden, "secret body" ), "permission" );
         await AssertDiscoveryCategoryAsync( options, _ => Json( HttpStatusCode.OK, "{malformed" ), "malformed-response" );
-        await AssertDiscoveryCategoryAsync( options, _ => throw new HttpRequestException( "offline" ), "network" );
-        await AssertDiscoveryCategoryAsync( options, _ => throw new TaskCanceledException( "provider timeout" ), "timeout" );
+        await AssertDiscoveryCategoryAsync( options, _ =>
+        {
+            throw new HttpRequestException( "offline" );
+        }, "network" );
+        await AssertDiscoveryCategoryAsync( options, _ =>
+        {
+            throw new TaskCanceledException( "provider timeout" );
+        }, "timeout" );
 
-        RecordingAiHandler noCredentialConnection = new( _ => throw new InvalidOperationException( "transport must not be reached" ) );
+        RecordingAiHandler noCredentialConnection = new( _ =>
+        {
+            throw new InvalidOperationException( "transport must not be reached" );
+        } );
 
         await using AiProviderRegistry missingCredentialRegistry = new( new AiOptions { Enabled = true, Providers = [withCredential( )] },
             new FixedTransportFactory( noCredentialConnection ), new MissingCredentialResolver( ) );

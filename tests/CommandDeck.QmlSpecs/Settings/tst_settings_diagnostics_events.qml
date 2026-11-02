@@ -28,11 +28,33 @@ EventPathFixture {
     ]
   })
 
+  TextEdit {
+    id: pasteTarget
+    width: 10
+    height: 10
+    visible: false
+  }
+
   SignalSpy { id: statusRequests; target: scene.part_settingsPanel; signalName: "runtimeStatusRequested" }
 
   EventPathTestCase {
     fixture: scene
     name: "CommandDeck_settings_diagnostics"
+
+    function pastedText() {
+      pasteTarget.text = ""
+      pasteTarget.paste()
+      return pasteTarget.text
+    }
+
+    function copyButton(parent, label) {
+      if (parent.Accessible.name === "Copy " + label) return parent
+      for (const child of parent.children || []) {
+        const found = copyButton(child, label)
+        if (found) return found
+      }
+      return null
+    }
 
     function cleanup() {
       const panel = fixture.part_settingsPanel
@@ -67,8 +89,6 @@ EventPathFixture {
 
       const copy = findChild(panel, "copyDebugInfo")
       tryVerify(() => copy.enabled, 2000)
-      copy.forceActiveFocus()
-      waitForValue(copy, "activeFocus", true)
       waitForFrame(copy)
       const page = panel.parts.diagnosticsScroll
       mouseWheel(page, page.width / 2, page.height / 2, 0, -1600)
@@ -77,7 +97,34 @@ EventPathFixture {
       waitForFrame(copy)
       mouseClick(copy)
       tryCompare(copy, "text", "Copied")
+      compare(pastedText(), [
+        "Version: 0.1.0-preview.1+abc",
+        "Process: 2081",
+        "Started: 2026-10-29 08:16:02",
+        "Socket: /run/user/1000/commanddeck.sock",
+        "Catalog: 22089 items: 3579 files, 18090 configuration, 87 applications",
+        "Database: 66.3 MiB",
+        "Index: 2 watched folders, 0 pending changes",
+        "Searches: Last 258: median 23 ms, p95 91 ms, slowest 352 ms",
+        "Provider catalog: p95 182 ms, slowest 350 ms, 3 of 120 timed out",
+        "Provider hyprland: p95 6 ms, slowest 9 ms",
+        "PDF extraction: unavailable: pdftotext is not installed"
+      ].join("\n"))
       tryCompare(copy, "text", "Copy debug info", 4000)
+    }
+
+    function test_individual_copy_pastes_the_value_without_its_label() {
+      const panel = fixture.part_settingsPanel
+      panel.visible = true
+      waitForValue(panel.searchControl, "activeFocus", true)
+      panel.showPage(Ui.SettingsPage.Diagnostics)
+      panel.runtimeStatus = scene.status
+      const copy = copyButton(panel.parts.diagnosticsScroll, "Version")
+      verify(copy !== null)
+      waitForFrame(copy)
+      mouseClick(copy)
+      tryCompare(copy, "text", "Copied")
+      compare(pastedText(), "0.1.0-preview.1+abc")
     }
 
     function test_settings_search_reaches_the_diagnostics_page() {

@@ -282,6 +282,7 @@ internal sealed partial class PackageHelperCore
             operation.Message = message;
             operation.FailedNames.Clear( );
             operation.FailedNames.AddRange( failedNames );
+            RetainTerminalOperation( operation );
 
             if ( string.Equals( _activeOperationId, operation.OperationId, StringComparison.Ordinal ) )
             {

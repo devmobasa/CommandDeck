@@ -155,7 +155,9 @@ internal static class ArchiveContentExtractor
         Stream input = OpenArchiveStream( compressed, file );
         await using ( input.ConfigureAwait( false ) )
         {
-            TarReader archive = new( input, leaveOpen: false );
+            var decompressedLimit = Math.Min( totalLimit, archiveBytes * MaximumExpansionRatio );
+            using ArchiveReadBudgetStream bounded = new( input, decompressedLimit );
+            using TarReader archive = new( bounded, leaveOpen: true );
             BoundedArchiveText output = new( archiveBytes, totalLimit );
             var entries = 0;
             TarEntry? entry;

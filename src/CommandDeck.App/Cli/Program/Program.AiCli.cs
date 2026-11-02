@@ -403,7 +403,8 @@ public static partial class Program
                 else
                 {
                     Console.WriteLine(
-                        $"Provider saved; selection was not changed ({Safe( result.SelectionError?.Category ?? "" )}: {Safe( result.SelectionError?.Summary ?? "" )})." );
+                        ($"Provider saved; selection was not changed ({Safe( result.SelectionError?.Category ?? "" )}" +
+                            $": {Safe( result.SelectionError?.Summary ?? "" )}).") );
                 }
             }
         }
@@ -425,7 +426,8 @@ public static partial class Program
         }
         else
         {
-            Console.WriteLine( $"Destination: {Safe( result.Destination )} ({Safe( result.Locality )}, credential {Safe( result.CredentialState )})" );
+            Console.WriteLine( ($"Destination: {Safe( result.Destination )} ({Safe( result.Locality )}" +
+                $", credential {Safe( result.CredentialState )})") );
             Console.WriteLine( $"Outcome:     {Safe( result.Outcome )}" );
 
             if ( result.Error is not null )

@@ -33,6 +33,7 @@ static partial class Journey
             throw new InvalidOperationException( message );
         }
     }
+
     public static JsonObject Input( string session, long sequence, long revision, string? handle = null, string? item = null ) => new( )
     {
         ["sessionId"] = session,
@@ -70,7 +71,8 @@ static partial class Journey
             start.ArgumentList.Add( argument );
         }
 
-        start.Environment[CommandDeck.EnvironmentVariableNames.ExecutablePath] = bin + ":" + Environment.GetEnvironmentVariable( CommandDeck.EnvironmentVariableNames.ExecutablePath );
+        start.Environment[CommandDeck.EnvironmentVariableNames.ExecutablePath] = bin + ":" +
+             Environment.GetEnvironmentVariable( CommandDeck.EnvironmentVariableNames.ExecutablePath );
         start.Environment["COMMANDDECK_TEST_EFFECTS"] = effects;
         using var daemon = Process.Start( start )!;
         var stdout = daemon.StandardOutput.ReadToEndAsync( );
@@ -85,7 +87,8 @@ static partial class Journey
             return connection;
         }
 
-        async Task<JsonNode> Cli( params string[] arguments ) => JsonNode.Parse( await Exec( host, ["extensions", .. arguments, "--socket", address, "--json"] ) )!;
+        async Task<JsonNode> Cli( params string[] arguments ) => JsonNode.Parse( await Exec( host, ["extensions", .. arguments, "--socket",
+             address, "--json"] ) )!;
 
         async Task Clean( string label ) => await Wait( async ( ) => (await Units( )).SetEquals( baseline ), label );
 
@@ -137,8 +140,10 @@ static partial class Journey
             var session = view["sessionId"]!.GetValue<string>( );
             Check( !(await Units( )).SetEquals( baseline ), "No isolated session" );
 
-            JsonObject Copy( JsonNode snapshot, long sequence ) => Input( snapshot["sessionId"]!.GetValue<string>( ), sequence, snapshot["revision"]!.GetValue<long>( ),
-                        snapshot["content"]!["items"]![0]!["actions"]![0]!["handle"]!.GetValue<string>( ), snapshot["content"]!["items"]![0]!["id"]!.GetValue<string>( ) );
+            JsonObject Copy( JsonNode snapshot, long sequence ) => Input( snapshot["sessionId"]!.GetValue<string>( ), sequence,
+                 snapshot["revision"]!.GetValue<long>( ),
+                        snapshot["content"]!["items"]![0]!["actions"]![0]!["handle"]!.GetValue<string>( ),
+                             snapshot["content"]!["items"]![0]!["id"]!.GetValue<string>( ) );
 
             await client.Call( "extension.action", Copy( view, 2 ), true );
             Check( !File.Exists( clipboard ), "Copy without grant" );
@@ -209,7 +214,8 @@ static partial class Journey
             await CheckNavigationAsync( client, view, clipboard );
             await Clean( "Navigation cleanup" );
 
-            Console.WriteLine( "PASS connected navigation: push Detail, copy, Back, Next/Previous pages, retired detail/page handles, callback after restored parent." );
+            Console.WriteLine( ("PASS connected navigation: push Detail, copy, Back, Next/Previous pages, retired detail/page " +
+                "handles, callback after restored parent.") );
 
             await Open( client );
             client.Dispose( );
@@ -269,7 +275,8 @@ static partial class Journey
 
             foreach ( var behavior in new[] { "crash", "hang", "malformed", "flood" } )
             {
-                var hostileArchive = CreatePackageVariant( package, Path.Combine( root, behavior + ".cdext" ), "org.commanddeck.hostile-" + behavior, "0.1.0", Path.Combine( hostileOutput, "extension-hostile" ), behavior );
+                var hostileArchive = CreatePackageVariant( package, Path.Combine( root, behavior + ".cdext" ), "org.commanddeck.hostile-" +
+                     behavior, "0.1.0", Path.Combine( hostileOutput, "extension-hostile" ), behavior );
 
                 var inspected = await Cli( "inspect", "--archive", hostileArchive );
 
@@ -285,7 +292,8 @@ static partial class Journey
                 hostileInput["resultId"] = hostileResult["id"]!.GetValue<string>( );
                 var failed = await client.Call( "extension.open", hostileInput, true );
 
-                Check( failed.Any( message => message["extensionSession"]?["status"]?.GetValue<string>( ) == "failed" ), behavior + " did not publish recovery state" );
+                Check( failed.Any( message => message["extensionSession"]?["status"]?.GetValue<string>( ) == "failed" ), behavior +
+                     " did not publish recovery state" );
 
                 await Clean( behavior + " descendants survived" );
                 await client.Call( "ping", new( ) );
@@ -314,7 +322,9 @@ static partial class Journey
 
             await File.WriteAllTextAsync( evidencePath, evidence.ToJsonString( new( ) { WriteIndented = true } ) + "\n" );
 
-            Console.WriteLine( "PASS real daemon/sandbox: discovery, negotiation, ownership, copy grants, replay, regeneration, presentation, revocation race, close/reopen, disconnect, master disable, update/rollback/sibling, remove, crash/hang/malformed/flood, daemon shutdown." );
+            Console.WriteLine( ("PASS real daemon/sandbox: discovery, negotiation, ownership, copy grants, replay, regeneration, " +
+                "presentation, revocation race, close/reopen, disconnect, master disable, update/rollback/sibling, " +
+                "remove, crash/hang/malformed/flood, daemon shutdown.") );
         }
         finally
         {

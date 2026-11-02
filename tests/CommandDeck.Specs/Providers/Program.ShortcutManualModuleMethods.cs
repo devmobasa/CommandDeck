@@ -14,7 +14,8 @@ public static partial class Program
         True( !snapshot.ModuleInstalled );
         var menu = snapshot.Bindings.Single( static row => row.Description == "Menu" );
         True( menu.Changeable );
-        snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+J" }, false, ShortcutInventoryFixture, default );
+        snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+J" }, false,
+             ShortcutInventoryFixture, default );
         True( snapshot.ModuleInstalled );
         True( !snapshot.HotkeyManaged );
         var module = File.ReadAllText( fixture.Paths.HotkeyFile );
@@ -48,7 +49,8 @@ public static partial class Program
         var id = snapshot.Bindings[0].Id;
         var conflict = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = id, Chord = "Ctrl+Space" }, false, inventory, default );
         Equal( "Open CommandDeck", conflict.ConflictDescription );
-        snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = id, Chord = "Ctrl+Space", Replace = true }, false, inventory, default );
+        snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = id, Chord = "Ctrl+Space", Replace = true }, false,
+             inventory, default );
         Equal( "", snapshot.Hotkey );
         True( snapshot.Bindings.Single( static row => row.LauncherHotkey ).Changed );
         snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutRestore, new( ) { Id = id }, true, inventory, default );
@@ -59,7 +61,8 @@ public static partial class Program
         Keybinding[] current = [.. ShortcutInventoryFixture, new( ) { Chord = "Super+F3", Description = "CommandDeck" }];
         snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = id, Chord = "Super+F3", Replace = true }, false, current, default );
         Equal( "", snapshot.Hotkey );
-        True( !snapshot.Lua.Contains( "hl.dsp.global(\"commanddeck:toggle\")", StringComparison.Ordinal ), "export must not reinstall a suppressed global binding" );
+        True( !snapshot.Lua.Contains( "hl.dsp.global(\"commanddeck:toggle\")", StringComparison.Ordinal ),
+             "export must not reinstall a suppressed global binding" );
         snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutRestore, new( ) { Id = id }, true, current, default );
         Equal( "SUPER + F3", snapshot.Hotkey );
         Equal( 1, snapshot.ChangeCount );

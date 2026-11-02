@@ -61,11 +61,12 @@ static class DaemonStartup
         {
             var config = await PrepareFixtureAsync( fixture, options );
             List<string> binaries = [options.Binary, .. options.Compare is null ? Array.Empty<string>( ) : [options.Compare]];
-            Dictionary<string, (List<double> Ready, List<double> Home)> results = binaries.ToDictionary( static binary => binary, static _ => (new List<double>( ), new List<double>( )) );
+            Dictionary<string, (List<double> Ready, List<double> Home)> results = binaries.ToDictionary( static binary => binary, static _ =>
+                 (new List<double>( ), new List<double>( )) );
 
             foreach ( var binary in binaries )
             {
-                await PrepareCatalogAsync( binary, fixture, config, options );
+                await PrepareCatalogAsync( binary, fixture, config );
                 _ = await StartOnceAsync( binary, fixture, config, options );
             }
 
@@ -129,7 +130,7 @@ static class DaemonStartup
         return config;
     }
 
-    private static async Task PrepareCatalogAsync( string binary, string fixture, string config, Options options )
+    private static async Task PrepareCatalogAsync( string binary, string fixture, string config )
     {
         using var process = new Process { StartInfo = CreateStart( binary, fixture, ["reindex", "--config", config, "--quiet", "--json"] ) };
         using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 120 ) );
@@ -158,7 +159,8 @@ static class DaemonStartup
     private static Queue<string> StartDrained( Process process )
     {
         Queue<string> errors = new( );
-        process.OutputDataReceived += static ( _, _ ) => { };
+        process.OutputDataReceived += static ( _, _ ) => {
+ };
         process.ErrorDataReceived += ( _, line ) =>
         {
             if ( line.Data is null )
@@ -208,12 +210,18 @@ static class DaemonStartup
 
             await using NetworkStream stream = new( socket );
             using StreamReader reader = new( stream, Encoding.UTF8 );
-            var request = JsonSerializer.Serialize( new { version = CommandDeck.ProtocolLimits.CurrentVersion, requestId = 1, operation = "search", query = "", limit = 50 } );
+            var request = JsonSerializer.Serialize( new { version = CommandDeck.ProtocolLimits.CurrentVersion, requestId = 1,
+                 operation = "search", query = "", limit = 50 } );
             await stream.WriteAsync( Encoding.UTF8.GetBytes( request + "\n" ), deadline.Token );
 
             while ( true )
             {
-                var line = await reader.ReadLineAsync( deadline.Token ) ?? throw new InvalidOperationException( "The daemon closed the connection before the Home search finished." );
+                var line = await reader.ReadLineAsync( deadline.Token );
+                if ( line is null )
+                {
+                    throw new InvalidOperationException( "The daemon closed the connection before the Home search finished." );
+                }
+
                 var reply = Reply.Classify( line, requestId: 1 );
                 if ( reply == ReplyKind.Done )
                 {
@@ -390,12 +398,17 @@ static class Reply
                 return ReplyKind.Other;
             }
 
-            return root.TryGetProperty( "type", out var type ) ? type.GetString( ) switch
+            if ( !root.TryGetProperty( "type", out var type ) )
+            {
+                return ReplyKind.Other;
+            }
+
+            return type.GetString( ) switch
             {
                 "done" => IsComplete( root ) ? ReplyKind.Done : ReplyKind.Failed,
                 "error" => ReplyKind.Failed,
                 _ => ReplyKind.Other
-            } : ReplyKind.Other;
+            };
         }
         catch ( JsonException )
         {
@@ -420,7 +433,12 @@ sealed record Options( string Binary, string? Compare, int Samples, int Director
 
         for ( var index = 0; index < args.Length; index++ )
         {
-            var value = index + 1 < args.Length ? args[index + 1] : throw new ArgumentException( $"{args[index]} needs a value." );
+            if ( index + 1 >= args.Length )
+            {
+                throw new ArgumentException( $"{args[index]} needs a value." );
+            }
+
+            var value = args[index + 1];
             switch ( args[index] )
             {
                 case "--binary":
@@ -445,11 +463,21 @@ sealed record Options( string Binary, string? Compare, int Samples, int Director
             index++;
         }
 
-        return new( binary ?? throw new ArgumentException( "--binary is required." ), compare, samples, directories, timeout );
+        if ( binary is null )
+        {
+            throw new ArgumentException( "--binary is required." );
+        }
+
+        return new( binary, compare, samples, directories, timeout );
     }
 
-    private static int ParseRange( string value, int minimum, int maximum, string name ) =>
-        int.TryParse( value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed ) && parsed >= minimum && parsed <= maximum
-            ? parsed
-            : throw new ArgumentException( $"{name} must be {minimum}-{maximum}." );
+    private static int ParseRange( string value, int minimum, int maximum, string name )
+    {
+        if ( !int.TryParse( value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed ) || parsed < minimum || parsed > maximum )
+        {
+            throw new ArgumentException( $"{name} must be {minimum}-{maximum}." );
+        }
+
+        return parsed;
+    }
 }

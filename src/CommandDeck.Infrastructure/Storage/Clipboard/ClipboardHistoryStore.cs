@@ -177,7 +177,8 @@ public sealed partial class ClipboardHistoryStore : IDisposable
                     .NewGuid( )
                     .ToString( "N" )) );
 
-                Execute( "INSERT INTO clipboard_selections VALUES($id,'text',$mime,$digest); INSERT INTO clipboard_offers VALUES($id,$payload,$mime,0)",
+                Execute( ("INSERT INTO clipboard_selections VALUES($id,'text',$mime,$digest); INSERT INTO clipboard_offers " +
+                    "VALUES($id,$payload,$mime,0)"),
                     ("$id", id), ("$mime", PlainMime), ("$digest", digest), ("$payload", payload.Id.ToString( "N" )) );
 
                 WriteProjectionMetadata( id, EmptyProjection );
@@ -208,7 +209,8 @@ public sealed partial class ClipboardHistoryStore : IDisposable
             using var command = _connection.CreateCommand( );
 
             command.CommandText =
-                "SELECT id,text,pinned FROM entries WHERE instr(lower(text),lower($text))>0 ORDER BY pinned DESC,copied DESC,rowid DESC LIMIT $limit";
+                ("SELECT id,text,pinned FROM entries WHERE instr(lower(text),lower($text))>0 ORDER BY pinned " +
+                    "DESC,copied DESC,rowid DESC LIMIT $limit");
 
             command.Parameters.AddWithValue( "$text", text );
             command.Parameters.AddWithValue( "$limit", Math.Clamp( limit, 1, MaximumLegacySearchResults ) );
@@ -250,7 +252,8 @@ public sealed partial class ClipboardHistoryStore : IDisposable
                 }
 
                 var changed = Execute(
-                                  "UPDATE entries SET pinned=$pinned,revision=revision+1 WHERE id=$id AND ($pinned=0 OR pinned=1 OR (SELECT count(*) FROM entries WHERE pinned=1)<$maximum)",
+                                  ("UPDATE entries SET pinned=$pinned,revision=revision+1 WHERE id=$id AND ($pinned=0 OR pinned=1 OR " +
+                                      "(SELECT count(*) FROM entries WHERE pinned=1)<$maximum)"),
                                   ("$id", id), ("$pinned", pinned ? 1 : 0), ("$maximum", ReadPolicy( )
                                                                                              .MaximumEntries /
                                                                                          2) ) >

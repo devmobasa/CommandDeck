@@ -21,6 +21,17 @@ ColumnLayout {
     launcherContent.pointerSelection = false
   }
 
+  // The row at the top of the list. Rows can overlap their neighbour by a
+  // pixel or two, so the point under the top edge may still belong to the row
+  // above the one the view was positioned at.
+  function topRow() {
+    const edge = resultList.contentY + 1
+    let top = resultList.indexAt(0, edge)
+    if (top < 0) top = resultList.indexAt(0, edge + resultList.spacing)
+    const next = top >= 0 ? resultList.itemAtIndex(top + 1) : null
+    return next && next.y <= edge ? top + 1 : top
+  }
+
   function stepResults(wheel) {
     if (!ResultWheel.isWheelTurn(wheel.phase === Qt.NoScrollPhase, wheel.angleDelta.y, wheel.pixelDelta.y)) {
       wheel.accepted = false
@@ -29,8 +40,7 @@ ColumnLayout {
     const turn = ResultWheel.notches(wheel.angleDelta.y, launcherContent.wheelRemainder)
     launcherContent.wheelRemainder = turn.remainder
     const rows = launcherContent.host.host.part_rows
-    let top = resultList.indexAt(0, resultList.contentY + 1)
-    if (top < 0) top = resultList.indexAt(0, resultList.contentY + resultList.spacing + 1)
+    const top = launcherContent.topRow()
     if (turn.steps === 0 || top < 0) return
     const isHeader = row => rows.get(row).isHeader
     const target = ResultWheel.targetRow(top, -turn.steps, rows.count, isHeader)
@@ -82,7 +92,7 @@ ColumnLayout {
   onChangeShortcutRequested: {
     const deck = launcherContent.host.host
     const result = deck.currentResult
-    const action = result ? (result.actions || []).find(value => value.id === "change-shortcut") : null
+    const action = result ? (result.actions || []).find(value => value.id === Ui.ResultAction.ChangeShortcut) : null
     if (action) deck.invokeAction(result, action)
   }
   onLargeTypeRequested: text => launcherContent.host.host.openLargeType(text)

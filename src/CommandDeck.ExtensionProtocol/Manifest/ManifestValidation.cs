@@ -51,7 +51,8 @@ public static partial class ManifestValidation
     private static partial Regex PackageIdPattern( );
 
     [GeneratedRegex(
-        "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+        ("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9" +
+            "A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"),
         RegexOptions.CultureInvariant )]
     private static partial Regex VersionPattern( );
 
@@ -332,7 +333,10 @@ public static partial class ManifestValidation
     }
 
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    private static void Invalid( string message ) => throw new InvalidDataException( message );
+    private static void Invalid( string message )
+    {
+        throw new InvalidDataException( message );
+    }
 
     private static bool HasInvalidPackageId( ExtensionManifest manifest )
     {

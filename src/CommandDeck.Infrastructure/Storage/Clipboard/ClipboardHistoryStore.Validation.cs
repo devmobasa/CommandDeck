@@ -21,10 +21,14 @@ public sealed partial class ClipboardHistoryStore
         RequireColumns( "clipboard_state", ["revision", "migration_review", "original_capacity"] );
 
         RequireValidRows( "clipboard_policy",
-            "typeof(revision)!='integer' OR typeof(consent)!='integer' OR typeof(paused)!='integer' OR typeof(maximum_entries)!='integer' OR typeof(retention_hours)!='integer' OR typeof(quota_mib)!='integer' OR typeof(clear_on_startup)!='integer'" );
+            ("typeof(revision)!='integer' OR typeof(consent)!='integer' OR typeof(paused)!='integer' OR " +
+                "typeof(maximum_entries)!='integer' OR typeof(retention_hours)!='integer' OR " +
+                "typeof(quota_mib)!='integer' OR typeof(clear_on_startup)!='integer'") );
 
         RequireValidRows( "clipboard_state",
-            "typeof(revision)!='integer' OR revision<1 OR typeof(migration_review)!='integer' OR migration_review NOT IN (0,1) OR typeof(original_capacity)!='integer' OR original_capacity NOT BETWEEN 10 AND 1000" );
+            ("typeof(revision)!='integer' OR revision<1 OR typeof(migration_review)!='integer' OR " +
+                "migration_review NOT IN (0,1) OR typeof(original_capacity)!='integer' OR original_capacity NOT " +
+                "BETWEEN 10 AND 1000") );
 
         if ( Scalar( "SELECT count(*) FROM clipboard_state" ) != 1 )
         {
@@ -40,7 +44,8 @@ public sealed partial class ClipboardHistoryStore
         }
 
         RequireValidRows( "entries",
-            "typeof(incarnation)!='text' OR length(incarnation)!=32 OR typeof(revision)!='integer' OR revision<1 OR typeof(keywords)!='text' OR length(cast(keywords AS blob))>8192" );
+            ("typeof(incarnation)!='text' OR length(incarnation)!=32 OR typeof(revision)!='integer' OR revision<1 " +
+                "OR typeof(keywords)!='text' OR length(cast(keywords AS blob))>8192") );
 
         ValidateEntryMetadata( );
 

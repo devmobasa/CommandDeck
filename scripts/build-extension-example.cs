@@ -47,7 +47,8 @@ try
     var publish = Path.Combine( root, "published" );
     var start = new ProcessStartInfo( ScriptExecutables.Dotnet ) { WorkingDirectory = root };
 
-    foreach ( var value in new[] { "publish", AuthorProject.ProjectPath( root ), "-c", "Release", "-r", ExtensionTargets.LinuxX64, "--self-contained", "true", "-p:PublishAot=true", "-o", publish } )
+    foreach ( var value in new[] { "publish", AuthorProject.ProjectPath( root ), "-c", "Release", "-r", ExtensionTargets.LinuxX64,
+         "--self-contained", "true", "-p:PublishAot=true", "-o", publish } )
     {
         start.ArgumentList.Add( value );
     }
@@ -94,5 +95,6 @@ static XElement CreatePackageConfiguration( string feed, string root )
     return new XElement( "configuration", new XElement( "packageSources", new XElement( "clear" ),
             new XElement( "add", new XAttribute( "key", "preview" ), new XAttribute( "value", feed ) ),
             new XElement( "add", new XAttribute( "key", "nuget" ), new XAttribute( "value", "https://api.nuget.org/v3/index.json" ) ) ),
-            new XElement( "config", new XElement( "add", new XAttribute( "key", "globalPackagesFolder" ), new XAttribute( "value", Path.Combine( root, "packages" ) ) ) ) );
+            new XElement( "config", new XElement( "add", new XAttribute( "key", "globalPackagesFolder" ), new XAttribute( "value",
+                 Path.Combine( root, "packages" ) ) ) ) );
 }

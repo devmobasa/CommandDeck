@@ -31,10 +31,15 @@ try
         }
     }
 
-    File.WriteAllText( Path.Combine( temporary, "NuGet.Config" ), $"<configuration><packageSources><clear/><add key=\"preview\" value=\"{SecurityElement.Escape( feed )}\"/><add key=\"nuget\" value=\"https://api.nuget.org/v3/index.json\"/></packageSources><packageSourceMapping><packageSource key=\"preview\"><package pattern=\"CommandDeck.*\"/></packageSource><packageSource key=\"nuget\"><package pattern=\"*\"/></packageSource></packageSourceMapping></configuration>" );
+    File.WriteAllText( Path.Combine( temporary, "NuGet.Config" ), ($"<configuration><packageSources><clear/><add key=\"preview\" " +
+        $"value=\"{SecurityElement.Escape( feed )}\"/><add key=\"nuget\" " +
+        "value=\"https://api.nuget.org/v3/index.json\"/></packageSources><packageSourceMapping>" +
+        "<packageSource key=\"preview\"><package pattern=\"CommandDeck.*\"/></packageSource>" +
+        "<packageSource key=\"nuget\"><package pattern=\"*\"/></packageSource></packageSourceMapping></configuration>") );
 
     await RunAsync( ["run", "--project", "LocalDraft.Tests", "-c", "Release", "-p:RestorePackagesPath=" + Path.Combine( temporary, "packages" )], temporary );
-    await RunAsync( ["publish", "LocalDraft.Tests", "-c", "Release", "-r", "linux-x64", "-p:PublishAot=true", "-p:RestorePackagesPath=" + Path.Combine( temporary, "packages" ), "-o", Path.Combine( temporary, "aot" )], temporary );
+    await RunAsync( ["publish", "LocalDraft.Tests", "-c", "Release", "-r", "linux-x64", "-p:PublishAot=true", "-p:RestorePackagesPath=" +
+         Path.Combine( temporary, "packages" ), "-o", Path.Combine( temporary, "aot" )], temporary );
 
     using var test = Process.Start( new ProcessStartInfo( Path.Combine( temporary, "aot/LocalDraft.Tests" ) ) { WorkingDirectory = temporary } )!;
 

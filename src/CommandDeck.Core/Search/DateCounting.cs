@@ -77,7 +77,8 @@ public static partial class DateCounting
         {
             var weeks = Math.Abs( days ) / DaysPerWeek;
             var remainder = Math.Abs( days % DaysPerWeek );
-            title = $"{(days < 0 ? "-" : "")}{weeks} {(weeks == 1 ? "week" : "weeks")} {remainder} {(remainder == 1 ? "day" : "days")}";
+            title = ($"{(days < 0 ? "-" : "")}{weeks} {(weeks == 1 ? "week" : "weeks")} {remainder}" +
+                $" {(remainder == 1 ? "day" : "days")}");
         }
 
         if ( days == 0 )
@@ -187,7 +188,8 @@ public static partial class DateCounting
     private static partial Regex CandidateRegex( );
 
     [GeneratedRegex(
-        @"\A(?<unit>days|weeks)\s+(?:(?<mode>until|till|since)\s+(?<first>.+)|(?<mode>from)\s+(?<first>.+?)(?:\s+to\s+(?<second>.+))?|(?<mode>between)\s+(?<first>.+?)\s+and\s+(?<second>.+))\z",
+        ("\\A(?<unit>days|weeks)\\s+(?:(?<mode>until|till|since)\\s+(?<first>.+)|(?<mode>from)\\s+(?<first>.+?)(?:" +
+            "\\s+to\\s+(?<second>.+))?|(?<mode>between)\\s+(?<first>.+?)\\s+and\\s+(?<second>.+))\\z"),
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant )]
     private static partial Regex PhraseRegex( );
 

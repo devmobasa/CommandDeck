@@ -7,7 +7,8 @@ public static partial class Program
     private static bool ImagePreviewToolsAvailable( ) => File.Exists( "/usr/bin/magick" ) && File.Exists( "/usr/bin/bwrap" );
 
     private const string PreviewPngBase64 =
-        "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAASElEQVR4nGNwi7r0fyAxw6gDRkNgNARGQ4BQCFAKKC6IiDGEEr2jDhgNgdEQGA2B0RAYGiEwoJXRaLN8NARGQ2A0BNxo3D0HAMBAGv92W3CjAAAAAElFTkSuQmCC";
+        ("iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAASElEQVR4nGNwi7r0fyAxw6gDRkNgNARGQ4BQCFAKKC6IiDGEEr2j" +
+            "DhgNgdEQGA2B0RAYGiEwoJXRaLN8NARGQ2A0BNxo3D0HAMBAGv92W3CjAAAAAElFTkSuQmCC");
 
     private static async Task VerifyImagePreviewProtocolAsync( UnixProtocolClient client, CancellationToken cancellationToken )
     {
@@ -111,8 +112,7 @@ public static partial class Program
             True( (await service.ReadAsync( animated, default )).Succeeded );
             var corrupt = Path.Combine( directory, "corrupt.png" );
 
-            await File.WriteAllBytesAsync( corrupt, Convert
-                .FromBase64String( PreviewPngBase64 )[..24] );
+            await File.WriteAllBytesAsync( corrupt, Convert.FromBase64String( PreviewPngBase64 )[..24] );
 
             True( !(await service.ReadAsync( corrupt, default )).Succeeded );
         }

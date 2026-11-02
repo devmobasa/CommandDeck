@@ -4,20 +4,27 @@ public static partial class Program
 {
     private static async Task RunCoreRegistrationsAsync( )
     {
+        await RunBackendAuditRegistrationsAsync( );
+
         await RunAsync( "shortcut review serializes inventory and writes for concurrent panels", ShortcutConcurrentPanelsValidateFreshInventoryAsync );
         await RunAsync( "shortcut review support loader defines Escape after keys", ShortcutSupportLoaderDefinesEscapeAfterKeysAsync );
         Run( "shortcut review rejects shadowed helpers and uncertain requires", ShortcutReaderRejectsShadowedHelpersAndUncertainRequires );
         Run( "shortcut review executes swaps and reserves a clipboard-incompatible chord", ShortcutGeneratedExecutionSupportsSwaps );
-        await RunAsync( "shortcut review preserves shared actions through move remove restore and reset", ShortcutGeneratedExecutionPreservesSharedBindingsAsync );
+        await RunAsync( "shortcut review preserves shared actions through move remove restore and reset",
+             ShortcutGeneratedExecutionPreservesSharedBindingsAsync );
         await RunAsync( "shortcut review refuses shared unportable and submap bindings", ShortcutGeneratedExecutionRejectsUnportableSharedBindingsAsync );
         await RunAsync( "shortcut review executes launcher replacement and Escape after unbinds", ShortcutGeneratedExecutionOrdersLauncherAndEscapeAsync );
-        await RunAsync( "shortcut editor refuses replacement when the conflicting source loads after its module", ShortcutCannotReplaceBindingsLoadedAfterItsModuleAsync );
+        await RunAsync( "shortcut editor refuses replacement when the conflicting source loads after its module",
+             ShortcutCannotReplaceBindingsLoadedAfterItsModuleAsync );
         await RunAsync( "shortcut editor generated keys keep distinct removal identities", ShortcutGeneratedKeysKeepDistinctRemovalIdentitiesAsync );
         await RunAsync( "shortcut editor restores a key taken by another desktop action", ShortcutRestoreFreesAChordTakenByAnotherDesktopActionAsync );
-        await RunAsync( "shortcut editor restores a desktop chord by returning the launcher to its original key", ShortcutRestoreFreesAChordTakenByTheLauncherAsync );
+        await RunAsync( "shortcut editor restores a desktop chord by returning the launcher to its original key",
+             ShortcutRestoreFreesAChordTakenByTheLauncherAsync );
         await RunAsync( "shortcut editor restore returns the reloaded inventory instead of stale moved keys", ShortcutRestoreReadsTheReloadedInventoryAsync );
-        await RunAsync( "shortcut editor launcher hints update immediately and reject an older background read", ShortcutHintsUpdateBeforeAnOlderReadCompletesAsync );
-        await RunAsync( "shortcut editor manual hotkey gets a support module without rebinding the launcher", ShortcutManualHotkeyGetsSupportWithoutRebindingAsync );
+        await RunAsync( "shortcut editor launcher hints update immediately and reject an older background read",
+             ShortcutHintsUpdateBeforeAnOlderReadCompletesAsync );
+        await RunAsync( "shortcut editor manual hotkey gets a support module without rebinding the launcher",
+             ShortcutManualHotkeyGetsSupportWithoutRebindingAsync );
         await RunAsync( "shortcut editor treats Lua configuration errors as a failed reload", ShortcutConfigurationErrorRollsBackAsync );
         await RunAsync( "shortcut editor replaces the global launcher chord and restores it with its owner", ShortcutReplaceGlobalHotkeyAndRestoreAsync );
         await RunAsync( "shortcut editor daemon changes hotkey and resets recording when its socket disconnects", ShortcutDaemonHotkeyAndDisconnectAsync );
@@ -83,6 +90,8 @@ public static partial class Program
         await RunAsync( "agent tool routing checks live turn and trust admission", ToolRoutingUsesLiveAdmissionAsync );
         await RunAsync( "editor payload validates positions before process execution", EditorPayloadRejectsInvalidArgumentsAsync );
 
+        Run( "architecture handwritten C# lines stay within 160 characters", HandwrittenCSharpLinesStayWithinLimit );
+        Run( "architecture source directories contain no Python files", SourceDirectoriesContainNoPython );
         Run( "architecture boundaries forbid reversed dependencies and ambient capabilities", ArchitectureBoundariesAreEnforced );
         Run( "generated current protocol contract matches Core QML and documentation", GeneratedProtocolContractMatchesCurrentTree );
         Run( "protocol routes cover every operation once with its admission", ProtocolRoutesCoverEveryOperationOnce );

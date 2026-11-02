@@ -83,7 +83,9 @@ public static partial class Program
 
                     throw new InvalidOperationException( "Invalid fixture was retained." );
                 }
-                catch ( Exception exception ) when ( exception is InvalidDataException or DecoderFallbackException ) { }
+                catch ( Exception exception ) when ( exception is InvalidDataException or DecoderFallbackException )
+                {
+                }
             }
 
             await ThrowsAsync<InvalidDataException>( ( ) => FeedNativeAdmissionAsync( store,

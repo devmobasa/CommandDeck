@@ -51,7 +51,9 @@ public static partial class Program
             {
                 await work;
             }
-            catch ( OperationCanceledException ) { }
+            catch ( OperationCanceledException )
+            {
+            }
 
             Directory.Delete( root, recursive: true );
         }
@@ -138,7 +140,9 @@ public static partial class Program
             {
                 await work.WaitAsync( TimeSpan.FromSeconds( 30 ) );
             }
-            catch ( OperationCanceledException ) { }
+            catch ( OperationCanceledException )
+            {
+            }
 
             if ( pid > 0 )
             {
@@ -148,8 +152,12 @@ public static partial class Program
                     child.Kill( entireProcessTree: true );
                     await child.WaitForExitAsync( );
                 }
-                catch ( ArgumentException ) { }
-                catch ( InvalidOperationException ) { }
+                catch ( ArgumentException )
+                {
+                }
+                catch ( InvalidOperationException )
+                {
+                }
             }
 
             Directory.Delete( root, recursive: true );
@@ -233,8 +241,12 @@ public static partial class Program
                     using var descendant = Process.GetProcessById( pid );
                     descendant.Kill( entireProcessTree: true );
                 }
-                catch ( ArgumentException ) { }
-                catch ( InvalidOperationException ) { }
+                catch ( ArgumentException )
+                {
+                }
+                catch ( InvalidOperationException )
+                {
+                }
             }
 
             Directory.Delete( root, recursive: true );

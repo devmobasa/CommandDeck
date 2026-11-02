@@ -79,7 +79,8 @@ try
     string key;
 
     async Task<JsonNode> Inventory( DraftClient client, JsonObject request ) =>
-        (await client.Call( "extensions.manage", new JsonObject { ["extension"] = request, ["limit"] = 32 } )).Single( n => n["type"]!.GetValue<string>( ) == "extensions-result" )["extensions"]!;
+        (await client.Call( "extensions.manage", new JsonObject { ["extension"] = request, ["limit"] = 32 } )).Single( n =>
+             n["type"]!.GetValue<string>( ) == "extensions-result" )["extensions"]!;
 
     async Task<JsonNode> Change( DraftClient client, JsonObject change )
     {
@@ -107,15 +108,18 @@ try
     {
         var review = await Inventory( client, new JsonObject { ["action"] = "inspect", ["archivePath"] = archive } );
 
-        var installed = await Change( client, new JsonObject { ["action"] = "install", ["archivePath"] = archive, ["digest"] = review["archiveDigest"]!.GetValue<string>( ), ["confirmed"] = true } );
+        var installed = await Change( client, new JsonObject { ["action"] = "install", ["archivePath"] = archive,
+             ["digest"] = review["archiveDigest"]!.GetValue<string>( ), ["confirmed"] = true } );
 
         key = installed["packages"]![0]!["key"]!.GetValue<string>( );
         await Change( client, new JsonObject { ["action"] = "enable", ["key"] = key } );
         await Change( client, new JsonObject { ["action"] = "enable" } );
         await client.Call( "extension.open", CreateOpenInput( key ), true ); // No storage grant.
 
-        await Change( client, new JsonObject { ["action"] = "grants", ["key"] = key, ["grants"] = new JsonArray( "storage.read", "storage.write" ), ["confirmed"] = true } );
-        await Change( client, new JsonObject { ["action"] = "configure", ["key"] = key, ["settings"] = new JsonObject { ["defaultTitle"] = "Configured title" } } );
+        await Change( client, new JsonObject { ["action"] = "grants", ["key"] = key, ["grants"] = new JsonArray( "storage.read",
+             "storage.write" ), ["confirmed"] = true } );
+        await Change( client, new JsonObject { ["action"] = "configure", ["key"] = key,
+             ["settings"] = new JsonObject { ["defaultTitle"] = "Configured title" } } );
 
         var opened = DraftCheck.View( await client.Call( "extension.open", CreateOpenInput( key ) ) );
 
@@ -142,9 +146,11 @@ try
 
         submit["extensionInput"]!["formRevision"] = 2;
 
-        submit["extensionInput"]!["values"] = new JsonObject { ["title"] = "Saved title", ["body"] = "Saved across restart", ["category"] = "task", ["done"] = true };
+        submit["extensionInput"]!["values"] = new JsonObject { ["title"] = "Saved title", ["body"] = "Saved across restart",
+             ["category"] = "task", ["done"] = true };
 
-        DraftCheck.That( DraftCheck.View( await client.Call( "extension.action", submit ) )["content"]!["title"]!.GetValue<string>( ) == "Draft saved", "Save did not complete" );
+        DraftCheck.That( DraftCheck.View( await client.Call( "extension.action", submit ) )["content"]!["title"]!.GetValue<string>( ) ==
+             "Draft saved", "Save did not complete" );
 
         await client.Call( "extension.action", submit, true ); // Same ingress sequence cannot save twice.
         await client.Call( "extension.close", new JsonObject { ["sessionId"] = opened["sessionId"]!.GetValue<string>( ) } );
@@ -171,7 +177,8 @@ try
             await Change( first, new JsonObject { ["action"] = "enable", ["key"] = key } );
             var reopened = DraftCheck.View( await first.Call( "extension.open", CreateOpenInput( key ) ) );
 
-            DraftCheck.That( reopened["content"]!["fields"]![0]!["defaultValue"]!.GetValue<string>( ) == "First writer", "Disable discarded data or stale write succeeded" );
+            DraftCheck.That( reopened["content"]!["fields"]![0]!["defaultValue"]!.GetValue<string>( ) == "First writer",
+                 "Disable discarded data or stale write succeeded" );
 
             await Change( first, new JsonObject { ["action"] = "remove", ["key"] = key, ["confirmed"] = true } );
         }
@@ -179,7 +186,8 @@ try
 
     await Stop( );
 
-    Console.WriteLine( "PASS Local Draft: install/configure, denied grants, native form validation, save/replay, restart persistence, concurrent stale writes, disable/reopen and removal through production IPC and sandbox." );
+    Console.WriteLine( ("PASS Local Draft: install/configure, denied grants, native form validation, save/replay, restart " +
+        "persistence, concurrent stale writes, disable/reopen and removal through production IPC and sandbox.") );
 }
 finally
 {
@@ -230,8 +238,11 @@ static class DraftCheck
             throw new InvalidOperationException( message );
         }
     }
-    public static JsonNode View( List<JsonNode> messages ) => messages.Last( n => n["extensionSession"]?["status"]?.GetValue<string>( ) == "view" )["extensionSession"]!;
-    public static JsonObject Input( JsonNode view, int sequence ) => new( ) { ["sessionId"] = view["sessionId"]!.GetValue<string>( ), ["extensionInput"] = new JsonObject { ["sequence"] = sequence, ["revision"] = view["revision"]!.GetValue<long>( ) } };
+
+    public static JsonNode View( List<JsonNode> messages ) => messages.Last( n => n["extensionSession"]?["status"]?.GetValue<string>( ) ==
+         "view" )["extensionSession"]!;
+    public static JsonObject Input( JsonNode view, int sequence ) => new( ) { ["sessionId"] = view["sessionId"]!.GetValue<string>( ),
+         ["extensionInput"] = new JsonObject { ["sequence"] = sequence, ["revision"] = view["revision"]!.GetValue<long>( ) } };
     public static async Task Exec( string executable, params string[] args )
     {
         var info = new ProcessStartInfo( executable );
@@ -264,6 +275,7 @@ sealed class DraftClient : IDisposable
         _reader = new StreamReader( stream );
         _writer = new StreamWriter( stream, new UTF8Encoding( false ) ) { AutoFlush = true };
     }
+
     public static async Task<DraftClient> Connect( string path )
     {
         var socket = new Socket( AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified );
@@ -271,6 +283,7 @@ sealed class DraftClient : IDisposable
 
         return new DraftClient( socket );
     }
+
     public async Task<List<JsonNode>> Call( string operation, JsonObject fields, bool error = false )
     {
         fields = ( JsonObject ) fields.DeepClone( );
@@ -305,10 +318,12 @@ sealed class DraftClient : IDisposable
             }
         }
 
-        DraftCheck.That( messages.Any( n => n["requestId"]!.GetValue<int>( ) == id && n["type"]!.GetValue<string>( ) == "error" ) == error, operation + ": " + string.Join( "\n", messages ) );
+        DraftCheck.That( messages.Any( n => n["requestId"]!.GetValue<int>( ) == id && n["type"]!.GetValue<string>( ) == "error" ) == error,
+             operation + ": " + string.Join( "\n", messages ) );
 
         return messages;
     }
+
     public void Dispose( )
     {
         _writer.Dispose( );

@@ -215,7 +215,8 @@ public static partial class Program
                     "[Desktop Entry]\nType=Application\nName=Must not leak\nExec=/usr/bin/true\n" );
 
                 await File.WriteAllTextAsync( Path.Combine( systemApplications, "visible.desktop" ),
-                    "[Desktop Entry]\nType=Application\nName=Visible\nExec=/usr/bin/true\nStartupWMClass=VisibleClass\nOnlyShowIn=Hyprland;\nTryExec=/usr/bin/true\n" );
+                    ("[Desktop Entry]\nType=Application\nName=Visible\nExec=/usr/bin/true\nStartupWMClass=VisibleClass\nOnlySho" +
+                        "wIn=Hyprland;\nTryExec=/usr/bin/true\n") );
 
                 await File.WriteAllTextAsync( Path.Combine( systemApplications, "gnome.desktop" ),
                     "[Desktop Entry]\nType=Application\nName=GNOME only\nExec=/usr/bin/true\nOnlyShowIn=GNOME;\n" );

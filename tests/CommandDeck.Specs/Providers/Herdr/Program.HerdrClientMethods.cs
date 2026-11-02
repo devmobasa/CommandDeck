@@ -90,7 +90,15 @@ public static partial class Program
         var throwing = false;
         HerdrFake fake = new( )
         {
-            Respond = _ => throwing ? throw new IOException( "spawn failed" ) : HerdrResult( "", 1, error )
+            Respond = _ =>
+            {
+                if ( throwing )
+                {
+                    throw new IOException( "spawn failed" );
+                }
+
+                return HerdrResult( "", 1, error );
+            }
         };
         HerdrClient client = new( fake.Runner, static ( ) => true, log: lines.Add, time: clock );
 
@@ -169,7 +177,13 @@ public static partial class Program
 
         True( (await new HerdrClient( memory.Runner, static ( ) => true ).ListAsync( CancellationToken.None )) is null );
 
-        HerdrFake throwing = new( ) { Respond = _ => throw new IOException( "spawn failed" ) };
+        HerdrFake throwing = new( )
+        {
+            Respond = _ =>
+            {
+                throw new IOException( "spawn failed" );
+            }
+        };
 
         Equal( HerdrAvailability.Failed, (await new HerdrClient( throwing.Runner, static ( ) => true ).GetStatusAsync( CancellationToken.None )).Availability );
 
@@ -183,7 +197,13 @@ public static partial class Program
         using CancellationTokenSource cancelled = new( );
         cancelled.Cancel( );
 
-        HerdrFake honoring = new( ) { Respond = _ => throw new OperationCanceledException( cancelled.Token ) };
+        HerdrFake honoring = new( )
+        {
+            Respond = _ =>
+            {
+                throw new OperationCanceledException( cancelled.Token );
+            }
+        };
 
         await ThrowsAsync<OperationCanceledException>( async ( ) => await new HerdrClient( honoring.Runner, static ( ) => true ).ListAsync( cancelled.Token ) );
 
@@ -326,7 +346,8 @@ public static partial class Program
             {
                 Respond = args => HerdrResult( "{\"id\":\"cli:tab:focus\",\"result\":{\"tab\":{\"tab_id\":" +
                                                System.Text.Json.JsonSerializer.Serialize( args[4] ) +
-                                               ",\"workspace_id\":\"w1\",\"focused\":true,\"label\":\"x\",\"number\":1,\"pane_count\":1},\"type\":\"tab_info\"}}" )
+                                               ",\"workspace_id\":\"w1\",\"focused\":true,\"label\":\"x\"," +
+                                               "\"number\":1,\"pane_count\":1},\"type\":\"tab_info\"}}" )
             };
         }
     }

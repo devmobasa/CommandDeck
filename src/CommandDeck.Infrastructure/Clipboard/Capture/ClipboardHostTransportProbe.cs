@@ -65,7 +65,9 @@ public static class ClipboardHostTransportProbe
             {
                 await flood.ConfigureAwait( false );
             }
-            catch ( Exception exception ) when ( exception is OperationCanceledException or IOException or ObjectDisposedException ) { }
+            catch ( Exception exception ) when ( exception is OperationCanceledException or IOException or ObjectDisposedException )
+            {
+            }
         }
     }
 

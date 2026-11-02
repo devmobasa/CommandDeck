@@ -1,6 +1,7 @@
 import ".."
 import QtQuick
 import "../UiConstants.js" as Ui
+import "../FocusTrap.js" as FocusTrap
 import QtQuick.Layouts
 
 Rectangle {
@@ -12,6 +13,7 @@ Rectangle {
   property string confirmLabel: "Run"
   // Confirming removes data or state, so the confirm button reads as danger.
   property bool destructive: false
+  readonly property bool settingsTabFence: true
   readonly property alias cancelControl: cancelButton
   readonly property alias confirmControl: confirmButton
   readonly property bool focusTrapConfigured:
@@ -22,6 +24,10 @@ Rectangle {
 
   signal accepted()
   signal canceled()
+
+  function cycleFocus(forward) {
+    FocusTrap.cycleTargets([cancelButton, confirmButton], forward)
+  }
 
   visible: opened
   color: root.theme.scrim

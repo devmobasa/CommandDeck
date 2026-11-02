@@ -217,7 +217,10 @@ public static partial class Program
 
     private static ExtensionPeer NoRequestsPeer( Stream stream )
     {
-        ExtensionPeer peer = new( stream, stream, true, [], ( _, _ ) => throw new InvalidOperationException( "No request is expected." ) );
+        ExtensionPeer peer = new( stream, stream, true, [], ( _, _ ) =>
+        {
+            throw new InvalidOperationException( "No request is expected." );
+        } );
 
         peer.Start( );
 

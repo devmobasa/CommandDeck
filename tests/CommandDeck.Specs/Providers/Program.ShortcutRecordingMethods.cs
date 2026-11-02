@@ -22,6 +22,7 @@ public static partial class Program
                     confirmationDelay = TimeSpan.Zero;
                     clock.Advance( delay );
                 }
+
                 return ValueTask.FromResult( ShortcutProcessResult( current ) );
             }
 
@@ -36,6 +37,7 @@ public static partial class Program
                     return ValueTask.FromResult( ShortcutProcessResult( "warning", 1 ) );
                 }
             }
+
             if ( enterRecording || arguments[2] == "reset" )
             {
                 current = arguments[2];
@@ -112,6 +114,7 @@ public static partial class Program
 
             Equal( "reload", arguments[0] );
             calls++;
+
             return ValueTask.FromResult( ShortcutProcessResult( "ok" ) );
         } );
         var originalMain = File.ReadAllText( fixture.Paths.MainConfig );
@@ -120,7 +123,8 @@ public static partial class Program
         var linkedModule = Path.Combine( fixture.Root, "linked-hotkey.lua" );
         File.Move( fixture.Paths.HotkeyFile, linkedModule );
         File.CreateSymbolicLink( fixture.Paths.HotkeyFile, linkedModule );
-        var snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutHotkey, new( ) { Id = "hotkey", Chord = "Super+F11" }, false, ShortcutInventoryFixture, default );
+        var snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutHotkey, new( ) { Id = "hotkey", Chord = "Super+F11" }, false,
+             ShortcutInventoryFixture, default );
         Equal( "SUPER + F11", snapshot.Hotkey );
         Equal( originalHotkey, File.ReadAllText( fixture.Paths.HotkeyFile + ".bak" ) );
         Equal( originalMain, File.ReadAllText( fixture.Paths.MainConfig ) );
@@ -130,7 +134,8 @@ public static partial class Program
             new( ) { Id = "hotkey", Chord = "Super+bad\"key" }, false, ShortcutInventoryFixture, default ) );
         Equal( 1, calls );
         True( new FileInfo( fixture.Paths.HotkeyFile ).LinkTarget is not null );
-        True( !File.ReadAllText( service.ModuleFile ).Contains( "commanddeck:toggle", StringComparison.Ordinal ), "the keys module must not duplicate the installed global binding" );
+        True( !File.ReadAllText( service.ModuleFile ).Contains( "commanddeck:toggle", StringComparison.Ordinal ),
+             "the keys module must not duplicate the installed global binding" );
         snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutRestore, new( ) { Id = "hotkey" }, true, ShortcutInventoryFixture, default );
         Equal( "CTRL + SPACE", snapshot.Hotkey );
         Equal( originalHotkey, File.ReadAllText( linkedModule ) );

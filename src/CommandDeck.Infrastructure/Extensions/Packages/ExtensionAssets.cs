@@ -172,13 +172,15 @@ public sealed class ExtensionAssets( string artifactDirectory )
     }
 
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    private static void Invalid( ) => throw new InvalidDataException( "Only bounded, non-interlaced 8-bit PNG images without ancillary chunks are supported." );
+    private static void Invalid( )
+    {
+        throw new InvalidDataException( "Only bounded, non-interlaced 8-bit PNG images without ancillary chunks are supported." );
+    }
 
     private static bool IsPngHeaderInvalid( ReadOnlySpan<byte> bytes )
     {
         return bytes.Length is < MinimumPngBytes or > ExtensionViewLimits.MaximumPngAssetBytes ||
-               !bytes[..8]
-                   .SequenceEqual( PngFormat.Signature );
+               !bytes[..8].SequenceEqual( PngFormat.Signature );
     }
 
     private static bool IsImageHeaderInvalid( uint length, ReadOnlySpan<byte> kind )

@@ -23,20 +23,10 @@ internal sealed class EditorLauncher( ILauncherSearchPreferences? preferences )
             selected = EditorAdapterValidator.Validate( selected, selected.Terminal );
             var expanded = EditorAdapterValidator.Expand( selected, path, line, column, key );
 
-            if ( selected.Terminal )
-            {
-                if ( !ProcessRunner.ExistsOnPath( ToolExecutables.TerminalLauncher ) )
-                {
-                    return ActionExecutionResult.Failure( "The terminal editor requires xdg-terminal-exec, which is unavailable." );
-                }
-
-                return await ManagedLaunch
-                    .RunAndReportAsync( ToolExecutables.TerminalLauncher, ["--", selected.Executable, .. expanded], null, cancellationToken )
-                    .ConfigureAwait( false );
-            }
+            var command = new DesktopEntryCommand { Executable = selected.Executable, Arguments = expanded };
 
             return await ManagedLaunch
-                .RunAndReportAsync( selected.Executable, expanded, null, cancellationToken )
+                .LaunchApplicationAsync( command, selected.Terminal, cancellationToken )
                 .ConfigureAwait( false );
         }
 
@@ -55,8 +45,10 @@ internal sealed class EditorLauncher( ILauncherSearchPreferences? preferences )
         var adapter = CreateEnvironmentAdapter( editor[0] );
         arguments.AddRange( EditorAdapterValidator.Expand( adapter, path, line, column, key ) );
 
+        var environmentCommand = new DesktopEntryCommand { Executable = editor[0], Arguments = arguments };
+
         return await ManagedLaunch
-            .RunAndReportAsync( editor[0], arguments, null, cancellationToken )
+            .LaunchApplicationAsync( environmentCommand, adapter.Terminal, cancellationToken )
             .ConfigureAwait( false );
     }
 

@@ -83,7 +83,12 @@ public static partial class Program
     }
 
     private static Task<ProcessOutcome> RunHotkeyCliAsync( string configHome, string stateHome, params string[] arguments ) =>
-        RunCommandDeckWithEnvironmentAsync( new Dictionary<string, string?> { ["XDG_CONFIG_HOME"] = configHome, ["XDG_STATE_HOME"] = stateHome }, arguments );
+        RunCommandDeckWithEnvironmentAsync( new Dictionary<string, string?>
+        {
+            ["XDG_CONFIG_HOME"] = configHome,
+            ["XDG_STATE_HOME"] = stateHome,
+            ["OMARCHY_PATH"] = Path.Combine( Path.GetDirectoryName( configHome )!, "omarchy" )
+        }, arguments );
 
     // A null value removes the variable from the child's environment.
     private static async Task<ProcessOutcome> RunCommandDeckWithEnvironmentAsync( IReadOnlyDictionary<string, string?> environment, params string[] arguments )

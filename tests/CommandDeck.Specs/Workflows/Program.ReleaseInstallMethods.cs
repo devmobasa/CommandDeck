@@ -69,7 +69,7 @@ public static partial class Program
 
             Equal(
                 string.Join( "\n", "hyprctl -j version", "systemctl --user show-environment", "commanddeck version",
-                    "commanddeck hotkey check --chord CTRL + SPACE", "omarchy plugin validate " + Path.Combine( release, "qml" ) ),
+                    "commanddeck hotkey check", "omarchy plugin validate " + Path.Combine( release, "qml" ) ),
                 (await File.ReadAllTextAsync( calls )).TrimEnd( ) );
 
             True( !Directory.Exists( home ), "a dry run creates no installed files" );

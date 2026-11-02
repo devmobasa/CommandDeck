@@ -56,7 +56,9 @@ public static partial class Program
             {
                 await effect.WaitAsync( deadline.Token );
             }
-            catch ( OperationCanceledException ) { }
+            catch ( OperationCanceledException )
+            {
+            }
 
             await disable.WaitAsync( deadline.Token );
         }
@@ -151,7 +153,8 @@ public static partial class Program
 
         True(
             cancellation is OperationCanceledException or IOException { InnerException: OperationCanceledException } or ExtensionRpcException { Code: -32800 },
-            $"Queued data may receive either transport cancellation or the host's cancelled error reply; got {cancellation}." );
+            ($"Queued data may receive either transport cancellation or the " +
+                $"host's cancelled error reply; got {cancellation}.") );
 
         Equal( 0L, harness.Registry.DataStore.Read( harness.Installation.Key ).Revision );
         Equal( 0, harness.Registry.DataStore.Read( harness.Installation.Key ).Values.Count );

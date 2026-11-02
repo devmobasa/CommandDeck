@@ -156,7 +156,8 @@ public sealed partial class SqliteCatalog
             migrate.Transaction = transaction;
 
             migrate.CommandText =
-                "INSERT INTO extension_storage(installation_key, revision, values_json) VALUES($key, $revision, $values) ON CONFLICT(installation_key) DO NOTHING;";
+                ("INSERT INTO extension_storage(installation_key, revision, values_json) VALUES($key, $revision, " +
+                    "$values) ON CONFLICT(installation_key) DO NOTHING;");
 
             migrate.Parameters.AddWithValue( "$key", row.InstallationKey );
             migrate.Parameters.AddWithValue( "$revision", row.Revision );

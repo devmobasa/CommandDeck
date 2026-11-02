@@ -29,7 +29,8 @@ files that it changes under ~/.local/state/commanddeck. If a step fails or you
 interrupt it, it restores the previous installation.
 
   --from=DIR       Install this publish output. Default: the release's bin/.
-  --hotkey=CHORD   Bind this chord. Default: "CTRL + SPACE".
+  --hotkey=CHORD   Bind this chord. Without it, keep saved shortcuts.
+                   Fresh installs use "CTRL + SPACE".
   --reset-config   Move the CommandDeck configuration folder to
                    ~/.local/state/commanddeck/config-backups/, then create the
                    default configuration.
@@ -40,7 +41,8 @@ EOF
 }
 
 binary_dir=$root_dir/bin
-hotkey="CTRL + SPACE"
+hotkey=""
+hotkey_options=()
 reset_config=0
 dry_run=0
 for argument in "$@"; do
@@ -50,6 +52,7 @@ for argument in "$@"; do
       ;;
     --hotkey=*)
       hotkey=${argument#--hotkey=}
+      hotkey_options=(--chord "$hotkey")
       ;;
     --reset-config)
       reset_config=1
@@ -248,7 +251,7 @@ if [[ ! -x $binary_dir/commanddeck ]]; then
 elif ! version=$("$binary_dir/commanddeck" version 2>&1); then
   problems+=("$binary_dir/commanddeck does not run on this computer: ${version%%$'\n'*}")
   problems+=("Check that the build is for this CPU ($(uname -m)), that glibc is at least as new as on the build machine, and that icu is installed.")
-elif ! hotkey_check=$("$binary_dir/commanddeck" hotkey check --chord "$hotkey" 2>&1); then
+elif ! hotkey_check=$("$binary_dir/commanddeck" hotkey check "${hotkey_options[@]}" 2>&1); then
   problems+=("Cannot bind the hotkey: $hotkey_check")
 fi
 if [[ ! -f $binary_dir/picker/shell.qml ]]; then
@@ -281,7 +284,7 @@ printf '  from     %s\n' "$binary_dir"
 printf '  binary   %s, linked from %s\n' "$installed_binary" "$HOME/.local/bin/commanddeck"
 printf '  service  %s\n' "$service_file"
 printf '  plugin   %s\n' "$plugin_dir"
-printf '  hotkey   %s\n' "$hotkey"
+printf '  hotkey   %s\n' "${hotkey:-keep saved shortcuts (fresh default: CTRL + SPACE)}"
 printf '  config   %s\n' "$config_plan"
 
 if (( dry_run )); then
@@ -306,7 +309,10 @@ if systemctl --user is-enabled --quiet commanddeck.service; then
 fi
 save_for_rollback "$program_dir" "$HOME/.local/bin/commanddeck" "$service_file" "$config_dir" \
   "$plugin_dir" "$config_home/omarchy/shell.json" \
-  "$hypr_dir/commanddeck.lua" "$hypr_dir/hyprland.lua" "$hypr_dir/bindings.lua"
+  "$hypr_dir/commanddeck.lua" "$hypr_dir/commanddeck.lua.bak" \
+  "$hypr_dir/commanddeck_keys.lua" "$hypr_dir/commanddeck_keys.lua.bak" \
+  "$state_dir/shortcut-overrides.json" "$state_dir/shortcut-overrides.json.bak" \
+  "$hypr_dir/hyprland.lua" "$hypr_dir/bindings.lua"
 changes_started=1
 
 step "Stop the existing daemon"
@@ -349,8 +355,8 @@ if ! "$installed_binary" reindex --quiet; then
   echo "Reindex reported unavailable or failed inputs; continuing with its usable catalog." >&2
 fi
 
-step "Install the $hotkey hotkey"
-"$installed_binary" hotkey install --chord "$hotkey"
+step "Regenerate shortcuts (${hotkey:-preserve saved choices})"
+"$installed_binary" hotkey install "${hotkey_options[@]}"
 
 step "Import desktop session environment and start daemon"
 session_variables=()
@@ -403,4 +409,8 @@ if [[ :$PATH: != *":$HOME/.local/bin:"* ]]; then
   echo "Note: add ~/.local/bin to your PATH to run commanddeck from a terminal."
 fi
 
-printf '\nCommandDeck is installed. Press %s to open it.\n' "$hotkey"
+if ((${#hotkey_options[@]})); then
+  printf '\nCommandDeck is installed. Press %s to open it.\n' "$hotkey"
+else
+  printf '\nCommandDeck is installed. Saved shortcuts were kept; fresh installs use CTRL + SPACE.\n'
+fi

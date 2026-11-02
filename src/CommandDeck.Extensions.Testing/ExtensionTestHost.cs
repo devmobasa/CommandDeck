@@ -281,7 +281,9 @@ public sealed partial class ExtensionTestHost : IAsyncDisposable
                     .WaitAsync( TimeSpan.FromSeconds( 2 ) )
                     .ConfigureAwait( false );
             }
-            catch ( Exception exception ) when ( exception is OperationCanceledException or IOException or TimeoutException ) { }
+            catch ( Exception exception ) when ( exception is OperationCanceledException or IOException or TimeoutException )
+            {
+            }
         }
 
         _invocations.Dispose( );

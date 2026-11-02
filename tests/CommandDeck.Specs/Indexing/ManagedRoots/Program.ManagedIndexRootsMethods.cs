@@ -168,7 +168,10 @@ public static partial class Program
                         ConfigurationValidator.ValidateIndexRoot( new IndexRootOptions { Path = invalid } );
                         expected = invalid == protectedRoot ? protectedIssue! : "Folder does not exist.";
                     }
-                    catch ( InvalidOperationException exception ) { expected = exception.Message; }
+                    catch ( InvalidOperationException exception )
+                    {
+                        expected = exception.Message;
+                    }
 
                     Equal( expected, rejected.Error );
                 }

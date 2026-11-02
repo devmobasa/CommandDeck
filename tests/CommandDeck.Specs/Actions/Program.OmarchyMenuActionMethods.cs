@@ -48,7 +48,8 @@ public static partial class Program
             // expands no % specifier. The unit stops 5 s after the 5-minute wait.
             Equal(
                 "systemd-run|--user|--quiet|--collect|--wait|--pipe|--property=ExitType=cgroup|--property=RuntimeMaxSec=305|" +
-                $"--|/bin/sh|-lc|choice=$$(synthetic-picker); [[ -n $$choice ]] && synthetic-apply \"$$choice\" %h; : > '{ran}'\n",
+                ($"--|/bin/sh|-lc|choice=$$(synthetic-picker); [[ -n $$choice ]] && " +
+                    $"synthetic-apply \"$$choice\" %h; : > '{ran}'\n"),
                 await File.ReadAllTextAsync( capture ) );
 
             await WriteExecutableAsync( sessionRun, ArgvRecorder( capture ) + "\necho 'no choice' >&2\nexit 3\n" );

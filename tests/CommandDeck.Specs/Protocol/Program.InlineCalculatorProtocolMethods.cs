@@ -239,7 +239,10 @@ public static partial class Program
         static CalculatorProvider CreateCalculator( SqliteCatalog catalog, DateCalculatorClock clock )
         {
             return new( clock: clock, inlineEnabled: ( ) => catalog.History.InlineCalculator,
-                rates: ( ) => throw new InvalidOperationException( "Inline arithmetic must stay offline." ) );
+                rates: ( ) =>
+                {
+                    throw new InvalidOperationException( "Inline arithmetic must stay offline." );
+                } );
         }
     }
 }

@@ -259,7 +259,8 @@ static partial class WorkflowSmoke
     {
         return new( )
         {
-            [CommandDeck.EnvironmentVariableNames.ExecutablePath] = tools + Path.PathSeparator + Environment.GetEnvironmentVariable( CommandDeck.EnvironmentVariableNames.ExecutablePath ),
+            [CommandDeck.EnvironmentVariableNames.ExecutablePath] = tools + Path.PathSeparator +
+                 Environment.GetEnvironmentVariable( CommandDeck.EnvironmentVariableNames.ExecutablePath ),
             [CommandDeck.XdgEnvironmentNames.ConfigHome] = Path.Combine( root, "config" ),
             [CommandDeck.XdgEnvironmentNames.StateHome] = Path.Combine( root, "state" ),
             [CommandDeck.XdgEnvironmentNames.CacheHome] = Path.Combine( root, "cache" ),

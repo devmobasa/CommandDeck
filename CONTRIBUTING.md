@@ -206,6 +206,9 @@ explain how the offscreen renders are isolated.
   `Metadata["path"]`, so that an accidental change to a constant fails a spec.
 - `.editorconfig` holds these rules for the formatter and the IDE. Keep this
   spacing when you format, and read the resulting diff.
+- Architecture specs enforce the 160-character limit for handwritten C# lines
+  and reject Python files under `src`, `tests`, `scripts`, `samples`, and `qml`.
+  The line check excludes raw-string contents and generated files.
 - Write new automation scripts as C# .NET file-based apps (`.cs`). The existing
   shell scripts stay supported.
 

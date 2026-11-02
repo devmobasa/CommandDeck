@@ -63,7 +63,8 @@ public static partial class ConfigurationValidator
         if ( provider.ContextLimit is < OptionLimits.AiProvider.ContextLimit.Minimum or > OptionLimits.AiProvider.ContextLimit.Maximum )
         {
             throw new InvalidOperationException(
-                $"AI provider contextLimit must be {OptionLimits.AiProvider.ContextLimit.Minimum}-{OptionLimits.AiProvider.ContextLimit.Maximum} when configured." );
+                ($"AI provider contextLimit must be {OptionLimits.AiProvider.ContextLimit.Minimum}" +
+                    $"-{OptionLimits.AiProvider.ContextLimit.Maximum} when configured.") );
         }
 
         ValidateCredentialReference( provider.Credential, "AI credential" );

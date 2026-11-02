@@ -8,7 +8,10 @@ public static partial class Program
     {
         await using var pipes = await ExtensionTestPipes.CreateAsync( );
 
-        await using ExtensionPeer peer = new( pipes.Host, pipes.Host, true, [], ( _, _ ) => throw new InvalidOperationException( ) );
+        await using ExtensionPeer peer = new( pipes.Host, pipes.Host, true, [], ( _, _ ) =>
+        {
+            throw new InvalidOperationException( );
+        } );
         using CancellationTokenSource deadline = new( TimeSpan.FromMilliseconds( 300 ) );
 
         await ThrowsAsync<InvalidOperationException>( async ( ) => await peer.CallAsync( "initialize", null, deadline.Token ) );
@@ -20,7 +23,10 @@ public static partial class Program
     {
         await using var pipes = await ExtensionTestPipes.CreateAsync( );
 
-        ExtensionPeer peer = new( pipes.Host, pipes.Host, true, [], ( _, _ ) => throw new InvalidOperationException( ) );
+        ExtensionPeer peer = new( pipes.Host, pipes.Host, true, [], ( _, _ ) =>
+        {
+            throw new InvalidOperationException( );
+        } );
 
         peer.Start( );
 
@@ -39,7 +45,10 @@ public static partial class Program
     {
         using UncooperativeExtensionStream input = new( );
         using MemoryStream output = new( );
-        await using ExtensionPeer peer = new( input, output, true, [], ( _, _ ) => throw new InvalidOperationException( ) );
+        await using ExtensionPeer peer = new( input, output, true, [], ( _, _ ) =>
+        {
+            throw new InvalidOperationException( );
+        } );
 
         peer.Start( );
         peer.Start( );
@@ -57,7 +66,10 @@ public static partial class Program
             await peer.DisposeAsync( );
             Throws<ObjectDisposedException>( peer.Start );
         }
-        finally { input.Release.TrySetResult( ); }
+        finally
+        {
+            input.Release.TrySetResult( );
+        }
     }
 
     private sealed class UncooperativeExtensionStream : Stream
@@ -69,8 +81,25 @@ public static partial class Program
         public override bool CanRead => true;
         public override bool CanWrite => false;
         public override bool CanSeek => false;
-        public override long Length => throw new NotSupportedException( );
-        public override long Position { get => throw new NotSupportedException( ); set => throw new NotSupportedException( ); }
+        public override long Length
+        {
+            get
+            {
+                throw new NotSupportedException( );
+            }
+        }
+
+        public override long Position
+        {
+            get
+            {
+                throw new NotSupportedException( );
+            }
+            set
+            {
+                throw new NotSupportedException( );
+            }
+        }
 
         public override async ValueTask<int> ReadAsync( Memory<byte> buffer, CancellationToken cancellationToken = default )
         {
@@ -81,11 +110,30 @@ public static partial class Program
             return 0;
         }
 
-        public override void Flush( ) => throw new NotSupportedException( );
-        public override int Read( byte[] buffer, int offset, int count ) => throw new NotSupportedException( );
-        public override long Seek( long offset, SeekOrigin origin ) => throw new NotSupportedException( );
-        public override void SetLength( long value ) => throw new NotSupportedException( );
-        public override void Write( byte[] buffer, int offset, int count ) => throw new NotSupportedException( );
+        public override void Flush( )
+        {
+            throw new NotSupportedException( );
+        }
+
+        public override int Read( byte[] buffer, int offset, int count )
+        {
+            throw new NotSupportedException( );
+        }
+
+        public override long Seek( long offset, SeekOrigin origin )
+        {
+            throw new NotSupportedException( );
+        }
+
+        public override void SetLength( long value )
+        {
+            throw new NotSupportedException( );
+        }
+
+        public override void Write( byte[] buffer, int offset, int count )
+        {
+            throw new NotSupportedException( );
+        }
 
         protected override void Dispose( bool disposing )
         {

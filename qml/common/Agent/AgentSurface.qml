@@ -124,8 +124,9 @@ FocusScope {
     ? String(root.pending.kind) : ""
   readonly property var pendingQuestions: root.pending && root.pending.questions
     ? root.pending.questions : []
-  readonly property var firstQuestion: root.pendingQuestions.length > 0
-    ? root.pendingQuestions[0] : null
+  property int questionIndex: 0
+  property var questionAnswers: ({})
+  readonly property var currentQuestion: root.pendingQuestions[questionIndex] || null
   readonly property var pendingContext: root.pending && root.pending.context
     ? root.pending.context : null
   readonly property var pendingAction: root.pending && root.pending.action
@@ -289,11 +290,24 @@ FocusScope {
   }
 
   function submitAnswer(text) {
-    if (!root.firstQuestion || root.pendingId.length === 0) return
-    const answers = ({})
-    answers[String(root.firstQuestion.id || "")] = String(text || "")
+    if (!root.currentQuestion || root.pendingId.length === 0) return
+    const answers = Object.assign({}, root.questionAnswers)
+    answers[String(root.currentQuestion.id)] = String(text || "")
     root.part_questionField.text = ""
+    root.questionAnswers = answers
+    if (root.questionIndex + 1 < root.pendingQuestions.length) {
+      root.questionIndex++
+      const id = root.pendingId
+      Qt.callLater(function() {
+        if (!root.opened || root.pendingHidden || root.pendingId !== id) return
+        const option = root.part_optionRepeater.itemAt(0)
+        if (option) option.forceActiveFocus()
+        else if (root.part_questionField.visible) root.part_questionField.forceActiveFocus()
+      })
+      return
+    }
     root.answerRequested(root.pendingId, answers)
+    Qt.callLater(function() { if (root.opened && !root.pending) composer.forceActiveFocus() })
   }
 
   function consumeDraft(text) { if (composer.text === text) composer.text = "" }
@@ -304,6 +318,11 @@ FocusScope {
   }
 
   onPendingChanged: root.pendingHidden = false
+  onPendingIdChanged: {
+    root.questionIndex = 0
+    root.questionAnswers = ({})
+    root.part_questionField.text = ""
+  }
 
   visible: opened
   focus: opened

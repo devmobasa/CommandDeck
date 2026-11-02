@@ -40,6 +40,7 @@ sealed class Notebook : IExtensionCommand, IExtensionSearchProvider
             await ShowEditorAsync( context, token );
         }
     }
+
     public async ValueTask HandleAsync( CommandContext context, CommandEvent commandEvent, CancellationToken token )
     {
         if ( commandEvent is ActionInvoked { ActionId: EditActionId } )
@@ -79,8 +80,10 @@ sealed class Notebook : IExtensionCommand, IExtensionSearchProvider
             Id = NoteViewId,
             Title = "Edit searchable note",
             Submit = ViewAction.Callback( SaveActionId, "Save note" ),
-            Fields = [FormField.Text( TitleFieldId, "Title", true, 120 ) with { DefaultValue = JsonSerializer.SerializeToElement( _note.Title, NotebookJson.Default.String ) },
-            FormField.Multiline( BodyFieldId, "Note", 2048 ) with { DefaultValue = JsonSerializer.SerializeToElement( _note.Body, NotebookJson.Default.String ) }]
+            Fields = [FormField.Text( TitleFieldId, "Title", true, 120 ) with { DefaultValue = JsonSerializer.SerializeToElement( _note.Title,
+                 NotebookJson.Default.String ) },
+            FormField.Multiline( BodyFieldId, "Note", 2048 ) with { DefaultValue = JsonSerializer.SerializeToElement( _note.Body,
+                 NotebookJson.Default.String ) }]
         }, token );
     }
 
@@ -94,6 +97,7 @@ sealed class Notebook : IExtensionCommand, IExtensionSearchProvider
             Actions = [ViewAction.Callback( EditActionId, "Edit note" )]
         }, token );
     }
+
     private static bool MatchesNoteQuery( Note? note, SearchContext context )
     {
         return note is not null && context.Query

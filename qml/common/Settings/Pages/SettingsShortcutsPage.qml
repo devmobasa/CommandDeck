@@ -29,16 +29,53 @@ ScrollView {
   readonly property bool clipboardMatches: keybindingSearch.text.trim().length === 0 || KeyChords.search(
     [{chord: clipboardSettings.savedChord, description: "Open Clipboard History"}], keybindingSearch.text).rows.length > 0
   readonly property var keybindingMatches: KeyChords.search(keybindings.filter(row => !row.launcherHotkey).concat(hotkeyBindings), keybindingSearch.text)
-  readonly property var sharedChords: KeyChords.sharedCounts(keybindings)
   readonly property var hotkeyChange: keybindings.find(row => row.launcherHotkey) || null
   property var pendingAddition: null
   property bool resetConfirmation: false
+  property var savedFocus: null
   readonly property var moreMenu: desktopCard.accessoryItem ? desktopCard.accessoryItem.menu : null
   readonly property alias desktopRepeater: keybindingResults
   clip: true
   contentWidth: availableWidth
 
   function copy(text) { if (controller) controller.copyRequested(text) }
+  function rememberFocus(id) {
+    savedFocus = { id: id, control: shortcutsScroll.Window.activeFocusItem, received: false }
+  }
+  function restoreSavedFocus() {
+    if (!savedFocus || !savedFocus.received || !visible || !host.visible
+        || !controller || controller.isSaving(savedFocus.id)) return
+    const id = savedFocus.id
+    savedFocus = null
+    const rows = [hotkey]
+    for (const repeater of [keybindingResults, addedBindings]) {
+      for (let index = 0; index < repeater.count; index++) rows.push(repeater.itemAt(index))
+    }
+    for (const row of rows) {
+      if (row.binding.id !== id || !row.visible || !row.pill.enabled) continue
+      row.pill.forceActiveFocus()
+      return
+    }
+    keybindingSearch.forceActiveFocus()
+  }
+  Connections {
+    target: shortcutsScroll.Window.window
+    function onActiveFocusItemChanged() {
+      const pending = shortcutsScroll.savedFocus
+      const focused = shortcutsScroll.Window.activeFocusItem
+      if (pending && focused !== pending.control && focused !== shortcutsScroll) shortcutsScroll.savedFocus = null
+    }
+  }
+  Connections {
+    target: shortcutsScroll.controller
+    function onSnapshotChanged() {
+      if (shortcutsScroll.savedFocus && shortcutsScroll.controller.snapshot) {
+        shortcutsScroll.savedFocus.received = true
+        Qt.callLater(shortcutsScroll.restoreSavedFocus)
+      }
+    }
+    function onBusyIdChanged() { Qt.callLater(shortcutsScroll.restoreSavedFocus) }
+  }
   function recordBinding(target) {
     keybindingSearch.text = ""
     host.showPage("shortcuts")
@@ -71,10 +108,16 @@ ScrollView {
       }
     })
   }
-  onVisibleChanged: { if (!visible && controller) controller.cancelRecording() }
+  onVisibleChanged: {
+    if (!visible) savedFocus = null
+    if (!visible && controller) controller.cancelRecording()
+  }
   Connections {
     target: shortcutsScroll.host
-    function onVisibleChanged() { if (!shortcutsScroll.host.visible && shortcutsScroll.controller) shortcutsScroll.controller.cancelRecording() }
+    function onVisibleChanged() {
+      if (!shortcutsScroll.host.visible) shortcutsScroll.savedFocus = null
+      if (!shortcutsScroll.host.visible && shortcutsScroll.controller) shortcutsScroll.controller.cancelRecording()
+    }
   }
 
   component MenuChoice: MenuItem {
@@ -118,6 +161,8 @@ ScrollView {
       title: "CommandDeck"
       SettingsShortcutRow {
         id: hotkey
+        onRecorded: shortcutsScroll.rememberFocus(binding.id)
+        onRestoreRequested: shortcutsScroll.rememberFocus(binding.id)
         visible: shortcutsScroll.hotkeyMatches
         theme: shortcutsScroll.host.theme
         controller: shortcutsScroll.controller
@@ -231,9 +276,12 @@ ScrollView {
       }
       Repeater {
         id: keybindingResults
-        model: keybindingHeading.visible ? shortcutsScroll.keybindingMatches.rows.filter(row => !row.launcherHotkey) : shortcutsScroll.keybindings.filter(row => !row.added && !row.launcherHotkey)
+        model: (keybindingHeading.visible ? shortcutsScroll.keybindingMatches.rows : shortcutsScroll.keybindings)
+          .filter(row => !row.added && !row.launcherHotkey)
         SettingsShortcutRow {
           required property var modelData
+          onRecorded: shortcutsScroll.rememberFocus(binding.id)
+          onRestoreRequested: shortcutsScroll.rememberFocus(binding.id)
           theme: shortcutsScroll.host.theme
           binding: modelData
           controller: shortcutsScroll.controller
@@ -254,6 +302,8 @@ ScrollView {
         model: shortcutsScroll.keybindings.filter(row => row.added && (!keybindingHeading.visible || shortcutsScroll.keybindingMatches.rows.indexOf(row) >= 0))
         SettingsShortcutRow {
           required property var modelData
+          onRecorded: shortcutsScroll.rememberFocus(binding.id)
+          onRestoreRequested: shortcutsScroll.rememberFocus(binding.id)
           theme: shortcutsScroll.host.theme
           binding: modelData
           controller: shortcutsScroll.controller
@@ -264,6 +314,7 @@ ScrollView {
         id: addition
         objectName: "addedShortcut"
         pendingAddition: true
+        onRecorded: shortcutsScroll.rememberFocus(binding.id)
         visible: !!shortcutsScroll.pendingAddition && !shortcutsScroll.keybindings.some(row => row.id === shortcutsScroll.pendingAddition.id)
         theme: shortcutsScroll.host.theme
         binding: shortcutsScroll.pendingAddition || ({id: "", description: "", chord: "", changeable: true})

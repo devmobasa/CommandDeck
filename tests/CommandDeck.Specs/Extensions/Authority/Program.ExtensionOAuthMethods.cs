@@ -44,11 +44,12 @@ public static partial class Program
             {
                 using var ignored = await browser.GetAsync( bad["redirect_uri"] + "?code=x&state=wrong&iss=" + Uri.EscapeDataString( server.Origin ) );
             }
-            catch ( HttpRequestException ) { }
+            catch ( HttpRequestException )
+            {
+            }
 
             using var timeout = new CancellationTokenSource( TimeSpan.FromSeconds( 5 ) );
-            while ( !broker
-                       .List( "one" )[0]
+            while ( !broker.List( "one" )[0]
                        .CredentialStatus.StartsWith( "Login failed", StringComparison.Ordinal ) )
             {
                 await Task.Delay( 10, timeout.Token );
@@ -118,7 +119,8 @@ public static partial class Program
             // The pending callback still completes the login.
             var stream = browser.GetStream( );
 
-            var callback = $"GET {redirect.AbsolutePath}?code=issued&state={login["state"]}&iss={Uri.EscapeDataString( server.Origin )} HTTP/1.1\r\n" +
+            var callback = ($"GET {redirect.AbsolutePath}?code=issued&state={login["state"]}&iss=" +
+                $"{Uri.EscapeDataString( server.Origin )} HTTP/1.1\r\n") +
                            $"Host: {redirect.Authority}\r\n\r\n";
 
             await stream.WriteAsync( Encoding.ASCII.GetBytes( callback ) );

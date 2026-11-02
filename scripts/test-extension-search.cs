@@ -84,7 +84,8 @@ try
 
     var launcherResults = await SearchMeetingAsync( client, providerId );
 
-    That( launcherResults.Count( message => message["result"] is JsonNode result && Dynamic( result ) ) == 1, "Launcher scoped expression did not find the saved note" );
+    That( launcherResults.Count( message => message["result"] is JsonNode result && Dynamic( result ) ) == 1,
+         "Launcher scoped expression did not find the saved note" );
 
     var cold = Stopwatch.StartNew( );
     var row = (await Search( client, "notes: Meeting" )).Single( Dynamic );
@@ -126,11 +127,18 @@ try
 
     That( (await Search( client, "Meeting" )).All( result => !Dynamic( result ) ), "Disabled provider still returned results" );
 
-    Console.WriteLine( $"PASS native search journey: save/cache, scoped prefix, query consent, process-independent activation, foreign/replayed/stale leases and revocation. Cold scoped={cold.Elapsed.TotalMilliseconds:F1}ms" );
+    Console.WriteLine( ($"PASS native search journey: save/cache, scoped prefix, query " +
+        $"consent, process-independent activation, foreign/replayed/stale " +
+        $"leases and revocation. Cold scoped={cold.Elapsed.TotalMilliseconds:F1}" +
+        $"ms") );
 
     daemon.Refresh( );
 
-    Console.WriteLine( $"Baseline ms {Percentiles( baseline )}; opt-in ms {Percentiles( global )} (12 serial samples, not a production benchmark). Daemon idle RSS baseline={baselineRss / CommandDeck.ByteUnits.BytesPerKibibyte}KiB, after search={daemon.WorkingSet64 / CommandDeck.ByteUnits.BytesPerKibibyte}KiB; 12-query typing burst passed." );
+    Console.WriteLine( ($"Baseline ms {Percentiles( baseline )}; opt-in ms {Percentiles( global )}" +
+        $" (12 serial samples, not a production benchmark). Daemon idle " +
+        $"RSS baseline={baselineRss / CommandDeck.ByteUnits.BytesPerKibibyte}" +
+        $"KiB, after search={daemon.WorkingSet64 / CommandDeck.ByteUnits.BytesPerKibibyte}" +
+        $"KiB; 12-query typing burst passed.") );
 
     if ( args.Length == 3 )
     {
@@ -188,20 +196,23 @@ static bool Dynamic( JsonNode row ) => row["id"]!
 
 static JsonNode View( List<JsonNode> messages ) => messages.Last( message => message["extensionSession"]?["content"] is not null )["extensionSession"]!;
 
-static async Task<List<JsonNode>> Search( SearchClient client, string query ) => (await client.Call( "search", new JsonObject { ["query"] = query, ["limit"] = 50 } ))
+static async Task<List<JsonNode>> Search( SearchClient client, string query ) => (await client.Call( "search",
+     new JsonObject { ["query"] = query, ["limit"] = 50 } ))
     .Where( message => message["result"] is not null )
     .Select( message => message["result"]! )
     .ToList( );
 
 static JsonObject Open( string id, JsonNode? row = null ) => CreateOpenInput( id, row );
 
-static JsonObject Input( JsonNode view ) => new( ) { ["sessionId"] = view["sessionId"]!.DeepClone( ), ["extensionInput"] = new JsonObject { ["revision"] = view["revision"]!.DeepClone( ) } };
+static JsonObject Input( JsonNode view ) => new( ) { ["sessionId"] = view["sessionId"]!.DeepClone( ),
+     ["extensionInput"] = new JsonObject { ["revision"] = view["revision"]!.DeepClone( ) } };
 
 static async Task<JsonNode> Change( SearchClient client, JsonObject input )
 {
     await client.Call( "extensions.manage", new JsonObject { ["extension"] = new JsonObject { ["action"] = "list" }, ["limit"] = 128 } );
 
-    return (await client.Call( "extensions.manage", new JsonObject { ["extension"] = input, ["limit"] = 128 } )).Last( message => message["extensions"] is not null )["extensions"]!;
+    return (await client.Call( "extensions.manage", new JsonObject { ["extension"] = input, ["limit"] = 128 } )).Last( message =>
+         message["extensions"] is not null )["extensions"]!;
 }
 
 static async Task<double[]> Measure( SearchClient client, string query, int count )
@@ -220,13 +231,15 @@ static async Task<double[]> Measure( SearchClient client, string query, int coun
         .ToArray( );
 }
 
-static string Percentiles( double[] values ) => $"p50={values[( int ) (values.Length * .5)]:F1}, p95={values[( int ) (values.Length * .95)]:F1}, p99={values[( int ) (values.Length * .99)]:F1}";
+static string Percentiles( double[] values ) => ($"p50={values[( int ) (values.Length * .5)]:F1}, p95={values[( int ) (values.Length * .95)]:F1}" +
+    $", p99={values[( int ) (values.Length * .99)]:F1}");
 
 static async Task Isolation( SearchClient client, string socket, string archive, Process daemon )
 {
     var inspected = await Change( client, new JsonObject { ["action"] = "inspect", ["archivePath"] = archive } );
 
-    var installed = await Change( client, new JsonObject { ["action"] = "install", ["archivePath"] = archive, ["digest"] = inspected["archiveDigest"]!.DeepClone( ), ["confirmed"] = true, ["grants"] = new JsonArray( ) } );
+    var installed = await Change( client, new JsonObject { ["action"] = "install", ["archivePath"] = archive,
+         ["digest"] = inspected["archiveDigest"]!.DeepClone( ), ["confirmed"] = true, ["grants"] = new JsonArray( ) } );
 
     var key = installed["packages"]!
         .AsArray( )
@@ -253,7 +266,8 @@ static async Task Isolation( SearchClient client, string socket, string archive,
     var identity = Convert.ToHexString( System.Security.Cryptography.SHA256.HashData( Encoding.UTF8.GetBytes( "search:" + key ) ) )[..24].ToLowerInvariant( );
     var info = new ProcessStartInfo( CommandDeck.SystemdCommandNames.ControlPath ) { RedirectStandardOutput = true };
 
-    foreach ( var value in new[] { CommandDeck.SystemdCommandNames.User, "show", "--value", "-p", "ControlGroup", "commanddeck-extensions-p" + identity + ".slice" } )
+    foreach ( var value in new[] { "--user", "show", "--value", "-p", "ControlGroup", "commanddeck-extensions-p" +
+         identity + ".slice" } )
     {
         info.ArgumentList.Add( value );
     }
@@ -283,7 +297,8 @@ static async Task Isolation( SearchClient client, string socket, string archive,
                         .Split( '\0' )
                         .Contains( "descendant" ) );
             }
-            catch ( IOException ) { }
+            catch ( IOException ) {
+ }
         }
 
         peak = Math.Max( peak, long.Parse( await File.ReadAllTextAsync( cgroup + "/memory.current" ) ) );
@@ -293,7 +308,8 @@ static async Task Isolation( SearchClient client, string socket, string archive,
     var hungRows = await hung;
 
     That( hungRows.Count == 0 && timer.Elapsed < TimeSpan.FromSeconds( 3 ),
-        $"Noncooperative search exceeded its deadline: {hungRows.Count} rows in {timer.Elapsed.TotalMilliseconds:F1} ms" );
+        ($"Noncooperative search exceeded its deadline: {hungRows.Count} rows in " +
+            $"{timer.Elapsed.TotalMilliseconds:F1} ms") );
 
     timer.Stop( );
     That( observedDescendants, "Hostile fixture did not spawn its descendant" );
@@ -318,7 +334,11 @@ static async Task Isolation( SearchClient client, string socket, string archive,
 
     daemon.Refresh( );
 
-    Console.WriteLine( $"PASS hostile search: denied RPC, read-only artifact, no network/home, noncooperative descendant killed in {timer.Elapsed.TotalMilliseconds:F1}ms, sibling alive. Search memory peak sampled={peak / CommandDeck.ByteUnits.BytesPerKibibyte}KiB; idle search processes=0; daemon RSS={daemon.WorkingSet64 / CommandDeck.ByteUnits.BytesPerKibibyte}KiB." );
+    Console.WriteLine( ($"PASS hostile search: denied RPC, read-only artifact, no " +
+        $"network/home, noncooperative descendant killed in {timer.Elapsed.TotalMilliseconds:F1}" +
+        $"ms, sibling alive. Search memory peak sampled={peak / CommandDeck.ByteUnits.BytesPerKibibyte}" +
+        $"KiB; idle search processes=0; daemon RSS={daemon.WorkingSet64 / CommandDeck.ByteUnits.BytesPerKibibyte}" +
+        $"KiB.") );
 
     await client.Call( "extension.close", new JsonObject { ["sessionId"] = sibling["sessionId"]!.DeepClone( ) } );
 }
@@ -355,7 +375,8 @@ static JsonObject CreateOpenInput( string id, JsonNode? row )
     return new( )
     {
         ["resultId"] = id,
-        ["extensionInput"] = new JsonObject { ["features"] = new JsonArray( "commands@1", "views.form@1", "views.detail@1", "storage@1" ), ["searchLease"] = row?["metadata"]?["extensionSearchLease"]?.DeepClone( ) }
+        ["extensionInput"] = new JsonObject { ["features"] = new JsonArray( "commands@1", "views.form@1", "views.detail@1", "storage@1" ),
+             ["searchLease"] = row?["metadata"]?["extensionSearchLease"]?.DeepClone( ) }
     };
 }
 
@@ -399,6 +420,7 @@ sealed partial class SearchClient : IDisposable
         _reader = new StreamReader( stream );
         _writer = new StreamWriter( stream, new UTF8Encoding( false ) ) { AutoFlush = true };
     }
+
     public static async Task<SearchClient> Connect( string path )
     {
         var socket = new Socket( AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified );
@@ -406,6 +428,7 @@ sealed partial class SearchClient : IDisposable
 
         return new( socket );
     }
+
     public void Dispose( )
     {
         _writer.Dispose( );

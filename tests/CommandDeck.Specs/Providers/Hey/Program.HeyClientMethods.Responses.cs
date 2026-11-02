@@ -69,12 +69,18 @@ public static partial class Program
         // A successful envelope from a failing process is not trusted.
         Equal( HeyFailureKind.Failed, await KindForAsync( HeyResult( HeySearchJson, 1 ) ) );
 
-        HeyClient broken = new( static ( _, _, _, _, _ ) => throw new IOException( "exec failed" ), static ( ) => HeyBinary, HeyEnvironment );
+        HeyClient broken = new( static ( _, _, _, _, _ ) =>
+        {
+            throw new IOException( "exec failed" );
+        }, static ( ) => HeyBinary, HeyEnvironment );
 
         Equal( HeyFailureKind.Failed, (await broken.SearchAsync( new HeySearchQuery { Text = "x" }, CancellationToken.None )).Failure?.Kind );
 
         // Only the caller's cancellation escapes as an exception.
-        HeyClient cancelled = new( static ( _, _, _, _, token ) => throw new OperationCanceledException( token ), static ( ) => HeyBinary, HeyEnvironment );
+        HeyClient cancelled = new( static ( _, _, _, _, token ) =>
+        {
+            throw new OperationCanceledException( token );
+        }, static ( ) => HeyBinary, HeyEnvironment );
 
         await ThrowsAsync<OperationCanceledException>( async ( ) =>
             await cancelled.SearchAsync( new HeySearchQuery { Text = "x" }, new CancellationToken( true ) ) );

@@ -9,7 +9,12 @@ public sealed partial class UnixProtocolServer
             .ConfigureAwait( false );
 
         await writer
-            .WriteAsync( new ProtocolMessage { RequestId = requestId, Type = ProtocolMessageTypes.Status, RuntimeStatus = status.WithSocketPath( _socketPath ) } )
+            .WriteAsync( new ProtocolMessage
+            {
+                RequestId = requestId,
+                Type = ProtocolMessageTypes.Status,
+                RuntimeStatus = status.WithSocketPath( _socketPath )
+            } )
             .ConfigureAwait( false );
 
         await writer

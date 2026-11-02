@@ -27,7 +27,8 @@ public static partial class Program
     {
         var bindings = HyprlandShortcutInspector.ParseKeybindings( HyprlandBindsJson );
 
-        Equal( "Super+Space=CommandDeck|Super+Shift+O=Obsidian|XF86AudioMute=Mute|Super+Space=Omarchy menu|Enter=Capture highlighted window@capture",
+        Equal( ("Super+Space=CommandDeck|Super+Shift+O=Obsidian|XF86AudioMute=Mute|Super+Space=Omarchy " +
+            "menu|Enter=Capture highlighted window@capture"),
             string.Join( '|', bindings.Select( static binding =>
                 $"{binding.Chord}={binding.Description}" + (binding.Submap.Length > 0 ? "@" + binding.Submap : string.Empty) ) ) );
 
@@ -121,9 +122,9 @@ public static partial class Program
         Equal( 3, hints.Decorate( decorated )[0].Actions.Count );
         var change = decorated[0].Actions.Single( static action => action.Id == KeybindingHints.ChangeShortcutActionId );
         Equal( "Change Shortcut…", change.Title );
-        Equal( ActionKinds.OpenSettings, change.Kind );
+        Equal( "open-settings", change.Kind );
         Equal( "Super+Shift+O", change.Arguments[ActionArgumentNames.ShortcutChord] );
-        Equal( SettingIds.DesktopShortcuts, change.Arguments[ActionArgumentNames.SettingId] );
+        Equal( "shortcuts.desktop", change.Arguments["settingId"] );
         var add = first[0].Actions.Single( static action => action.Id == KeybindingHints.ChangeShortcutActionId );
         Equal( "Add Shortcut…", add.Title );
         Equal( "uwsm-app -- obsidian.desktop", add.Arguments[ActionArgumentNames.ShortcutCommand] );

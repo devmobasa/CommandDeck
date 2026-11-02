@@ -20,8 +20,7 @@ public static partial class Program
             return false;
         }
 
-        var action = positionals[0]
-            .ToLowerInvariant( );
+        var action = positionals[0].ToLowerInvariant( );
 
         if ( action is AiCliActions.Settings or AiCliActions.Enable or AiCliActions.Disable )
         {
@@ -30,8 +29,7 @@ public static partial class Program
 
         return action == AiCliActions.Providers &&
                positionals.Count >= 2 &&
-               positionals[1]
-                       .ToLowerInvariant( ) is AiCliActions.Add
+               positionals[1].ToLowerInvariant( ) is AiCliActions.Add
                    or AiCliActions.Edit
                    or AiCliActions.Enable
                    or AiCliActions.Disable
@@ -43,8 +41,7 @@ public static partial class Program
     {
         var positionals = arguments.PositionalsAfterCommand( );
 
-        var action = positionals[0]
-            .ToLowerInvariant( );
+        var action = positionals[0].ToLowerInvariant( );
 
         var json = arguments.HasFlag( CliOptionNames.Json );
 
@@ -105,8 +102,7 @@ public static partial class Program
     private static async Task<int> RunAiProviderManagementAsync( UnixProtocolClient client, CliArguments arguments, IReadOnlyList<string> positionals,
         bool json, CancellationToken cancellationToken )
     {
-        var verb = positionals[1]
-            .ToLowerInvariant( );
+        var verb = positionals[1].ToLowerInvariant( );
 
         var current = await RequestAiSettingsAsync( client, cancellationToken )
             .ConfigureAwait( false );
@@ -270,8 +266,15 @@ public static partial class Program
         }
     }
 
-    private static string RequireDefinitionValue( string? value, string message ) =>
-        string.IsNullOrWhiteSpace( value ) ? throw new InvalidOperationException( message ) : value;
+    private static string RequireDefinitionValue( string? value, string message )
+    {
+        if ( string.IsNullOrWhiteSpace( value ) )
+        {
+            throw new InvalidOperationException( message );
+        }
+
+        return value;
+    }
 
     private static AiCredentialOptions ResolveCredentialReference( CliArguments arguments, DefinitionDefaults defaults )
     {
@@ -439,7 +442,9 @@ public static partial class Program
         {
             Console.WriteLine( $"{Safe( provider.Id )}  {Safe( provider.DisplayName ?? provider.Id )}  {Safe( provider.Kind )}  " +
                                $"{Safe( provider.BaseUrl )}  model={Safe( provider.Model )}  " +
-                               $"credential={Safe( provider.Credential.Kind )}{(provider.Credential.Name is null ? "" : ":" + Safe( provider.Credential.Name ))}  " +
+                               ($"credential={Safe( provider.Credential.Kind )}{(provider.Credential.Name is null ? "" : ":" +
+                                    Safe( provider.Credential.Name ))}" +
+                                   $"  ") +
                                $"remote={provider.AllowRemoteEndpoint}  enabled={provider.Enabled}" );
         }
 
@@ -449,8 +454,7 @@ public static partial class Program
     private static bool HasManagementErrorCategory( string text, int separator )
     {
         return separator is > 0 and <= MaximumErrorCategoryCharacters &&
-               text[..separator]
-                   .All( static character => char.IsAsciiLetterLower( character ) || character == '-' );
+               text[..separator].All( static character => char.IsAsciiLetterLower( character ) || character == '-' );
     }
 
     private static bool UsesManagedSettingsOverLegacy( AiProviderSettings settings )

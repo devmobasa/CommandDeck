@@ -243,7 +243,8 @@ public sealed partial class ClipboardHistoryStore
             .ToUnixTimeSeconds( )) );
 
         changed += Execute(
-            "DELETE FROM entries WHERE id IN (SELECT id FROM entries WHERE pinned=0 ORDER BY copied DESC,rowid DESC LIMIT -1 OFFSET max(0,$maximum-(SELECT count(*) FROM entries WHERE pinned=1)))",
+            ("DELETE FROM entries WHERE id IN (SELECT id FROM entries WHERE pinned=0 ORDER BY copied DESC,rowid " +
+                "DESC LIMIT -1 OFFSET max(0,$maximum-(SELECT count(*) FROM entries WHERE pinned=1)))"),
             ("$maximum", policy.MaximumEntries) );
 
         if ( changed > 0 )

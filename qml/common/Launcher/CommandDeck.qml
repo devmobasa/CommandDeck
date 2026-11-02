@@ -402,6 +402,7 @@ CommandDeckState {
   TextEdit { id: shortcutClipboard; visible: false }
   ShortcutEditorController {
     id: shortcutEditor
+    ready: root.daemonAvailable && !root.reconciliationPending && root.part_protocol.ready
     nextRequestId: () => ++root.requestSequence
     onRequest: value => root.part_protocol.send(value)
     onSnapshotReceived: value => {

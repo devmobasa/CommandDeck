@@ -215,7 +215,8 @@ public static partial class Program
                 .Error?.Category );
 
             await File.WriteAllTextAsync( path,
-                "{\"schemaVersion\":1,\"revision\":1,\"enabled\":true,\"providers\":[{\"id\":\"bad\",\"kind\":\"ollama\",\"baseUrl\":\"http://localhost:1\",\"model\":\"m\"}]}" );
+                ((("{\"schemaVersion\":1,\"revision\":1,\"enabled\":true,\"providers\":[{\"id\":\"bad\",\"kind\":\"ollama\",\"baseUrl\":\"h")) +
+                    "ttp://localhost:1\",\"model\":\"m\"}]}") );
 
             var invalidProvider = store.Load( );
             Equal( "invalid-config", invalidProvider.Error?.Category );

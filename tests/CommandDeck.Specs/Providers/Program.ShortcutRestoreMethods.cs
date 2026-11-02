@@ -9,9 +9,11 @@ public static partial class Program
         await using var service = ShortcutService( fixture );
         var before = await service.SnapshotAsync( ShortcutInventoryFixture, default );
         var menu = before.Bindings.Single( static row => row.Description == "Menu" );
-        var conflict = await service.ChangeAsync( ProtocolOperations.ShortcutHotkey, new( ) { Id = "hotkey", Chord = "Super+Q" }, false, ShortcutInventoryFixture, default );
+        var conflict = await service.ChangeAsync( ProtocolOperations.ShortcutHotkey, new( ) { Id = "hotkey", Chord = "Super+Q" }, false,
+             ShortcutInventoryFixture, default );
         Equal( "Menu", conflict.ConflictDescription );
-        var changed = await service.ChangeAsync( ProtocolOperations.ShortcutHotkey, new( ) { Id = "hotkey", Chord = "Super+Q", Replace = true }, false, ShortcutInventoryFixture, default );
+        var changed = await service.ChangeAsync( ProtocolOperations.ShortcutHotkey, new( ) { Id = "hotkey", Chord = "Super+Q", Replace = true },
+             false, ShortcutInventoryFixture, default );
         Equal( "SUPER + Q", changed.Hotkey );
         Equal( "", changed.Bindings.Single( row => row.Id == menu.Id ).Chord );
         var restored = await service.ChangeAsync( ProtocolOperations.ShortcutRestore, new( ) { Id = menu.Id }, true, ShortcutInventoryFixture, default );
@@ -28,7 +30,8 @@ public static partial class Program
         var before = await service.SnapshotAsync( ShortcutInventoryFixture, default );
         var menu = before.Bindings.Single( static row => row.Description == "Menu" );
         var terminal = before.Bindings.Single( static row => row.Description == "Terminal" );
-        await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+T", Replace = true }, false, ShortcutInventoryFixture, default );
+        await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+T", Replace = true }, false,
+             ShortcutInventoryFixture, default );
         var restored = await service.ChangeAsync( ProtocolOperations.ShortcutRestore, new( ) { Id = terminal.Id }, true, ShortcutInventoryFixture, default );
         Equal( 0, restored.ChangeCount );
         True( !File.Exists( service.ModuleFile ) );
@@ -44,6 +47,7 @@ public static partial class Program
         await using var service = ShortcutService( fixture, ( _, arguments, _, _ ) =>
         {
             commands.Add( string.Join( ' ', arguments ) );
+
             return ValueTask.FromResult( ShortcutProcessResult( arguments[0] switch { "configerrors" => "", "-j" => response, _ => "ok" } ) );
         } );
         var menu = (await service.SnapshotAsync( ShortcutInventoryFixture, default )).Bindings.Single( static row => row.Description == "Menu" );

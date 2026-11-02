@@ -27,8 +27,10 @@ public sealed partial class UnixProtocolServer
         if ( request.Operation is ProtocolOperations.ShortcutRecordStart or ProtocolOperations.ShortcutRecordStop )
         {
             await writer.DoneAsync( request.RequestId ).ConfigureAwait( false );
+
             return;
         }
+
         var snapshot = await _runtime.GetPreferencesAsync( true, token ).ConfigureAwait( false );
         await writer.WriteAsync( new ProtocolMessage
         {

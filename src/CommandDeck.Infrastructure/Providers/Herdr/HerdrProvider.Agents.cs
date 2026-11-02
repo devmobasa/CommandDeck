@@ -84,11 +84,21 @@ public sealed partial class HerdrProvider
         return true;
     }
 
+    private static string AgentSpaceLabel( HerdrWorkspace? space )
+    {
+        if ( space is null )
+        {
+            return UnknownSpaceLabel;
+        }
+
+        return space.Label.Length > 0 ? space.Label : $"Space {Number( space.Number )}";
+    }
+
     private static SearchResult AgentResult( HerdrAgent agent, HerdrTab? tab, HerdrWorkspace? space )
     {
         var name = agent.Name.Length > 0 ? agent.Name : "Agent";
         var tabTitle = AgentTabTitle( tab );
-        var spaceLabel = space is null ? UnknownSpaceLabel : space.Label.Length > 0 ? space.Label : $"Space {Number( space.Number )}";
+        var spaceLabel = AgentSpaceLabel( space );
         var status = DescribeAgentStatus( agent.AgentStatus );
 
         return new SearchResult

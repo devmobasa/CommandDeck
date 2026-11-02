@@ -104,7 +104,9 @@ internal sealed class ClipboardNativeCaptureSession(
                 change = store.NextCaptureChange;
             }
         }
-        catch ( OperationCanceledException ) when ( lifetime.IsCancellationRequested ) { }
+        catch ( OperationCanceledException ) when ( lifetime.IsCancellationRequested )
+        {
+        }
         finally
         {
             await lifetime

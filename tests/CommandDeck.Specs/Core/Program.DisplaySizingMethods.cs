@@ -59,6 +59,7 @@ public static partial class Program
             var database = Path.Combine( root.FullName, "catalog.db" );
             var state = Path.Combine( root.FullName, "state" );
             var marker = Path.Combine( state, "display-sizing" );
+            Directory.CreateDirectory( Path.Combine( state, "install-rollback.fixture" ) );
             await DisplaySizingMigration.EnsureProfileAsync( database, state, CancellationToken.None );
             Equal( "logical-v1\n", await File.ReadAllTextAsync( marker ) );
             File.Delete( marker );

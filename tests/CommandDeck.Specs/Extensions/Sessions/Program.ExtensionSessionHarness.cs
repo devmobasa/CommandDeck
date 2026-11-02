@@ -45,8 +45,12 @@ public static partial class Program
             {
                 await _run.WaitAsync( TimeSpan.FromSeconds( 2 ) );
             }
-            catch ( OperationCanceledException ) when ( _lifetime.IsCancellationRequested ) { }
-            catch ( IOException ) when ( _lifetime.IsCancellationRequested ) { }
+            catch ( OperationCanceledException ) when ( _lifetime.IsCancellationRequested )
+            {
+            }
+            catch ( IOException ) when ( _lifetime.IsCancellationRequested )
+            {
+            }
             finally
             {
                 _lifetime.Dispose( );

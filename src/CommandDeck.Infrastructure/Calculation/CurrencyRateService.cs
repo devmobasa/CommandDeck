@@ -232,7 +232,9 @@ public sealed class CurrencyRateService : IAsyncDisposable
                 _fetched = fetched;
             }
         }
-        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException or FormatException or ArgumentException ) { }
+        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException or FormatException or ArgumentException )
+        {
+        }
     }
 
     private void WriteCache( CurrencyRateSnapshot snapshot, DateTimeOffset fetched )

@@ -15,7 +15,6 @@ function inside(surface, item) {
 
 function verifyCycle(test, window, surface, start, limit) {
   const focused = () => window.activeFocusItem
-  start.forceActiveFocus()
   test.verify(start.activeFocus, "the cycle starts on its first control")
 
   const cycle = [start]

@@ -74,7 +74,10 @@ public static partial class Program
                 actual.Add( Normalize( offered.Content ) );
             }
         }
-        finally { Directory.Delete( root, true ); }
+        finally
+        {
+            Directory.Delete( root, true );
+        }
 
         static string Normalize( JsonElement content )
         {

@@ -15,7 +15,8 @@ internal static class CodexAppServerContract
     private const string ReviewedSchema = ReviewedVersion +
                                           "\n" +
                                           "initialize:experimentalApi,requestAttestation,optOutNotificationMethods\n" +
-                                          "thread/start:ephemeral,permissions,approvalPolicy,approvalsReviewer,allowProviderModelFallback,developerInstructions,cwd,dynamicTools,model\n" +
+                                          ("thread/start:ephemeral,permissions,approvalPolicy,approvalsReviewer,allowProviderModelFallback,devel" +
+                                              "operInstructions,cwd,dynamicTools,model\n") +
                                           "permissions::read-only,:danger-full-access\n";
 
     public static void Validate( )

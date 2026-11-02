@@ -35,7 +35,14 @@ public static class PathExpansion
     public static string GetDefaultSocketPath( )
     {
         var runtimeDir = GetRuntimeDirectory( );
-        Directory.CreateDirectory( runtimeDir );
+        if ( string.IsNullOrEmpty( Environment.GetEnvironmentVariable( XdgEnvironmentNames.RuntimeDirectory ) ) )
+        {
+            PrivateRuntimeDirectory.Ensure( runtimeDir );
+        }
+        else
+        {
+            Directory.CreateDirectory( runtimeDir );
+        }
 
         return Path.Combine( runtimeDir, "commanddeck.sock" );
     }
@@ -57,8 +64,9 @@ public static class PathExpansion
 
     private static string GetRuntimeDirectory( )
     {
-        return Environment.GetEnvironmentVariable( XdgEnvironmentNames.RuntimeDirectory ) ??
-               Path.Combine( Path.GetTempPath( ), $"commanddeck-{Environment.UserName}" );
+        var configured = Environment.GetEnvironmentVariable( XdgEnvironmentNames.RuntimeDirectory );
+
+        return string.IsNullOrEmpty( configured ) ? Path.Combine( Path.GetTempPath( ), $"commanddeck-{Environment.UserName}" ) : configured;
     }
 
     private static string ExpandEnvironmentPaths( string path, string home, string stateHome, string configHome, string cacheHome, string runtimeDir )

@@ -22,6 +22,7 @@ sealed class Client : IDisposable
         reader = new StreamReader( stream );
         writer = new StreamWriter( stream, new UTF8Encoding( false ) ) { AutoFlush = true };
     }
+
     public bool HasData => socket.Available > 0;
     public async Task<int> Send( string operation, JsonObject fields )
     {
@@ -33,6 +34,7 @@ sealed class Client : IDisposable
 
         return sequence;
     }
+
     public async Task<List<JsonNode>> Done( int request )
     {
         var result = new List<JsonNode>( );
@@ -55,6 +57,7 @@ sealed class Client : IDisposable
             }
         }
     }
+
     public async Task<List<JsonNode>> Call( string operation, JsonObject fields, bool error = false )
     {
         var messages = await Done( await Send( operation, fields ) );
@@ -63,7 +66,9 @@ sealed class Client : IDisposable
 
         return messages;
     }
-    public static void NoErrors( List<JsonNode> messages ) => Journey.Check( messages.All( message => message["type"]!.GetValue<string>( ) != "error" ), string.Join( '\n', messages ) );
+
+    public static void NoErrors( List<JsonNode> messages ) => Journey.Check( messages.All( message => message["type"]!.GetValue<string>( ) !=
+         "error" ), string.Join( '\n', messages ) );
     public void Dispose( )
     {
         writer.Dispose( );
@@ -158,11 +163,13 @@ static class Wayland
 
             if ( failure )
             {
-                var failed = await State( s => s["restartFocused"]!.GetValue<bool>( ) && s["error"]!.GetValue<string>( ).Length > 0 && !s["busy"]!.GetValue<bool>( ), "Crash recovery focus" );
+                var failed = await State( s => s["restartFocused"]!.GetValue<bool>( ) && s["error"]!.GetValue<string>( ).Length > 0 &&
+                     !s["busy"]!.GetValue<bool>( ), "Crash recovery focus" );
 
                 await input.Key( 57 );
 
-                await State( s => s["sessionId"]!.GetValue<string>( ) != failed["sessionId"]!.GetValue<string>( ) && s["restartFocused"]!.GetValue<bool>( ) && !s["busy"]!.GetValue<bool>( ), "Explicit restart fails safely" );
+                await State( s => s["sessionId"]!.GetValue<string>( ) != failed["sessionId"]!.GetValue<string>( ) &&
+                     s["restartFocused"]!.GetValue<bool>( ) && !s["busy"]!.GetValue<bool>( ), "Explicit restart fails safely" );
 
                 await input.Key( 15 );
                 await State( s => s["disableFocused"]!.GetValue<bool>( ), "Disable recovery focus" );
@@ -175,7 +182,8 @@ static class Wayland
                 return;
             }
 
-            var initial = await State( s => s["sessionId"]!.GetValue<string>( ).Length > 0 && !s["busy"]!.GetValue<bool>( ) && s["viewFocused"]!.GetValue<bool>( ) && s["count"]!.GetValue<int>( ) == 8, "Open and focus UUIDs" );
+            var initial = await State( s => s["sessionId"]!.GetValue<string>( ).Length > 0 && !s["busy"]!.GetValue<bool>( ) &&
+                 s["viewFocused"]!.GetValue<bool>( ) && s["count"]!.GetValue<int>( ) == 8, "Open and focus UUIDs" );
 
             await input.Key( 108 );
 
@@ -183,7 +191,8 @@ static class Wayland
 
             await input.Key( 28 );
 
-            await Journey.Wait( async ( ) => File.Exists( clipboard ) && await File.ReadAllTextAsync( clipboard ) == selected["selectedId"]!.GetValue<string>( ), "Keyboard copy" );
+            await Journey.Wait( async ( ) => File.Exists( clipboard ) && await File.ReadAllTextAsync( clipboard ) ==
+                 selected["selectedId"]!.GetValue<string>( ), "Keyboard copy" );
 
             await input.Type( selected["selectedId"]!.GetValue<string>( )[..1] );
             await State( s => s["viewQuery"]!.GetValue<string>( ).Length == 1, "Immediate filtering" );
@@ -198,7 +207,8 @@ static class Wayland
             await State( s => s["detailsFocused"]!.GetValue<bool>( ), "Details Tab focus" );
             await input.Key( 57 );
 
-            await State( s => s["kind"]!.GetValue<string>( ) == "detail" && s["detailFocused"]!.GetValue<bool>( ) && !s["busy"]!.GetValue<bool>( ), "Detail initial focus" );
+            await State( s => s["kind"]!.GetValue<string>( ) == "detail" && s["detailFocused"]!.GetValue<bool>( ) &&
+                 !s["busy"]!.GetValue<bool>( ), "Detail initial focus" );
 
             await input.Key( 28 );
 
@@ -207,13 +217,15 @@ static class Wayland
             await State( s => !s["busy"]!.GetValue<bool>( ), "Detail copy completion" );
             await input.Key( 1 );
 
-            await State( s => s["kind"]!.GetValue<string>( ) == "list" && s["detailsFocused"]!.GetValue<bool>( ) && !s["busy"]!.GetValue<bool>( ), "Back restores invoking action" );
+            await State( s => s["kind"]!.GetValue<string>( ) == "list" && s["detailsFocused"]!.GetValue<bool>( ) &&
+                 !s["busy"]!.GetValue<bool>( ), "Back restores invoking action" );
 
             await input.Key( 15 );
             await State( s => s["callbackFocused"]!.GetValue<bool>( ), "Callback Tab focus" );
             await input.Key( 57 );
 
-            var generated = await State( s => s["revision"]!.GetValue<int>( ) > initial["revision"]!.GetValue<int>( ) && !s["busy"]!.GetValue<bool>( ) && s["callbackFocused"]!.GetValue<bool>( ), "Regenerate callback retains focus" );
+            var generated = await State( s => s["revision"]!.GetValue<int>( ) > initial["revision"]!.GetValue<int>( ) &&
+                 !s["busy"]!.GetValue<bool>( ) && s["callbackFocused"]!.GetValue<bool>( ), "Regenerate callback retains focus" );
 
             await input.Click( generated["copy"]! );
 
@@ -221,7 +233,8 @@ static class Wayland
 
             await input.Click( generated["regenerate"]! );
 
-            var changed = await State( s => s["revision"]!.GetValue<int>( ) > generated["revision"]!.GetValue<int>( ) && !s["busy"]!.GetValue<bool>( ), "Mouse regenerate" );
+            var changed = await State( s => s["revision"]!.GetValue<int>( ) > generated["revision"]!.GetValue<int>( ) &&
+                 !s["busy"]!.GetValue<bool>( ), "Mouse regenerate" );
 
             await input.Click( changed["details"]! );
 
@@ -235,13 +248,16 @@ static class Wayland
 
             await input.Click( changed["nextPage"]! );
 
-            var page = await State( s => s["revision"]!.GetValue<int>( ) > changed["revision"]!.GetValue<int>( ) && !s["busy"]!.GetValue<bool>( ), "Next page" );
+            var page = await State( s => s["revision"]!.GetValue<int>( ) > changed["revision"]!.GetValue<int>( ) &&
+                 !s["busy"]!.GetValue<bool>( ), "Next page" );
 
-            Journey.Check( page["count"]!.GetValue<int>( ) == 8 && page["selectedId"]!.GetValue<string>( ) != changed["selectedId"]!.GetValue<string>( ), "Page replacement selection" );
+            Journey.Check( page["count"]!.GetValue<int>( ) == 8 && page["selectedId"]!.GetValue<string>( ) !=
+                 changed["selectedId"]!.GetValue<string>( ), "Page replacement selection" );
 
             await input.Click( page["previousPage"]! );
 
-            changed = await State( s => s["revision"]!.GetValue<int>( ) > page["revision"]!.GetValue<int>( ) && !s["busy"]!.GetValue<bool>( ), "Previous page" );
+            changed = await State( s => s["revision"]!.GetValue<int>( ) > page["revision"]!.GetValue<int>( ) && !s["busy"]!.GetValue<bool>( ),
+                 "Previous page" );
 
             await input.Click( changed["back"]! );
 
@@ -249,7 +265,8 @@ static class Wayland
             await State( s => s["result"]?["kind"]?.GetValue<string>( ) == "extension-command", "Rediscover" );
             await input.Key( 28 );
 
-            await State( s => s["sessionId"]!.GetValue<string>( ).Length > 0 && s["sessionId"]!.GetValue<string>( ) != initial["sessionId"]!.GetValue<string>( ) && s["viewFocused"]!.GetValue<bool>( ) && !s["busy"]!.GetValue<bool>( ), "Reopen fresh session" );
+            await State( s => s["sessionId"]!.GetValue<string>( ).Length > 0 && s["sessionId"]!.GetValue<string>( ) !=
+                 initial["sessionId"]!.GetValue<string>( ) && s["viewFocused"]!.GetValue<bool>( ) && !s["busy"]!.GetValue<bool>( ), "Reopen fresh session" );
 
             await input.Key( 1 );
 
@@ -267,7 +284,8 @@ static class Wayland
 
             Directory.CreateDirectory( Path.Combine( Journey.Repo, "artifacts/extensions" ) );
 
-            await File.WriteAllTextAsync( Path.Combine( Journey.Repo, failure ? "artifacts/extensions/wayland-failure.log" : "artifacts/extensions/wayland.log" ), await output + await errors );
+            await File.WriteAllTextAsync( Path.Combine( Journey.Repo,
+                 failure ? "artifacts/extensions/wayland-failure.log" : "artifacts/extensions/wayland.log" ), await output + await errors );
 
             if ( input is not null )
             {
@@ -338,6 +356,7 @@ sealed class DesktopInput : IDisposable
         device.Write( data );
         device.Flush( );
     }
+
     public async Task Key( ushort code )
     {
         Event( 1, code, 1 );
@@ -347,6 +366,7 @@ sealed class DesktopInput : IDisposable
         Event( 0, 0, 0 );
         await Task.Delay( 100 );
     }
+
     public async Task Type( string text )
     {
         const string letters = "qwertyuiopasdfghjklzxcvbnm";
@@ -357,6 +377,7 @@ sealed class DesktopInput : IDisposable
             await Key( KeyCode( letter, letters, keys ) );
         }
     }
+
     private static ushort KeyCode( char letter, string letters, ushort[] keys )
     {
         if ( char.IsDigit( letter ) )
@@ -388,12 +409,14 @@ sealed class DesktopInput : IDisposable
 
         throw new InvalidOperationException( "Could not position acceptance pointer" );
     }
+
     public async Task Click( JsonNode point )
     {
         await Move( point );
         await Task.Delay( 50 );
         await Key( 272 );
     }
+
     public void Dispose( )
     {
         Set( 0x5502, 0 );

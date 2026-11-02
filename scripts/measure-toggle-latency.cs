@@ -41,7 +41,8 @@ static class ToggleLatency
     public const string Namespace = "commanddeck";
     public const string ShortcutId = "commanddeck:toggle";
     public const string DispatchRequest = "dispatch hl.dsp.global(\"" + ShortcutId + "\")";
-    public static readonly string[] ShellToggle = [CommandDeck.ToolExecutables.OmarchyShell, ShellSubcommand, "toggle", CommandDeck.CommandDeckIdentity.PluginId, "{}"];
+    public static readonly string[] ShellToggle = [CommandDeck.ToolExecutables.OmarchyShell, ShellSubcommand, "toggle",
+         CommandDeck.CommandDeckIdentity.PluginId, "{}"];
 
     private const string Usage = """
         Usage:
@@ -128,7 +129,8 @@ static class ToggleLatency
                 var closed = opened is not null ? await ToggleAsync( session, options, CloseLayerEvent, cancellationToken ) : null;
                 if ( opened is null || closed is null )
                 {
-                    Console.Error.WriteLine( $"Sample {sample}: no {(opened is null ? OpenLayerEvent : CloseLayerEvent)}>>{Namespace} event within {options.TimeoutMilliseconds} ms." );
+                    Console.Error.WriteLine( ($"Sample {sample}: no {(opened is null ? OpenLayerEvent : CloseLayerEvent)}" +
+                        $">>{Namespace} event within {options.TimeoutMilliseconds} ms.") );
 
                     return 1;
                 }
@@ -274,11 +276,13 @@ sealed record Options( int Samples, int TimeoutMilliseconds, string Via )
 
         throw new ArgumentException( $"{args[index - 1]} takes a whole number from {minimum} to {maximum}." );
     }
+
     private static bool TryReadNumber( IReadOnlyList<string> args, int index, int minimum, int maximum, out int value )
     {
         value = 0;
 
-        return index < args.Count && int.TryParse( args[index], NumberStyles.None, CultureInfo.InvariantCulture, out value ) && value >= minimum && value <= maximum;
+        return index < args.Count && int.TryParse( args[index], NumberStyles.None, CultureInfo.InvariantCulture, out value ) && value >=
+             minimum && value <= maximum;
     }
 }
 

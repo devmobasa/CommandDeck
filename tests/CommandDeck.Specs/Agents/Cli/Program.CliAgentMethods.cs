@@ -70,7 +70,8 @@ public static partial class Program
         True( HasArgumentPair( grokArgv, "--output-format", "streaming-messages-json" ) );
 
         var grokModels =
-            grok.ParseModels( "You are logged in with grok.com.\n\nDefault model: grok-4.6\n\nAvailable models:\n  * grok-4.6 (default)\n  - grok-4.5\n" );
+            grok.ParseModels( ("You are logged in with grok.com.\n\nDefault model: grok-4.6\n\nAvailable models:\n  * grok-4.6 " +
+                "(default)\n  - grok-4.5\n") );
 
         Equal( 2, grokModels.Count );
         True( grokModels[0].Id == "grok-4.6" && grokModels[0].IsDefault && grokModels[1].Id == "grok-4.5" );
@@ -158,18 +159,21 @@ public static partial class Program
         Equal( "s1", init?.SessionId );
 
         var delta = messages.Read(
-            "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Hel\"}}}" );
+            ((("{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"He")) +
+                "l\"}}}") );
 
         Equal( "Hel", delta?.Text );
 
         var thinking = messages.Read(
-            "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"hmm\"}}}" );
+            ((("{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"thinking_delta\",\"think")) +
+                "ing\":\"hmm\"}}}") );
 
         Equal( "hmm", thinking?.Reasoning );
         Equal( null, messages.Read( "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Hello\"}]}}" ) );
 
         var result = messages.Read(
-            "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"Hello\",\"session_id\":\"s1\",\"usage\":{\"input_tokens\":10,\"output_tokens\":4}}" );
+            ((("{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"Hello\",\"session_id\":\"s1\",\"usage\":{\"i")) +
+                "nput_tokens\":10,\"output_tokens\":4}}") );
 
         True( result is { Terminal: true, IsError: false, FinalText: null, Usage.TotalTokens: 14 } && messages.SawResult );
 
@@ -180,7 +184,8 @@ public static partial class Program
             ?.Text );
 
         var failed = whole.Read(
-            "{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true,\"result\":\"Not logged in. Please run /login\"}" );
+            ("{\"type\":\"result\",\"subtype\":\"error_during_execution\",\"is_error\":true,\"result\":\"Not logged in. Please " +
+                "run /login\"}") );
 
         True( failed is { Terminal: true, IsError: true, ErrorCategory: "authentication" } );
         True( failed!.ErrorSummary is not null && !failed.ErrorSummary.Contains( "/login", StringComparison.Ordinal ) );
@@ -202,7 +207,8 @@ public static partial class Program
         Equal( "Hi", cursor.Read( "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Hi\"}]},\"timestamp_ms\":1}" )
             ?.Text );
 
-        Equal( null, cursor.Read( "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Hi there\"}]},\"model_call_id\":\"m1\"}" ) );
+        Equal( null,
+             cursor.Read( ((("{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"Hi there\"}]},\"model_call_id\":\"m1\"}"))) ) );
 
         Equal( "Tool call declined", cursor.Read( "{\"type\":\"tool_call\",\"subtype\":\"started\",\"call_id\":\"t\"}" )
             ?.Status );

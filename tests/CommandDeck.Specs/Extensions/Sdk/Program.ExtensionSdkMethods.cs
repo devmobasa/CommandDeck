@@ -77,7 +77,9 @@ public static partial class Program
             {
                 await sdk;
             }
-            catch ( OperationCanceledException ) { }
+            catch ( OperationCanceledException )
+            {
+            }
         }
     }
 
@@ -122,7 +124,9 @@ public static partial class Program
             {
                 await sdk;
             }
-            catch ( OperationCanceledException ) { }
+            catch ( OperationCanceledException )
+            {
+            }
         }
     }
 
@@ -168,7 +172,9 @@ public static partial class Program
             {
                 await sdk;
             }
-            catch ( OperationCanceledException ) { }
+            catch ( OperationCanceledException )
+            {
+            }
         }
     }
 

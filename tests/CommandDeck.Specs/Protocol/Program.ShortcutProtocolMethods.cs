@@ -59,9 +59,10 @@ public static partial class Program
                     Equal( "CTRL + ALT + F10", HyprlandHotkeyConfig.ReadChord( File.ReadAllText( fixture.Paths.HotkeyFile ) ) );
                     await client.SendAsync( new( ) { RequestId = 2, Operation = ProtocolOperations.ShortcutRecordStart, Shortcut = new( ) }, default );
                     var recording = await CollectUntilDoneAsync( client, 2 );
-                    Equal( ProtocolMessageTypes.Done, recording.Single( ).Type );
+                    Equal( "done", recording.Single( ).Type );
                     Equal( ShortcutLua.RecordingSubmap, current );
                 }
+
                 await ClipboardEventuallyAsync( ( ) => current == "reset" );
                 lock ( commands )
                 {

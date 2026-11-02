@@ -6,6 +6,7 @@ public static partial class Program
     {
         var root = SpecTemporaryFiles.PathFor( $"commanddeck-file-workflow-{Guid.NewGuid( ):N}" );
         Directory.CreateDirectory( root );
+        using var launch = await CreateEditorLaunchFixtureAsync( root );
         var database = Path.Combine( root, "catalog.db" );
         var filePath = Path.Combine( root, "résumé notes.txt" );
         var unknownExtensionPath = Path.Combine( root, "mystery.commanddeck-unknown" );

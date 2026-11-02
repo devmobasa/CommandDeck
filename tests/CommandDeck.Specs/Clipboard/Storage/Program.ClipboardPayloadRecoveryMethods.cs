@@ -46,7 +46,10 @@ public static partial class Program
         Equal( 0L, fixture.Ledger.ChargedBytes );
         Equal( 0, fixture.Directory.Inventory( ).Count );
 
-        var again = fixture.Ledger.Recover( ( _, _ ) => throw new InvalidOperationException( "No damaged rows expected." ) );
+        var again = fixture.Ledger.Recover( ( _, _ ) =>
+        {
+            throw new InvalidOperationException( "No damaged rows expected." );
+        } );
 
         Equal( new ClipboardPayloadRecovery( 0, 0 ), again );
     }
@@ -63,7 +66,9 @@ public static partial class Program
             live = writer.Complete( );
         }
 
-        fixture.Ledger.Publish( reservation, new HashSet<Guid> { live.Id }, ( ) => true, ( _, _ ) => { } );
+        fixture.Ledger.Publish( reservation, new HashSet<Guid> { live.Id }, ( ) => true, ( _, _ ) =>
+        {
+        } );
         File.Delete( Path.Combine( fixture.Root, "history.data", live.Id.ToString( "N" ) + ClipboardPayloadDirectory.PayloadSuffix ) );
 
         Throws<IOException>( ( ) => fixture.Ledger.Recover( ( connection, _ ) =>
@@ -88,7 +93,9 @@ public static partial class Program
         }
 
         File.WriteAllText( Path.Combine( fixture.Root, "history.data", "unexpected" ), "leave untouched" );
-        Throws<IOException>( ( ) => fixture.Ledger.Recover( ( _, _ ) => { } ) );
+        Throws<IOException>( ( ) => fixture.Ledger.Recover( ( _, _ ) =>
+        {
+        } ) );
         Equal( 0L, fixture.Ledger.ChargedBytes );
         Equal( "leave untouched", File.ReadAllText( Path.Combine( fixture.Root, "history.data", "unexpected" ) ) );
     }
@@ -105,7 +112,9 @@ public static partial class Program
             live = writer.Complete( );
         }
 
-        fixture.Ledger.Publish( reservation, new HashSet<Guid> { live.Id }, ( ) => true, ( _, _ ) => { } );
+        fixture.Ledger.Publish( reservation, new HashSet<Guid> { live.Id }, ( ) => true, ( _, _ ) =>
+        {
+        } );
 
         using ( var staging = fixture.Directory.CreateStaging( live.Id ) )
         {
@@ -131,7 +140,10 @@ public static partial class Program
 
         command.ExecuteNonQuery( );
 
-        Throws<IOException>( ( ) => fixture.Ledger.Recover( ( _, _ ) => throw new InvalidOperationException( "Invalid ledger must fail before callbacks." ) ) );
+        Throws<IOException>( ( ) => fixture.Ledger.Recover( ( _, _ ) =>
+        {
+            throw new InvalidOperationException( "Invalid ledger must fail before callbacks." );
+        } ) );
 
         Equal( 5L, fixture.Ledger.ChargedBytes );
     }

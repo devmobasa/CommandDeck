@@ -53,14 +53,15 @@ const string metricsPrefix = "Saved sizing proof ";
 
 foreach ( var scenario in cases )
 {
-    var name = FormattableString.Invariant( $"{scenario.Width}x{scenario.Height}-dpr{scenario.Dpr}-zoom{scenario.Percent}-font{scenario.Font}-panel{scenario.PanelWidth}x{scenario.PanelHeight}" );
+    var name = RenderName( scenario );
 
     Console.WriteLine( name );
     var directory = Path.Combine( output, name );
     ProcessStartInfo start = CreateRenderStartInfo( repository );
 
     foreach ( var argument in new[] { "scripts/capture-gallery.cs", "sizing", GalleryCaptureOptions.Width, Number( scenario.Width ),
-        GalleryCaptureOptions.Height, Number( scenario.Height ), GalleryCaptureOptions.Dpr, Number( scenario.Dpr ), GalleryCaptureOptions.DisplayPercent, Number( scenario.Percent ),
+        GalleryCaptureOptions.Height, Number( scenario.Height ), GalleryCaptureOptions.Dpr, Number( scenario.Dpr ),
+             GalleryCaptureOptions.DisplayPercent, Number( scenario.Percent ),
         GalleryCaptureOptions.FontScale, Number( scenario.Font ), GalleryCaptureOptions.PanelWidth, Number( scenario.PanelWidth ),
         GalleryCaptureOptions.PanelHeight, Number( scenario.PanelHeight ), "--output", directory } )
     {
@@ -94,7 +95,7 @@ foreach ( var scenario in cases )
         throw new InvalidOperationException( $"{name}: missing rendered logical measurements." );
     }
 
-    var key = FormattableString.Invariant( $"{scenario.Width}x{scenario.Height}-zoom{scenario.Percent}-font{scenario.Font}-panel{scenario.PanelWidth}x{scenario.PanelHeight}" );
+    var key = LogicalKey( scenario );
     var measurement = string.Join( '\n', metrics );
     if ( logicalMetrics.TryGetValue( key, out var baseline ) && measurement != baseline )
     {
@@ -138,6 +139,20 @@ return 0;
 
 static string Number( double value ) => value.ToString( CultureInfo.InvariantCulture );
 
+static string RenderName( (int Width, int Height, double Dpr, int Percent, double Font, int PanelWidth, int PanelHeight) scenario )
+{
+    var (width, height, dpr, percent, font, panelWidth, panelHeight) = scenario;
+
+    return FormattableString.Invariant( $"{width}x{height}-dpr{dpr}-zoom{percent}-font{font}-panel{panelWidth}x{panelHeight}" );
+}
+
+static string LogicalKey( (int Width, int Height, double Dpr, int Percent, double Font, int PanelWidth, int PanelHeight) scenario )
+{
+    var (width, height, _, percent, font, panelWidth, panelHeight) = scenario;
+
+    return FormattableString.Invariant( $"{width}x{height}-zoom{percent}-font{font}-panel{panelWidth}x{panelHeight}" );
+}
+
 static ProcessStartInfo CreateRenderStartInfo( string repository )
 {
     return new( ScriptExecutables.Dotnet )
@@ -158,7 +173,8 @@ static string[] ParseLogicalMetrics( string metricsPrefix, string log )
         .ToArray( );
 }
 
-static bool HasIncorrectImageSize( (int Width, int Height, double Dpr, int Percent, double Font, int PanelWidth, int PanelHeight) scenario, int width, int height )
+static bool HasIncorrectImageSize( (int Width, int Height, double Dpr, int Percent, double Font, int PanelWidth, int PanelHeight) scenario,
+     int width, int height )
 {
     return Math.Abs( width - scenario.Width * scenario.Dpr ) > 1 ||
                 Math.Abs( height - scenario.Height * scenario.Dpr ) > 1;

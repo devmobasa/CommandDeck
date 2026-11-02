@@ -92,6 +92,19 @@ Assistant tools are mediated by the daemon. Levels below unrestricted use a
 Bubblewrap boundary; unrestricted intentionally grants much broader access.
 The package helper is a separate Polkit-protected service, not an automatic part
 of the user-local installer.
+It retains the latest 64 completed, failed, or cancelled operations in memory.
+Older operation IDs return `UnknownOperation`; active operations remain available.
+Restarting the helper clears its operation history.
+
+Socket clients verify that the connected server has the same effective user ID
+before sending requests. Without `XDG_RUNTIME_DIR`, the fallback directory under
+the temporary directory must belong to the current user and have mode 0700.
+Symbolic links and existing directories with other permissions are rejected.
+
+Tar content extraction counts all decompressed bytes, including skipped members,
+headers, and padding, against its output and expansion budgets. Archives over a
+budget are rejected as a whole. Archive extraction also uses the configured
+extractor deadline.
 
 ## Limitations and reporting
 

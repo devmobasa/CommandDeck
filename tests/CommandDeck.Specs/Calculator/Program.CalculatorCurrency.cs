@@ -157,7 +157,10 @@ public static partial class Program
             AssertCalculationInvalid( expression, CalculatorTestRates );
         }
 
-        Equal( CalculationStatus.Invalid, CalculatorEngine.Evaluate( "1 USD", ( ) => throw new InvalidOperationException( ) ).Status );
+        Equal( CalculationStatus.Invalid, CalculatorEngine.Evaluate( "1 USD", ( ) =>
+        {
+            throw new InvalidOperationException( );
+        } ).Status );
 
         Equal( CalculationStatus.Invalid, CalculatorEngine
             .Evaluate( "1 USD", ( ) => new( new( 2026, 10, 21 ), new Dictionary<string, decimal> { ["USD"] = 0 } ) ).Status );

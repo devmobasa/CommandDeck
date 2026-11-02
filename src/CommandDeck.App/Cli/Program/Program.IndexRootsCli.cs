@@ -277,6 +277,11 @@ public static partial class Program
             .Indexer.GetIncrementalStatusAsync( cancellationToken )
             .ConfigureAwait( false );
 
+        return WriteIndexControlStatus( status );
+    }
+
+    private static int WriteIndexControlStatus( IncrementalIndexStatus status )
+    {
         foreach ( var root in status.Roots )
         {
             Console.WriteLine( $"{root.Id}  paused={root.Paused} watched={root.Watched} " +

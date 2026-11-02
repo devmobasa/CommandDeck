@@ -65,7 +65,8 @@ public static partial class Program
                 ExtensionViewJsonContext.Default.ExtensionView ) );
 
         var form = JsonSerializer.Deserialize(
-            "{\"kind\":\"form\",\"id\":\"form\",\"title\":\"Form\",\"fields\":[{\"id\":\"name\",\"label\":\"Name\",\"kind\":\"text\"}],\"submit\":{\"id\":\"submit\",\"kind\":\"callback\",\"title\":\"Save\"}}",
+            ((("{\"kind\":\"form\",\"id\":\"form\",\"title\":\"Form\",\"fields\":[{\"id\":\"name\",\"label\":\"Name\",\"kind\":\"text\"}],\"sub")) +
+                "mit\":{\"id\":\"submit\",\"kind\":\"callback\",\"title\":\"Save\"}}"),
             ExtensionViewJsonContext.Default.ExtensionView )!;
 
         CommandDeck.Extensions.Views.ViewValidation.Validate( form );

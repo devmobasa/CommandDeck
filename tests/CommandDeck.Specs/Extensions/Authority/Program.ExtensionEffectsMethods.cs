@@ -116,7 +116,9 @@ public static partial class Program
             {
                 await sdk;
             }
-            catch ( OperationCanceledException ) { }
+            catch ( OperationCanceledException )
+            {
+            }
         }
     }
 

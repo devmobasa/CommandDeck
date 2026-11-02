@@ -23,7 +23,7 @@ public static partial class Program
         }
 
         HyprlandHotkeyInstaller installer = new( HyprlandHotkeyPaths.FromEnvironment( Environment.GetEnvironmentVariable ) );
-        var chord = arguments.GetOption( CliOptionNames.Chord ) ?? HyprlandHotkeyConfig.DefaultChord;
+        var chord = arguments.GetOption( CliOptionNames.Chord );
         IReadOnlyList<string> messages;
 
         try
@@ -31,7 +31,7 @@ public static partial class Program
             messages = action switch
             {
                 InstallCommand => installer.Install( chord ),
-                CheckCommand => [$"The {installer.Check( chord )} hotkey can be installed. Nothing was changed."],
+                CheckCommand => [HotkeyCheckMessage( installer, chord )],
                 _ => installer.Remove( )
             };
         }
@@ -49,4 +49,16 @@ public static partial class Program
 
         return 0;
     }
+
+    private static string HotkeyCheckMessage( HyprlandHotkeyInstaller installer, string? chord )
+    {
+        var normalized = installer.Check( chord );
+        if ( chord is null )
+        {
+            return "Saved shortcuts will be preserved; fresh installs use CTRL + SPACE. Nothing was changed.";
+        }
+
+        return $"The {normalized} hotkey can be installed. Nothing was changed.";
+    }
+
 }

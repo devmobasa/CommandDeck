@@ -429,7 +429,10 @@ public sealed partial class ExtensionPackageRegistry : IContributionRegistry, ID
         }
     }
 
-    /// <summary>Orders a bounded host effect with this installation's revocation. Never await child RPC, network I/O, credential resolution or browser launches here.</summary>
+    /// <summary>
+    /// Orders a bounded host effect with this installation's revocation. Never await
+    /// child RPC, network I/O, credential resolution or browser launches here.
+    /// </summary>
     public async ValueTask<T> WithExecutionAsync<T>( string key, Func<ExtensionInstallation, ValueTask<T>> operation, CancellationToken cancellationToken )
     {
         var canonicalKey = Find( key ).Key;

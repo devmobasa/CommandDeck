@@ -14,8 +14,8 @@ Rectangle {
   implicitHeight: Math.round(root.theme.inputHeight * 0.62)
   radius: root.theme.radiusSmall
   color: root.theme.surfaceStrong
-  border.width: 1
-  border.color: root.theme.selectedBorder
+  border.width: root.activeFocus ? 2 : 1
+  border.color: root.activeFocus ? root.theme.focusRing : root.theme.selectedBorder
 
   Accessible.role: Accessible.Button
   Accessible.name: root.accessibilityName

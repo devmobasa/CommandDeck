@@ -11,8 +11,13 @@ public static partial class LuaBindingReader
     public static LuaSource Read( string source )
     {
         try
-        { return ReadTokens( source, LuaTokens.Read( source ) ); }
-        catch ( FormatException ) { return new( [], [] ); }
+        {
+            return ReadTokens( source, LuaTokens.Read( source ) );
+        }
+        catch ( FormatException )
+        {
+            return new( [], [] );
+        }
     }
 
     private static LuaSource ReadTokens( string source, IReadOnlyList<LuaToken> tokens )
@@ -56,11 +61,12 @@ public static partial class LuaBindingReader
             var call = ReadBinding( source, tokens, index, arguments );
             if ( call is not null )
             {
-                var statementStart = index == 0 || tokens[index - 1].Text == ";" || tokens[index - 1].Line < tokens[index].Line && !ContinuesExpression( tokens[index - 1].Text );
-                var statementEnd = last + 1 == tokens.Count || tokens[last + 1].Text == ";" || tokens[last + 1].Line > tokens[last].Line && !ContinuesExpression( tokens[last + 1].Text );
+                var statementStart = IsStatementStart( tokens, index );
+                var statementEnd = IsStatementEnd( tokens, last );
                 bindings.Add( call with { Literal = call.Literal && !helpersChanged && scopes.Count == 0 && nesting == 0 && statementStart && statementEnd } );
             }
         }
+
         return new( bindings, requires );
     }
 
@@ -97,8 +103,48 @@ public static partial class LuaBindingReader
             return;
         }
 
-        var ordered = nesting == 0 && !InUntilCondition( tokens, index ) && (scopes.Count == 0 || scopes.Count == 1 && scopes.Peek( ) == "if" && IsPresenceGuard( tokens, index, require.Module ));
+        var ordered = IsOrderedRequire( tokens, index, scopes, nesting, require.Module );
         requires.Add( require with { Ordered = ordered } );
+    }
+
+    private static bool IsOrderedRequire( IReadOnlyList<LuaToken> tokens, int index, Stack<string> scopes, int nesting, string module )
+    {
+        if ( nesting != 0 || InUntilCondition( tokens, index ) )
+        {
+            return false;
+        }
+
+        if ( scopes.Count == 1 && scopes.Peek( ) == "if" && IsPresenceGuard( tokens, index, module ) )
+        {
+            return true;
+        }
+
+        var start = IsStatementStart( tokens, index );
+        var open = tokens[index].Text == "require" ? index + 1 : index + 3;
+        var last = open + (tokens[open].Text == "(" ? 2 : 0);
+        var end = IsStatementEnd( tokens, last );
+
+        return scopes.Count == 0 && start && end;
+    }
+
+    private static bool IsStatementStart( IReadOnlyList<LuaToken> tokens, int index )
+    {
+        if ( index == 0 || tokens[index - 1].Text == ";" )
+        {
+            return true;
+        }
+
+        return tokens[index - 1].Line < tokens[index].Line && !ContinuesExpression( tokens[index - 1].Text );
+    }
+
+    private static bool IsStatementEnd( IReadOnlyList<LuaToken> tokens, int last )
+    {
+        if ( last + 1 == tokens.Count || tokens[last + 1].Text == ";" )
+        {
+            return true;
+        }
+
+        return tokens[last + 1].Line > tokens[last].Line && !ContinuesExpression( tokens[last + 1].Text );
     }
 
     private static bool InUntilCondition( IReadOnlyList<LuaToken> tokens, int index )
@@ -122,6 +168,7 @@ public static partial class LuaBindingReader
                 return false;
             }
         }
+
         return false;
     }
 
@@ -142,6 +189,7 @@ public static partial class LuaBindingReader
                 return false;
             }
         }
+
         return true;
     }
 
@@ -176,6 +224,7 @@ public static partial class LuaBindingReader
                 return true;
             }
         }
+
         return false;
     }
 
@@ -209,6 +258,7 @@ public static partial class LuaBindingReader
                 return false;
             }
         }
+
         return false;
     }
 
@@ -234,6 +284,7 @@ public static partial class LuaBindingReader
 
             cursor++;
         }
+
         while ( cursor < tokens.Count && tokens[cursor].Text == "," )
         {
             cursor += 2;
@@ -249,8 +300,17 @@ public static partial class LuaBindingReader
     {
         var name = tokens[index].Text;
         // Omarchy uses require_optional.module for optional default applications.
-        var open = name == "require" ? index + 1 : name == "require_optional" && index + 3 < tokens.Count &&
-            tokens[index + 1].Text == "." && tokens[index + 2].Text == "module" ? index + 3 : -1;
+        var open = -1;
+        if ( name == "require" )
+        {
+            open = index + 1;
+        }
+        else if ( name == "require_optional" && index + 3 < tokens.Count &&
+                  tokens[index + 1].Text == "." && tokens[index + 2].Text == "module" )
+        {
+            open = index + 3;
+        }
+
         if ( open < 0 || open >= tokens.Count )
         {
             return null;
@@ -288,8 +348,10 @@ public static partial class LuaBindingReader
         var description = omarchy && arguments[1] is [{ Value: { } label }] ? label : Description( arguments.Last( ) );
         var dispatcher = arguments[expected - 1];
         var options = arguments.Count == expected + 1 ? arguments[^1] : [];
-        var literal = chord.Length > 0 && dispatcher.Count > 0 && (dispatcher[0].Value is not null || dispatcher[0].Text is "{" or "hl") && IsLiteral( dispatcher ) && (options.Count == 0 || IsLiteral( options )) &&
+        var literal = chord.Length > 0 && dispatcher.Count > 0 && (dispatcher[0].Value is not null || dispatcher[0].Text is "{" or "hl") &&
+             IsLiteral( dispatcher ) && (options.Count == 0 || IsLiteral( options )) &&
             (!omarchy || arguments[1] is [{ Value: not null }]);
+
         return new( chord, description, omarchy ? "o.bind" : "hl.bind", Slice( source, dispatcher ),
             options.Count == 0 ? "{}" : Slice( source, options ), literal, tokens[start].Start );
     }
@@ -328,10 +390,17 @@ public static partial class LuaBindingReader
                     }
 
                     end = index;
+
                     return values;
                 }
+
                 if ( token.Text == "," && depth == 0 )
-                { values.Add( value ); value = []; continue; }
+                {
+                    values.Add( value );
+                    value = [];
+                    continue;
+                }
+
                 if ( token.Text is "(" or "{" or "[" )
                 {
                     depth++;
@@ -347,14 +416,17 @@ public static partial class LuaBindingReader
                     return null;
                 }
             }
+
             value.Add( token );
         }
+
         return null;
     }
 
     public static bool IsLiteral( IReadOnlyList<LuaToken> tokens )
     {
         var index = 0;
+
         return ReadValue( tokens, ref index, 0 ) && index == tokens.Count;
     }
 
@@ -431,12 +503,14 @@ public static partial class LuaBindingReader
                 return false;
             }
         }
+
         return false;
     }
 
     private static bool Number( string value ) => LuaNumberPattern( ).IsMatch( value );
 
-    [GeneratedRegex( @"^(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$|^0[xX][0-9a-fA-F]+(?:\.[0-9a-fA-F]*)?(?:[pP][+-]?[0-9]+)?$", RegexOptions.CultureInvariant )]
+    [GeneratedRegex( @"^(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$|^0[xX][0-9a-fA-F]+(?:\.[0-9a-fA-F]*)?(?:[pP][+-]?[0-9]+)?$",
+         RegexOptions.CultureInvariant )]
     private static partial Regex LuaNumberPattern( );
 
     private static bool ReadTable( IReadOnlyList<LuaToken> tokens, ref int index, int depth )
@@ -460,6 +534,7 @@ public static partial class LuaBindingReader
                     return false;
                 }
             }
+
             if ( !ReadValue( tokens, ref index, depth ) )
             {
                 return false;
@@ -474,6 +549,7 @@ public static partial class LuaBindingReader
                 break;
             }
         }
+
         return Take( tokens, ref index, "}" );
     }
 
@@ -495,6 +571,7 @@ public static partial class LuaBindingReader
                 break;
             }
         }
+
         return Take( tokens, ref index, close );
     }
 

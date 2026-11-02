@@ -23,7 +23,7 @@ public static partial class Program
         Equal( "Settings", direct.Single( ).Section!.Title );
         var open = transparency.Actions.Single( );
         Equal( "open-settings", open.Kind );
-        Equal( SettingIds.Transparency, open.Arguments[ActionArgumentNames.SettingId] );
+        Equal( "customization.transparency", open.Arguments["settingId"] );
 
         // Words inside a card find it, and AI cards name their section.
         Equal( "settings:search.behavior", (await FindAsync( "reduce motion" ))[0].Id );
@@ -35,12 +35,12 @@ public static partial class Program
         {
             var font = (await FindAsync( query )).Single( static row => row.Id == "settings:customization.font" );
             Equal( "Appearance", font.Title );
-            Equal( SettingIds.InterfaceFont, font.Actions.Single( ).Arguments[ActionArgumentNames.SettingId] );
+            Equal( "customization.font", font.Actions.Single( ).Arguments["settingId"] );
         }
 
         var providers = (await FindAsync( "quick answer providers" )).Single( static row => row.Id == "settings:ai.quick.providers" );
         Equal( "Providers", providers.Title );
-        Equal( SettingIds.QuickAnswerProviders, providers.Actions.Single( ).Arguments[ActionArgumentNames.SettingId] );
+        Equal( "ai.quick.providers", providers.Actions.Single( ).Arguments["settingId"] );
         var desktop = (await FindAsync( "Hyprland bindings" )).Single( static row => row.Id == "settings:shortcuts.desktop" );
         Equal( "Desktop", desktop.Title );
 

@@ -185,7 +185,9 @@ public sealed partial class ClipboardHistoryStore
         using var command = _connection.CreateCommand( );
 
         command.CommandText =
-            "SELECT id,(SELECT coalesce(sum(p.actual),0) FROM clipboard_offers o JOIN clipboard_payloads p ON p.id=o.payload_id WHERE o.entry_id=e.id),copied,pinned FROM entries e ORDER BY copied DESC,rowid DESC";
+            ("SELECT id,(SELECT coalesce(sum(p.actual),0) FROM clipboard_offers o JOIN clipboard_payloads p ON " +
+                "p.id=o.payload_id WHERE o.entry_id=e.id),copied,pinned FROM entries e ORDER BY copied DESC,rowid " +
+                "DESC");
 
         using var reader = command.ExecuteReader( );
         List<PolicyRow> rows = [];

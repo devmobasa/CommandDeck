@@ -56,12 +56,16 @@ public sealed partial class SearchCoordinator
         // A positive unqualified clause has already been matched by the
         // provider's lexical/fuzzy engine. Requiring a literal substring here
         // would discard accepted typo and acronym matches.
-        if ( IsUnqualifiedPositiveClause( clause ) )
+        if ( IsUnqualifiedPositiveClause( clause ) && !clause.Text.Any( char.IsWhiteSpace ) )
         {
             return true;
         }
 
         var values = GetClauseValues( clause, result );
+        if ( IsUnqualifiedPositiveClause( clause ) )
+        {
+            return values.Any( value => value is not null && FuzzyMatcher.ScorePhrase( clause.Text, value ) > 0 );
+        }
 
         return values.Any( value => value?.Contains( clause.Text, StringComparison.OrdinalIgnoreCase ) == true );
     }

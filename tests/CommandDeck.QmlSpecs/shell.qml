@@ -462,8 +462,9 @@ ShellRoot {
   ProductionHostJourneyAssertions { id: productionHostJourney; host: root }
   StaleActivationJourneyAssertions { id: staleActivationJourney; host: root }
   OnDemandSurfaceAssertions { id: onDemandSurfaces; host: root }
+  LauncherInputJourneyAssertions { id: launcherInputJourneys; host: root }
 
-  function onDemandSurfaceSteps() { return onDemandSurfaces.steps() }
+  function onDemandSurfaceSteps() { return onDemandSurfaces.steps().concat(launcherInputJourneys.steps()) }
 
   ComponentHelpSheetFixture { id: helpSheet; parent: host; theme: theme }
 

@@ -31,7 +31,8 @@ var script = Path.Combine( scripts, "validate.cs" );
 File.Copy( Path.Combine( directory, "validate.cs" ), script );
 File.Copy( Path.Combine( directory, "ScriptExecutables.cs" ), Path.Combine( scripts, "ScriptExecutables.cs" ) );
 var utilities = Directory.CreateDirectory( Path.Combine( fixture, "src/CommandDeck.Core/Utilities" ) ).FullName;
-File.Copy( Path.Combine( directory, "../src/CommandDeck.Core/Utilities/EnvironmentVariableNames.cs" ), Path.Combine( utilities, "EnvironmentVariableNames.cs" ) );
+File.Copy( Path.Combine( directory, "../src/CommandDeck.Core/Utilities/EnvironmentVariableNames.cs" ), Path.Combine( utilities,
+     "EnvironmentVariableNames.cs" ) );
 
 try
 {
@@ -64,8 +65,10 @@ try
         "scripts/test-extension-sdk.cs",
         "scripts/test-extension-sandbox.cs",
         "scripts/publish-aot.sh linux-x64",
-        "run --project tests/CommandDeck.Specs --configuration Release --no-build -- --native-index-aot artifacts/publish/linux-x64/commanddeck",
-        "run --project tests/CommandDeck.Specs --configuration Release --no-build -- --clipboard-native-aot artifacts/publish/linux-x64/commanddeck"
+        ("run --project tests/CommandDeck.Specs --configuration Release --no-build -- --native-index-aot " +
+            "artifacts/publish/linux-x64/commanddeck"),
+        ("run --project tests/CommandDeck.Specs --configuration Release --no-build -- --clipboard-native-aot " +
+            "artifacts/publish/linux-x64/commanddeck")
     ];
     if ( !commands.SequenceEqual( requiredCommands ) )
     {

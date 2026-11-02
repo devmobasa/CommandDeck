@@ -35,7 +35,8 @@ public sealed partial class HerdrClient
             return;
         }
 
-        var line = $"event=herdr.command_failed command=\"{string.Join( ' ', arguments.Take( LoggedCommandWords ) )}\" {outcome} error=\"{FirstLine( error )}\"";
+        var line = ($"event=herdr.command_failed command=\"{string.Join( ' ', arguments.Take( LoggedCommandWords ) )}" +
+            $"\" {outcome} error=\"{FirstLine( error )}\"");
         if ( ShouldLog( line ) )
         {
             _log( line );

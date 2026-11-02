@@ -99,6 +99,7 @@ public static partial class Program
         }
 
         var root = SpecTemporaryFiles.CreateDirectory( "commanddeck-environment-editors-" ).FullName;
+        using var launch = await CreateEditorLaunchFixtureAsync( root );
         var capture = Path.Combine( root, "argv" );
         var visual = Environment.GetEnvironmentVariable( "VISUAL" );
         var editor = Environment.GetEnvironmentVariable( "EDITOR" );

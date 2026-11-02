@@ -88,7 +88,10 @@ public static partial class Program
             await WriteWhilePendingAsync( harness, preparing );
             Equal( revision, harness.Registry.Document.Revision );
         }
-        finally { secrets.Release.TrySetResult( ); }
+        finally
+        {
+            secrets.Release.TrySetResult( );
+        }
 
         var result = await preparing;
         Equal( "service", result.Connections.Single( ).Name );
@@ -123,7 +126,10 @@ public static partial class Program
         {
             await WriteWhilePendingAsync( harness, browser );
         }
-        finally { release.TrySetResult( ); }
+        finally
+        {
+            release.TrySetResult( );
+        }
 
         await browser;
         Equal( "open-url", harness.Effects.Actions.Single( ).Kind );

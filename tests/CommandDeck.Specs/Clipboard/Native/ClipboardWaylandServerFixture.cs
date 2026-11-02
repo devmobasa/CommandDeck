@@ -229,8 +229,7 @@ internal sealed unsafe partial class ClipboardWaylandServerFixture : IDisposable
             else if ( (type, opcode) is ("ext_data_control_source_v1", 0 ) )
             {
                 server
-                    ._sources[target]
-                    .Add( Marshal.PtrToStringUTF8( arguments[0].Pointer )! );
+                    ._sources[target].Add( Marshal.PtrToStringUTF8( arguments[0].Pointer )! );
             }
             else if ( (type, opcode) is ("ext_data_control_source_v1", 1 ) )
             {
@@ -456,8 +455,12 @@ internal sealed unsafe partial class ClipboardWaylandServerFixture : IDisposable
                     stream.Write( bytes );
                     stream.Flush( );
                 }
-                catch ( IOException ) { }
-                catch ( OperationCanceledException ) when ( _writers.IsCancellationRequested ) { }
+                catch ( IOException )
+                {
+                }
+                catch ( OperationCanceledException ) when ( _writers.IsCancellationRequested )
+                {
+                }
                 finally
                 {
                     Interlocked.Increment( ref _finishedReceives );

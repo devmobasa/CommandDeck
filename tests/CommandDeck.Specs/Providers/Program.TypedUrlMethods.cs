@@ -117,7 +117,7 @@ public static partial class Program
             // Save as Quicklink opens the Quicklinks editor in Settings with the address.
             Equal( "open-settings", row.Actions[2].Kind );
             Equal( "Save as Quicklink…", row.Actions[2].Title );
-            Equal( SettingIds.Quicklinks, row.Actions[2].Arguments[ActionArgumentNames.SettingId] );
+            Equal( "search.quicklinks", row.Actions[2].Arguments["settingId"] );
             Equal( TypedUrlAddress, row.Actions[2].Arguments[ActionArgumentNames.Url] );
         }
 

@@ -69,7 +69,9 @@ static class BrokerJourney
 
             That( connections["connections"]!.AsArray( ).Count == 0, "Disable retained broker authority" );
 
-            Console.WriteLine( "PASS connected brokers: published daemon and native sandbox, selected note read/revocation, HTTP adapter, credential attachment, cancelled and confirmed writes, replay denial and package revocation." );
+            Console.WriteLine( ("PASS connected brokers: published daemon and native sandbox, selected note read/revocation, HTTP " +
+                "adapter, credential attachment, cancelled and confirmed writes, replay denial and package " +
+                "revocation.") );
         }
         finally
         {
@@ -108,6 +110,7 @@ static class BrokerJourney
             Directory.Delete( root, true );
         }
     }
+
     private static async Task Notes( BrokerClient client, string root, string key )
     {
         var notes = Path.Combine( root, "notes" );
@@ -135,6 +138,7 @@ static class BrokerJourney
 
         await client.Call( "extension.close", new JsonObject { ["sessionId"] = revoked["sessionId"]!.DeepClone( ) } );
     }
+
     private static async Task Tasks( BrokerClient client, string key )
     {
         await using var service = new MockTasks( );
@@ -159,6 +163,7 @@ static class BrokerJourney
 
         await client.Call( "extension.close", new JsonObject { ["sessionId"] = saved["sessionId"]!.DeepClone( ) } );
     }
+
     private static async Task<List<JsonNode>> Save( BrokerClient client, JsonNode form, bool approve )
     {
         await client.Call( "extension.present", Input( form ) );
@@ -169,6 +174,7 @@ static class BrokerJourney
 
         return await client.Call( "extension.action", input, approve: approve );
     }
+
     private static async Task<List<JsonNode>> Action( BrokerClient client, JsonNode view, string handle, string? item = null )
     {
         await client.Call( "extension.present", Input( view ) );
@@ -178,16 +184,21 @@ static class BrokerJourney
 
         return await client.Call( "extension.action", input );
     }
-    private static JsonObject Input( JsonNode view ) => new( ) { ["sessionId"] = view["sessionId"]!.DeepClone( ), ["extensionInput"] = new JsonObject { ["revision"] = view["revision"]!.DeepClone( ) } };
+
+    private static JsonObject Input( JsonNode view ) => new( ) { ["sessionId"] = view["sessionId"]!.DeepClone( ),
+         ["extensionInput"] = new JsonObject { ["revision"] = view["revision"]!.DeepClone( ) } };
     private static JsonObject Open( string key, string command ) => CreateOpenInput( key, command );
     private static async Task<JsonNode> Change( BrokerClient client, JsonObject change )
     {
-        var current = (await client.Call( "extensions.manage", new JsonObject { ["extension"] = new JsonObject( ), ["limit"] = 32 } )).Single( n => n["extensions"] is not null )["extensions"]!;
+        var current = (await client.Call( "extensions.manage", new JsonObject { ["extension"] = new JsonObject( ),
+             ["limit"] = 32 } )).Single( n => n["extensions"] is not null )["extensions"]!;
 
         change["expectedRevision"] = current["revision"]!.DeepClone( );
 
-        return (await client.Call( "extensions.manage", new JsonObject { ["extension"] = change, ["limit"] = 32 } )).Single( n => n["extensions"] is not null )["extensions"]!;
+        return (await client.Call( "extensions.manage", new JsonObject { ["extension"] = change, ["limit"] = 32 } )).Single( n =>
+             n["extensions"] is not null )["extensions"]!;
     }
+
     private static JsonNode View( List<JsonNode> messages ) => messages.Last( n => n["extensionSession"]?["content"] is not null )["extensionSession"]!;
     public static void That( bool condition, string message )
     {
@@ -204,7 +215,8 @@ static class BrokerJourney
             ["resultId"] = "extension:" + key + ":" + command,
             ["extensionInput"] = new JsonObject
             {
-                ["features"] = new JsonArray( "commands@1", "brokers@1", "views.list@1", "views.detail@1", "views.stack@1", "views.pagination@1", "views.form@1", "storage@1" )
+                ["features"] = new JsonArray( "commands@1", "brokers@1", "views.list@1", "views.detail@1", "views.stack@1", "views.pagination@1",
+                     "views.form@1", "storage@1" )
             }
         };
     }
@@ -270,6 +282,7 @@ sealed class BrokerClient : IDisposable
         _reader = new StreamReader( stream );
         _writer = new StreamWriter( stream, new UTF8Encoding( false ) ) { AutoFlush = true };
     }
+
     public static async Task<BrokerClient> Connect( string path )
     {
         var socket = new Socket( AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified );
@@ -277,6 +290,7 @@ sealed class BrokerClient : IDisposable
 
         return new( socket );
     }
+
     private async Task<int> Send( string operation, JsonObject fields )
     {
         fields = ( JsonObject ) fields.DeepClone( );
@@ -304,6 +318,7 @@ sealed class BrokerClient : IDisposable
 
         return id;
     }
+
     public async Task<List<JsonNode>> Call( string operation, JsonObject fields, bool error = false, bool approve = false )
     {
         var id = await Send( operation, fields );
@@ -341,7 +356,8 @@ sealed class BrokerClient : IDisposable
         var failed = messages.Any( n => n["requestId"]!.GetValue<int>( ) == id && n["type"]!.GetValue<string>( ) == "error" );
         if ( ShouldLoadDiagnostics( operation, error, failed ) )
         {
-            var diagnostics = await Call( "extensions.manage", new JsonObject { ["extension"] = new JsonObject { ["action"] = "logs", ["key"] = _package, ["includeStderr"] = true }, ["limit"] = 32 } );
+            var diagnostics = await Call( "extensions.manage", new JsonObject { ["extension"] = new JsonObject { ["action"] = "logs",
+                 ["key"] = _package, ["includeStderr"] = true }, ["limit"] = 32 } );
 
             BrokerJourney.That( !string
                 .Join( "\n", diagnostics )
@@ -354,6 +370,7 @@ sealed class BrokerClient : IDisposable
 
         return messages;
     }
+
     public void Dispose( )
     {
         _writer.Dispose( );
@@ -371,7 +388,8 @@ sealed class BrokerClient : IDisposable
         return new JsonObject
         {
             ["sessionId"] = message["extensionSession"]!["sessionId"]!.DeepClone( ),
-            ["extensionInput"] = new JsonObject { ["revision"] = message["extensionSession"]!["revision"]!.DeepClone( ), ["confirmationId"] = LastConfirmation, ["confirmed"] = approve }
+            ["extensionInput"] = new JsonObject { ["revision"] = message["extensionSession"]!["revision"]!.DeepClone( ),
+                 ["confirmationId"] = LastConfirmation, ["confirmed"] = approve }
         };
     }
 }
@@ -390,6 +408,7 @@ sealed class MockTasks : IAsyncDisposable
         Origin = "http://127.0.0.1:" + (( IPEndPoint ) _listener.LocalEndpoint).Port;
         _run = Run( );
     }
+
     private async Task Run( )
     {
         try
@@ -429,11 +448,14 @@ sealed class MockTasks : IAsyncDisposable
 
                 const string json = "[{\"title\":\"Existing task\"}]";
 
-                await stream.WriteAsync( Encoding.ASCII.GetBytes( "HTTP/1.1 200 OK\r\nContent-Type: " + System.Net.Mime.MediaTypeNames.Application.Json + "\r\nContent-Length: " + json.Length + "\r\n\r\n" + json ), _lifetime.Token );
+                await stream.WriteAsync( Encoding.ASCII.GetBytes( "HTTP/1.1 200 OK\r\nContent-Type: " +
+                     System.Net.Mime.MediaTypeNames.Application.Json + "\r\nContent-Length: " + json.Length + "\r\n\r\n" + json ), _lifetime.Token );
             }
         }
-        catch ( Exception exception ) when ( exception is OperationCanceledException or SocketException or IOException ) { }
+        catch ( Exception exception ) when ( exception is OperationCanceledException or SocketException or IOException ) {
+ }
     }
+
     public async ValueTask DisposeAsync( )
     {
         _lifetime.Cancel( );

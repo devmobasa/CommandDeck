@@ -69,7 +69,9 @@ public static partial class Program
                 {
                     await copying;
                 }
-                catch ( OperationCanceledException ) { }
+                catch ( OperationCanceledException )
+                {
+                }
             }
         }
         finally

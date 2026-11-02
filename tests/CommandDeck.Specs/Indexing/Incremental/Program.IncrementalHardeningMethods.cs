@@ -116,6 +116,9 @@ public static partial class Program
                     Equal( 0, secondStatus.WatchedRootCount );
                     True( secondStatus.LastError?.Contains( "owned", StringComparison.OrdinalIgnoreCase ) is true );
                     await first.ReindexAsync( progress: null, CancellationToken.None );
+                    var pauseState = await File.ReadAllTextAsync( database + ".index-roots" );
+                    await ThrowsAsync<InvalidOperationException>( async ( ) => await second.PauseAsync( null, default ) );
+                    Equal( pauseState, await File.ReadAllTextAsync( database + ".index-roots" ) );
                     AssertPrivateFile( database + ".index-owner" );
                     AssertPrivateFile( database + ".index-events" );
                     AssertPrivateFile( database + ".index-state" );

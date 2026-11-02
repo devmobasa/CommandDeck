@@ -104,10 +104,15 @@ public static partial class ProtocolRequestValidator
             return;
         }
 
+        if ( edit is { Id: null } or { Chord: null } or { Description: null } or { Command: null } )
+        {
+            throw new InvalidOperationException( "Shortcut id, chord, description, and command must not be null." );
+        }
+
         CheckLength( edit.Id, nameof( edit.Id ), 512 );
         CheckLength( edit.Chord, nameof( edit.Chord ), 64 );
-        CheckLength( edit.Description, nameof( edit.Description ), 200 );
-        CheckLength( edit.Command, nameof( edit.Command ), 16_384 );
+        CheckLength( edit.Description, nameof( edit.Description ), ShortcutLimits.MaximumDescriptionCharacters );
+        CheckLength( edit.Command, nameof( edit.Command ), ShortcutLimits.MaximumCommandCharacters );
         if ( request.Operation is ProtocolOperations.ShortcutSet or ProtocolOperations.ShortcutRestore or ProtocolOperations.ShortcutHotkey
             && edit.Id.Length == 0 )
         {
@@ -453,9 +458,12 @@ public static partial class ProtocolRequestValidator
                input.Sequence < 0 ||
                input.Revision < 0 ||
                input.Handle?.Length > MaximumExtensionHandleCharacters ||
-               input.ItemId?.Length > MaximumExtensionItemIdCharacters ||
+               HasOversizedExtensionItemId( input.ItemId ) ||
                (input.ConfirmationId?.Length > MaximumExtensionConfirmationIdCharacters || input.SearchLease?.Length > MaximumExtensionSearchLeaseCharacters);
     }
+
+    private static bool HasOversizedExtensionItemId( string? itemId ) =>
+        itemId is not null && System.Text.Encoding.UTF8.GetByteCount( itemId ) > ExtensionProtocol.ExtensionItemIdLimits.MaximumBytes;
 
     private static bool HasMissingExtensionResult( ProtocolRequest request )
     {

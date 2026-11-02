@@ -352,6 +352,28 @@ Item {
       done()
       verify(added.itemAt(0).pill.recording)
     }
+    function test_search_shows_each_added_shortcut_once_data() {
+      return [{tag: "description", query: "Saved browser"}, {tag: "chord", query: "Super+Alt+B"}]
+    }
+    function test_search_shows_each_added_shortcut_once(data) {
+      row.visible = false
+      panel.visible = true
+      panel.showPage("shortcuts")
+      const page = panel.parts.shortcutsScroll
+      waitForFrame(panel)
+      mouseClick(page.part_keybindingSearch)
+      keyClick(Qt.Key_A, Qt.ControlModifier)
+      for (const character of data.query) keyClick(character)
+      nextTurn()
+      const added = findChild(panel, "savedAddedShortcuts")
+      const shown = []
+      for (const repeater of [page.desktopRepeater, added]) {
+        for (let index = 0; index < repeater.count; index++) shown.push(repeater.itemAt(index).binding.id)
+      }
+      compare(shown, ["added:saved-browser"])
+      compare(findChild(panel, "keybindingHeading").text,
+        data.tag === "chord" ? "Super+Alt+B runs one binding." : "1 binding")
+    }
     function test_launcher_add_reuses_an_existing_disabled_added_row() {
       row.visible = false
       panel.visible = true
@@ -388,6 +410,48 @@ Item {
       verify(!row.pill.recording)
       row.pill.recordable = true
       row.pill.chord = "Super+T"
+    }
+
+    function test_saved_snapshot_preserves_keyboard_position_data() {
+      return [{tag: "record"}, {tag: "restore"}, {tag: "add"}, {tag: "moved-on"}]
+    }
+    function test_saved_snapshot_preserves_keyboard_position(data) {
+      row.visible = false
+      panel.visible = true
+      panel.showPage("shortcuts")
+      const page = panel.parts.shortcutsScroll
+      waitForFrame(panel)
+      mouseClick(page.part_keybindingSearch)
+      keyClick(Qt.Key_A, Qt.ControlModifier)
+      keyClick(Qt.Key_Backspace)
+      nextTurn()
+      const binding = page.desktopRepeater.itemAt(0)
+      if (data.tag === "restore") mouseClick(binding.restoreControl)
+      else {
+        if (data.tag === "add") panel.recordShortcut({id: "added:new", description: "New app", command: "fictional-app"})
+        else mouseClick(binding.pill)
+        nextTurn()
+        done()
+        keyClick(Qt.Key_Q, Qt.MetaModifier)
+        done()
+      }
+      verify(controller.active !== null)
+      const requestId = controller.active.requestId
+      if (data.tag === "moved-on") mouseClick(panel.searchControl)
+      const snapshot = JSON.parse(JSON.stringify(panel.snapshot.shortcutEditor))
+      snapshot.bindings[0].chord = "Super+Q"
+      if (data.tag === "restore") snapshot.bindings[0].changed = false
+      if (data.tag === "add") snapshot.bindings.push({id: "added:new", description: "New app", chord: "Super+Q", added: true, changed: true, changeable: true})
+      controller.handleMessage({requestId: requestId, type: Protocol.Messages.PreferencesResult, preferences: {shortcutEditor: snapshot}})
+      controller.handleMessage({requestId: requestId, type: Protocol.Messages.Done})
+      nextTurn()
+      const target = data.tag === "add" ? findChild(panel, "savedAddedShortcuts").itemAt(1).pill : page.desktopRepeater.itemAt(0).pill
+      if (data.tag === "moved-on") verify(panel.searchControl.activeFocus, "a reply does not steal focus after the user moved on")
+      else {
+        verify(target.activeFocus, "the matching replacement pill keeps the keyboard position")
+        keyClick(Qt.Key_Return)
+        verify(target.preparing, "recording can resume immediately after saving")
+      }
     }
   }
 }

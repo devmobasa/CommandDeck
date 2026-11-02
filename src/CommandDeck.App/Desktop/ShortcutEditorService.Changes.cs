@@ -20,9 +20,11 @@ public sealed partial class ShortcutEditorService
 
             return existing with { Chord = chord };
         }
+
         if ( edit.Command.Length > 0 )
         {
-            if ( edit.Description.Length == 0 || edit.Command.Length > 16_384 || edit.Description.Length > 200 )
+            if ( edit.Description.Length == 0 || edit.Command.Length > ShortcutLimits.MaximumCommandCharacters || edit.Description.Length >
+                 ShortcutLimits.MaximumDescriptionCharacters )
             {
                 throw new InvalidOperationException( "Choose a command with a short description." );
             }
@@ -37,6 +39,7 @@ public sealed partial class ShortcutEditorService
                 Added = true
             };
         }
+
         var row = snapshot.Bindings.FirstOrDefault( binding => binding.Id == edit.Id );
         if ( row is not { Changeable: true } )
         {
@@ -44,6 +47,7 @@ public sealed partial class ShortcutEditorService
         }
 
         var source = ReadSources( ).Single( value => value.Id == edit.Id );
+
         return new( )
         {
             Id = edit.Id,
@@ -67,7 +71,8 @@ public sealed partial class ShortcutEditorService
 
         var previous = changes.ToList( );
         var originalChord = changes.FirstOrDefault( static change => change.HotkeyEdit )?.OriginalChord ??
-            HyprlandHotkeyConfig.ReadChord( File.ReadAllText( _paths.HotkeyFile ) ) ?? changes.FirstOrDefault( static change => change.LauncherHotkey )?.OriginalChord ?? "";
+            HyprlandHotkeyConfig.ReadChord( File.ReadAllText( _paths.HotkeyFile ) ) ?? changes.FirstOrDefault( static change =>
+                 change.LauncherHotkey )?.OriginalChord ?? "";
         var installer = new HyprlandHotkeyInstaller( _paths );
         var chord = edit.Chord.Length == 0 ? "" : installer.Check( edit.Chord );
         if ( chord.Length == 0 && !confirmed )
@@ -83,15 +88,24 @@ public sealed partial class ShortcutEditorService
             return Snapshot( inventory, changes, conflicts[0].Id, conflicts[0].Description );
         }
 
+        ApplyHotkeyChange( changes, conflicts, snapshot, originalChord, chord );
+        await SaveAsync( changes, previous, inventory, cancellationToken, chord ).ConfigureAwait( false );
+
+        return await SnapshotAfterReloadAsync( inventory, previous, changes, cancellationToken ).ConfigureAwait( false );
+    }
+
+    private void ApplyHotkeyChange( List<ShortcutOverride> changes, IReadOnlyList<Keybinding> conflicts,
+        ShortcutEditorSnapshot snapshot, string originalChord, string chord )
+    {
         changes.RemoveAll( static change => change.LauncherHotkey );
         foreach ( var conflict in conflicts.Take( 1 ) )
         {
-            Put( changes, ConflictRemoval( changes, conflict, snapshot ) with { Chord = "", ReplacedBy = "hotkey" } );
+            Put( changes, ConflictRemoval( changes, conflict, snapshot ) with { Chord = "", ReplacedBy = ShortcutIds.LauncherHotkey } );
         }
 
         Put( changes, new( )
         {
-            Id = "hotkey",
+            Id = ShortcutIds.LauncherHotkey,
             OriginalChord = originalChord,
             Chord = chord,
             Description = "Open CommandDeck",
@@ -101,8 +115,6 @@ public sealed partial class ShortcutEditorService
             Options = "{ description = \"CommandDeck\" }",
             SourceFile = _paths.HotkeyFile
         } );
-        await SaveAsync( changes, previous, inventory, cancellationToken, chord ).ConfigureAwait( false );
-        return await SnapshotAfterReloadAsync( inventory, previous, changes, cancellationToken ).ConfigureAwait( false );
     }
 
 }

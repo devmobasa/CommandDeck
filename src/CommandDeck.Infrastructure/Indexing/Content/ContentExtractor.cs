@@ -144,9 +144,19 @@ public sealed class ContentExtractor : IDisposable
                 return ContentExtractionOutcome.Failed( UnreadableFileReason );
             }
 
-            var archive = await ArchiveContentExtractor
-                .ExtractAsync( input, path, size, limits.MaximumExtractedBytes, cancellationToken )
-                .ConfigureAwait( false );
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource( cancellationToken );
+            deadline.CancelAfter( TimeSpan.FromMilliseconds( limits.TimeoutMilliseconds ) );
+            string? archive;
+            try
+            {
+                archive = await ArchiveContentExtractor
+                    .ExtractAsync( input, path, size, limits.MaximumExtractedBytes, deadline.Token )
+                    .ConfigureAwait( false );
+            }
+            catch ( OperationCanceledException ) when ( !cancellationToken.IsCancellationRequested )
+            {
+                return ContentExtractionOutcome.Failed( ExtractorTimeoutReason );
+            }
 
             if ( archive is null )
             {

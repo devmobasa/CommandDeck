@@ -374,6 +374,12 @@ public static partial class FuzzyMatcher
 
         private static int GetOriginalEnd( int[] originalIndices, int originalLength, int foldedEnd )
         {
+            var finalStart = originalIndices[foldedEnd - 1];
+            while ( foldedEnd < originalIndices.Length && originalIndices[foldedEnd] == finalStart )
+            {
+                foldedEnd++;
+            }
+
             if ( foldedEnd < originalIndices.Length )
             {
                 return originalIndices[foldedEnd];

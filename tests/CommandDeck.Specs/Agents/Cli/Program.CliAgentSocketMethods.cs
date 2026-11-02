@@ -191,10 +191,12 @@ public static partial class Program
                     process.Stdout.WriteLine( "{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"sock-1\"}" );
 
                     process.Stdout.WriteLine(
-                        "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello from Claude\"}}}" );
+                        ((("{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"He")) +
+                            "llo from Claude\"}}}") );
 
                     process.Stdout.WriteLine(
-                        "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"Hello from Claude\",\"session_id\":\"sock-1\"}" );
+                        ("{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"Hello from " +
+                            "Claude\",\"session_id\":\"sock-1\"}") );
 
                     process.Exit( 0 );
                 }

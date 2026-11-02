@@ -46,6 +46,7 @@ public static partial class Program
             await File.WriteAllTextAsync( Path.Combine( files, "project-a", "context-report.md" ), "context report alpha" );
             await File.WriteAllTextAsync( Path.Combine( files, "project-b", "context-report.md" ), "context report beta" );
 
+            using var launch = await CreateEditorLaunchFixtureAsync( root );
             var editorCapture = Path.Combine( root, "socket-editor-argv.txt" );
             var editorExecutable = Path.Combine( root, "socket-editor" );
             var editorConfig = Path.Combine( files, "editor.conf" );

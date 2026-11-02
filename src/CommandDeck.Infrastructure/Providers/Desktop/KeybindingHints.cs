@@ -229,8 +229,11 @@ public sealed partial class KeybindingHints
         return action.Kind switch
         {
             ActionKinds.LaunchDesktop when action.Arguments.GetValueOrDefault( ResultMetadataKeys.Application.DesktopId ) is { Length: > 0 } desktopId =>
-                "uwsm-app -- " + ShellWord( desktopId.EndsWith( FileExtensions.Desktop, StringComparison.Ordinal ) ? desktopId : desktopId + FileExtensions.Desktop ),
-            ActionKinds.RunArgv or ActionKinds.LaunchArgv when action.Arguments.GetValueOrDefault( ActionArgumentNames.Argv ) is { Length: > 0 } argv =>
+                "uwsm-app -- " + ShellWord( desktopId.EndsWith( FileExtensions.Desktop, StringComparison.Ordinal ) ? desktopId : desktopId +
+                     FileExtensions.Desktop ),
+            ActionKinds.LaunchArgv when action.Arguments.GetValueOrDefault( ActionArgumentNames.Argv ) is { Length: > 0 } launchArgv =>
+                string.Join( ' ', LaunchArgumentCodec.Decode( launchArgv ).Select( ShellWord ) ),
+            ActionKinds.RunArgv when action.Arguments.GetValueOrDefault( ActionArgumentNames.Argv ) is { Length: > 0 } argv =>
                 string.Join( ' ', argv.Split( '\u001f' ).Select( ShellWord ) ),
             ActionKinds.RunTrustedShell => action.Arguments.GetValueOrDefault( ActionArgumentNames.Command ),
             _ => null
@@ -239,7 +242,8 @@ public sealed partial class KeybindingHints
 
     // One line in Omarchy's Lua configuration; the chord is a placeholder to choose.
     public static string FormatBinding( string command, string description ) =>
-        $"hl.bind(\"{PlaceholderChord}\", hl.dsp.exec_cmd({LuaString( command )}), {{ description = {LuaString( description )} }}) -- choose KEY";
+        ($"hl.bind(\"{PlaceholderChord}\", hl.dsp.exec_cmd({LuaString( command )}" +
+            $"), {{ description = {LuaString( description )} }}) -- choose KEY");
 
     private static string LuaString( string value )
     {

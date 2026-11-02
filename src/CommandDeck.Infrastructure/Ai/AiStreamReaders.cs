@@ -20,12 +20,24 @@ public sealed class AiIdleTimeoutStream : Stream
     public override bool CanRead => _inner.CanRead;
     public override bool CanSeek => false;
     public override bool CanWrite => false;
-    public override long Length => throw new NotSupportedException( );
+    public override long Length
+    {
+        get
+        {
+            throw new NotSupportedException( );
+        }
+    }
 
     public override long Position
     {
-        get => throw new NotSupportedException( );
-        set => throw new NotSupportedException( );
+        get
+        {
+            throw new NotSupportedException( );
+        }
+        set
+        {
+            throw new NotSupportedException( );
+        }
     }
 
     public override async ValueTask<int> ReadAsync( Memory<byte> buffer, CancellationToken cancellationToken = default )
@@ -45,15 +57,30 @@ public sealed class AiIdleTimeoutStream : Stream
         }
     }
 
-    public override int Read( byte[] buffer, int offset, int count ) =>
+    public override int Read( byte[] buffer, int offset, int count )
+    {
         throw new NotSupportedException( );
+    }
 
-    public override void Flush( ) => throw new NotSupportedException( );
-    public override long Seek( long offset, SeekOrigin origin ) => throw new NotSupportedException( );
-    public override void SetLength( long value ) => throw new NotSupportedException( );
-
-    public override void Write( byte[] buffer, int offset, int count ) =>
+    public override void Flush( )
+    {
         throw new NotSupportedException( );
+    }
+
+    public override long Seek( long offset, SeekOrigin origin )
+    {
+        throw new NotSupportedException( );
+    }
+
+    public override void SetLength( long value )
+    {
+        throw new NotSupportedException( );
+    }
+
+    public override void Write( byte[] buffer, int offset, int count )
+    {
+        throw new NotSupportedException( );
+    }
 
     protected override void Dispose( bool disposing )
     {
@@ -289,8 +316,7 @@ public static partial class OpenAiSseReader
 
             if ( line.StartsWith( "event:", StringComparison.Ordinal ) )
             {
-                eventName = line[6..]
-                    .Trim( );
+                eventName = line[6..].Trim( );
 
                 continue;
             }

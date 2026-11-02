@@ -13,7 +13,6 @@ public static class ViewValidation
     private const int MaximumListItems = 100;
     private const int MaximumFormChoices = 100;
     private const int MaximumPageTokenBytes = 256;
-    private const int MaximumItemIdBytes = 256;
     private const int MaximumChoiceValueBytes = 256;
     private const int MaximumBodyBytes = 65536;
     private const int MaximumCopyTextBytes = 65536;
@@ -89,7 +88,7 @@ public static class ViewValidation
                 Invalid( path, "missing" );
             }
 
-            Text( item.Id, MaximumItemIdBytes, path + ".id" );
+            Text( item.Id, ExtensionViewLimits.MaximumItemIdBytes, path + ".id" );
 
             if ( string.IsNullOrWhiteSpace( item.Id ) )
             {

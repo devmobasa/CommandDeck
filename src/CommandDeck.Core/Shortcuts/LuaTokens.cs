@@ -28,6 +28,7 @@ public static class LuaTokens
                 offset++;
                 continue;
             }
+
             var comment = source.AsSpan( offset ).StartsWith( "--", StringComparison.Ordinal );
             if ( comment )
             {
@@ -63,6 +64,7 @@ public static class LuaTokens
 
             line += text.Count( static item => item == '\n' );
         }
+
         return tokens;
     }
 
@@ -122,6 +124,7 @@ public static class LuaTokens
         }
 
         offset = finish + close.Length;
+
         return true;
     }
 
@@ -151,6 +154,7 @@ public static class LuaTokens
                 value.Append( character );
             }
         }
+
         throw new FormatException( "Unfinished Lua string." );
     }
 
@@ -178,6 +182,7 @@ public static class LuaTokens
 
             return (( char ) code).ToString( );
         }
+
         if ( character == 'z' )
         {
             while ( offset < source.Length && char.IsWhiteSpace( source[offset] ) )
@@ -187,16 +192,20 @@ public static class LuaTokens
 
             return "";
         }
+
         if ( character == 'x' )
         {
-            if ( offset + 2 > source.Length || !byte.TryParse( source.AsSpan( offset, 2 ), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var code ) )
+            if ( offset + 2 > source.Length || !byte.TryParse( source.AsSpan( offset, 2 ), NumberStyles.HexNumber, CultureInfo.InvariantCulture,
+                 out var code ) )
             {
                 throw new FormatException( "Invalid Lua hexadecimal escape." );
             }
 
             offset += 2;
+
             return (( char ) code).ToString( );
         }
+
         if ( character == 'u' )
         {
             return ReadUnicodeEscape( source, ref offset );
@@ -221,6 +230,7 @@ public static class LuaTokens
             _ => throw new FormatException( "Unsupported Lua escape." )
         };
     }
+
     private static string ReadUnicodeEscape( string source, ref int offset )
     {
         if ( offset >= source.Length || source[offset++] != '{' )
@@ -236,6 +246,7 @@ public static class LuaTokens
         }
 
         offset = end + 1;
+
         return char.ConvertFromUtf32( code );
     }
 

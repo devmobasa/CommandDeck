@@ -94,14 +94,16 @@ public static partial class Program
             WriteReturnedValueCount = saved.Values.Count;
 
             SavedText = (await context.Data.ReadAsync( cancellationToken ))
-                .Values["draft"]
-                .GetString( );
+                .Values["draft"].GetString( );
 
             try
             {
                 await context.Data.WriteAsync( "draft", JsonElement.Parse( "\"stale\"" ), 0, cancellationToken );
             }
-            catch ( ExtensionRpcException exception ) when ( exception.IsConflict ) { Conflict = true; }
+            catch ( ExtensionRpcException exception ) when ( exception.IsConflict )
+            {
+                Conflict = true;
+            }
         }
 
         protected override ValueTask OnPageAsync( CommandContext context, PageRequested page, CancellationToken cancellationToken )
@@ -115,7 +117,13 @@ public static partial class Program
     private static async Task ExtensionSdkLogsBoundedAuthorErrorsAsync( )
     {
         using StringWriter diagnostics = new( );
-        SessionViewCommand command = new( ) { Handler = ( _, _, _ ) => throw new InvalidOperationException( new string( 'λ', 10000 ) ) };
+        SessionViewCommand command = new( )
+        {
+            Handler = ( _, _, _ ) =>
+            {
+                throw new InvalidOperationException( new string( 'λ', 10000 ) );
+            }
+        };
 
         await using var harness = await ExtensionSessionHarness.CreateAsync( command, diagnostics: diagnostics );
 
@@ -173,7 +181,10 @@ public static partial class Program
             {
                 await context.Brokers.SendHttpAsync( "service", new( "POST", "/", IdempotencyKey: "stable-effect-key" ), cancellationToken );
             }
-            catch ( BrokerOutcomeException exception ) { Error = exception; }
+            catch ( BrokerOutcomeException exception )
+            {
+                Error = exception;
+            }
 
             await context.Views.ReplaceAsync( new DetailView { Id = "outcome", Title = "Outcome" }, cancellationToken );
         }
@@ -204,7 +215,10 @@ public static partial class Program
             {
                 await context.Effects.CopyTextAsync( "copy", cancellationToken );
             }
-            catch ( ExtensionRpcException exception ) { ErrorCode = exception.ErrorCode; }
+            catch ( ExtensionRpcException exception )
+            {
+                ErrorCode = exception.ErrorCode;
+            }
         }
 
         public ValueTask HandleAsync( CommandContext context, CommandEvent commandEvent, CancellationToken cancellationToken ) => ValueTask.CompletedTask;

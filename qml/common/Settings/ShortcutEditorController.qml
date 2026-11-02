@@ -5,6 +5,7 @@ import "../Protocol.js" as Protocol
 QtObject {
   id: root
   required property var nextRequestId
+  property bool ready: true
   property var snapshot: null
   property var queue: []
   property var active: null
@@ -19,13 +20,19 @@ QtObject {
   signal request(var value)
   signal snapshotReceived(var value)
   signal copyRequested(string text)
+  onReadyChanged: { if (!ready) disconnected() }
 
   function submit(operation, edit, confirmed) {
+    if (!ready) {
+      error = "Wait for CommandDeck to reconnect and refresh shortcuts before trying again."
+      return false
+    }
     queue = queue.concat([{ operation: operation, shortcut: edit || ({}), confirmed: confirmed === true }])
     dispatch()
+    return true
   }
   function dispatch() {
-    if (active || queue.length === 0) return
+    if (!ready || active || queue.length === 0) return
     active = queue[0]
     queue = queue.slice(1)
     active.requestId = nextRequestId()
@@ -41,7 +48,7 @@ QtObject {
     recordingPill = pill
     recordingId = id || ""
     error = ""
-    submit(Protocol.Operations.ShortcutRecordStart, { id: id || "" })
+    if (!submit(Protocol.Operations.ShortcutRecordStart, { id: id || "" })) cancelRecording()
   }
   function stop() {
     recordingPill = null
@@ -94,6 +101,7 @@ QtObject {
     active = null
     queue = []
     busyId = ""
+    snapshot = null
     error = "The connection closed. Press Escape if shortcut recording is still active."
   }
 }

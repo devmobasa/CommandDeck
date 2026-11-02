@@ -28,8 +28,10 @@ internal sealed class RenderedExtensionViewConverter : JsonConverter<RenderedExt
     private const string BackHandleField = "backHandle";
     private const string ImageSourceField = "imageSource";
 
-    public override RenderedExtensionView Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options ) =>
+    public override RenderedExtensionView Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options )
+    {
         throw new NotSupportedException( "Renderer payloads are host output only." );
+    }
 
     public override void Write( Utf8JsonWriter writer, RenderedExtensionView value, JsonSerializerOptions options )
     {

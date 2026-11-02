@@ -85,6 +85,13 @@ commanddeck preferences reset --yes
 Export contains preferences and customization snapshots only; it excludes
 queries and invocation history.
 
+## Editor actions
+
+Editor actions use detached application launches through `uwsm-app` or
+`systemd-run`. They keep literal file arguments and the terminal preference,
+and return after launch acceptance. Closing the launcher or cancelling its
+request does not close the editor.
+
 ## Indexed folders in Settings
 
 **Settings > Search > Indexed folders** lists configuration and added folders,
@@ -649,6 +656,11 @@ validated from 1 minute through 7 days. Each run removes catalog rows for files
 that no longer exist, checks SQLite/FTS integrity, and optimizes the index while
 holding the same mutation lock as reindexing. Last/next run and errors are
 visible through `commanddeck index status` and the runtime status protocol.
+The `index status`, `index pause`, and `index resume` commands use the running
+daemon's index state. Without a daemon they use a local runtime. An explicit
+`--config` keeps commands local unless `--socket` selects a daemon. A runtime
+that does not own the catalog cannot change pause state.
+
 
 ## `privacy`
 

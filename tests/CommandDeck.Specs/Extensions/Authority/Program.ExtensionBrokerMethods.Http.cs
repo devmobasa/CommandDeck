@@ -232,7 +232,9 @@ public static partial class Program
                     await stream.WriteAsync( Encoding.ASCII.GetBytes( response ), _lifetime.Token );
                 }
             }
-            catch ( Exception exception ) when ( exception is OperationCanceledException or SocketException or IOException ) { }
+            catch ( Exception exception ) when ( exception is OperationCanceledException or SocketException or IOException )
+            {
+            }
         }
 
         private static string HttpFixtureResponse( string first )
@@ -276,7 +278,8 @@ public static partial class Program
 
             Equal( "refresh-first", values["refresh_token"] );
 
-            return "{\"access_token\":\"oauth-refreshed\",\"refresh_token\":\"refresh-rotated\",\"token_type\":\"Bearer\",\"expires_in\":120}";
+            return ("{\"access_token\":\"oauth-refreshed\",\"refresh_token\":\"refresh-rotated\",\"token_type\":\"Bearer\",\"expires_i" +
+                "n\":120}");
         }
 
         public async ValueTask DisposeAsync( )

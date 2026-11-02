@@ -263,6 +263,7 @@ public sealed partial class IndexCoordinator : IIndexCoordinator
         ObjectDisposedException.ThrowIf( _disposed, this );
 
         cancellationToken.ThrowIfCancellationRequested( );
+        EnsureCatalogMutationOwnership( );
         _incremental.Pause( rootId );
 
         return ValueTask.CompletedTask;

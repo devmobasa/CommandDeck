@@ -19,7 +19,10 @@ public static partial class Program
         await using JsonRpcConnection connection = new( new InMemoryTransport( inbound.Reader, outbound.Writer ) );
 
         Queue<Func<ValueTask<JsonNode?>>> failures = new( [
-            ( ) => throw new ArgumentException( "/home/user/private path" ),
+            ( ) =>
+            {
+                throw new ArgumentException( "/home/user/private path" );
+            },
             static async ( ) =>
             {
                 await Task.Yield( );
@@ -34,8 +37,7 @@ public static partial class Program
             }
         ] );
 
-        connection.RequestHandler = ( _, _, _ ) => failures
-            .Dequeue( )( );
+        connection.RequestHandler = ( _, _, _ ) => failures.Dequeue( )( );
 
         connection.Start( );
 

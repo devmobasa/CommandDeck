@@ -36,7 +36,8 @@ var ExtensionManagementPage = Object.freeze({
 var ExtensionSessionPurpose = Object.freeze({ DisableList: "disable-list", DisableSave: "disable-save" });
 var ResultAction = Object.freeze({
   WhyResult: "why-result", RankingExplanation: "ranking-explanation", Favorite: "favorite", Alias: "alias",
-  FavoriteToggle: "favorite-toggle", AliasEdit: "alias-edit", Hide: "hide", HideResult: "hide-result"
+  FavoriteToggle: "favorite-toggle", AliasEdit: "alias-edit", Hide: "hide", HideResult: "hide-result",
+  ChangeShortcut: "change-shortcut"
 });
 var SearchShortcut = Object.freeze({ Reveal: "reveal", CopyPath: "copy-path", Favorite: "favorite" });
 var ShortcutSlot = Object.freeze({

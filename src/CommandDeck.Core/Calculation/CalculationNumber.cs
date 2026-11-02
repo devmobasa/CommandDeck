@@ -113,7 +113,9 @@ internal readonly struct CalculationNumber
 
                 return new( result );
             }
-            catch ( OverflowException ) { }
+            catch ( OverflowException )
+            {
+            }
         }
 
         return Floating( left, right, operation );
@@ -240,9 +242,7 @@ internal readonly struct CalculationNumber
     private static bool HasFloatingPointUnderflow( string text, double floating )
     {
         return floating == 0 &&
-               text
-                   .Split( 'e', 'E' )[0]
-                   .Any( character => character is >= '1' and <= '9' );
+               text.Split( 'e', 'E' )[0].Any( character => character is >= '1' and <= '9' );
     }
 
     private static bool IsZeroDivisor( CalculationNumber right, char operation )

@@ -189,6 +189,13 @@ FocusScope {
     FocusTrap.cycleTargets(root.focusTargets(), forward)
   }
 
+  function restoreFocus() {
+    if (discardDialog.opened) discardDialog.cancelControl.forceActiveFocus()
+    else if (picker.opened) picker.searchControl.forceActiveFocus()
+    else if (root.mode === root.editorModes.Add) root.part_typeChoice.forceActiveFocus()
+    else root.part_nameField.forceActiveFocus()
+  }
+
   function ensureVisible(item) {
     if (!item || !root.opened) return
     const flickable = root.editorFlickable

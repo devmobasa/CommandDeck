@@ -39,24 +39,20 @@ internal static class CalculationLexer
                 tokens.Add( new( CalculationUnitSymbols.LitresPer100Kilometres ) );
                 i = start + CalculationUnitSymbols.LitresPer100Kilometres.Length;
             }
-            else if ( IsNumberStart( character ) && GroupedNumberEnd( expression, start, parentheses ) is var grouped and > 0 )
-            {
-                tokens.Add( new( expression[start..grouped].Replace( ",", string.Empty, StringComparison.Ordinal ), true ) );
-                i = grouped;
-            }
             else if ( IsNumberStart( character ) )
             {
-                i = NumberEnd( expression, start );
-
-                var fraction = FractionEnd( expression, start, i, tokens is [.., { Text: "^" }] or [.., { Text: "^" }, { Text: "+" or "-" }] );
+                i = NumericEnd( expression, start, parentheses );
+                var number = NormalizeNumber( expression[start..i] );
+                var afterPower = tokens is [.., { Text: "^" }] or [.., { Text: "^" }, { Text: "+" or "-" }];
+                var fraction = FractionEnd( expression, number, i, parentheses, afterPower );
 
                 var rate = tokens is [.., var previous] && CalculationCurrencies.IsCurrency( previous.Text ) ? DenominatorEnd( expression, i ) : -1;
                 if ( fraction > i )
                 {
                     // An integer fraction before an operand is one number: 1/2 cup, 3/4 h, 1/2pi = π/2.
                     tokens.AddRange( [
-                        new( "(", Fraction: true ), new( expression[start..i], true ), new( "/" ),
-                        new( expression[(i + 1)..fraction], true ), new( ")", Fraction: true )
+                        new( "(", Fraction: true ), new( number, true ), new( "/" ),
+                        new( NormalizeNumber( expression[(i + 1)..fraction] ), true ), new( ")", Fraction: true )
                     ] );
 
                     i = fraction;
@@ -68,16 +64,14 @@ internal static class CalculationLexer
                     tokens.RemoveAt( tokens.Count - 1 );
 
                     AddUnitGroup( tokens, [
-                        currency, new( expression[start..i]
-                            .Replace( '−', '-' ), true )
+                        currency, new( number, true )
                     ], expression, i, rate );
 
                     i = rate;
                 }
                 else
                 {
-                    tokens.Add( new( expression[start..i]
-                        .Replace( '−', '-' ), true ) );
+                    tokens.Add( new( number, true ) );
                 }
             }
             else if ( IsWordStart( character ) )
@@ -144,23 +138,22 @@ internal static class CalculationLexer
 
     // The end of `/denominator` when both sides are plain integers and an operand follows, otherwise -1.
     // Without an operand (10/2^2, 3/2!, 100/5%) or after ^ (27^1/3) normal precedence applies.
-    private static int FractionEnd( string expression, int start, int end, bool afterPower )
+    private static int FractionEnd( string expression, string number, int end, Stack<bool> parentheses, bool afterPower )
     {
-        if ( CannotReadFraction( expression, start, end, afterPower ) )
+        if ( CannotReadFraction( expression, number, end, afterPower ) )
         {
             return -1;
         }
 
-        var denominator = NumberEnd( expression, end + 1 );
+        var denominator = NumericEnd( expression, end + 1, parentheses );
         var next = denominator;
         while ( next < expression.Length && char.IsWhiteSpace( expression[next] ) )
         {
             next++;
         }
 
-        if ( !expression
-                 .AsSpan( end + 1, denominator - end - 1 )
-                 .ContainsAnyExceptInRange( '0', '9' ) &&
+        var denominatorNumber = NormalizeNumber( expression[(end + 1)..denominator] );
+        if ( !denominatorNumber.AsSpan( ).ContainsAnyExceptInRange( '0', '9' ) &&
              next < expression.Length &&
              (IsWordStart( expression[next] ) ||
               expression[next] == '(' ||
@@ -216,6 +209,17 @@ internal static class CalculationLexer
         CalculationUnits.Find( word ) is not null ||
         CalculationCurrencies.IsCurrency( word ) ||
         word.Length > 1 && word[^1] is '2' or '3' && CalculationUnits.Find( word[..^1] ) is not null;
+
+    private static int NumericEnd( string expression, int start, Stack<bool> parentheses )
+    {
+        var grouped = GroupedNumberEnd( expression, start, parentheses );
+
+        return grouped > 0 ? grouped : NumberEnd( expression, start );
+    }
+
+    private static string NormalizeNumber( string number ) => number
+        .Replace( ",", string.Empty, StringComparison.Ordinal )
+        .Replace( '−', '-' );
 
     private static int NumberEnd( string expression, int start )
     {
@@ -344,14 +348,14 @@ internal static class CalculationLexer
         return tokens.Count > 0 && (tokens[^1].Lower, word.ToLowerInvariant( )) is ("fl", "oz" ) or ("fluid", "ounce" or "ounces" );
     }
 
-    private static bool CannotReadFraction( string expression, int start, int end, bool afterPower )
+    private static bool CannotReadFraction( string expression, string number, int end, bool afterPower )
     {
         return afterPower ||
                end + 1 >= expression.Length ||
                expression[end] != '/' ||
                !char.IsAsciiDigit( expression[end + 1] ) ||
-               expression
-                   .AsSpan( start, end - start )
+               number
+                   .AsSpan( )
                    .ContainsAnyExceptInRange( '0', '9' );
     }
 

@@ -30,7 +30,9 @@ public static partial class Program
             {
                 await pending;
             }
-            catch ( OperationCanceledException ) { }
+            catch ( OperationCanceledException )
+            {
+            }
         }
     } );
 

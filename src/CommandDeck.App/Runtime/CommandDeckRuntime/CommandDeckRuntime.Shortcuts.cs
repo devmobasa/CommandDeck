@@ -5,6 +5,7 @@ public sealed partial class CommandDeckRuntime
     private ShortcutEditorService? _shortcuts;
     private readonly SemaphoreSlim _shortcutEdits = new( 1, 1 );
     private readonly Lock _shortcutCreation = new( );
+
     public ShortcutEditorService Shortcuts
     {
         get
@@ -29,7 +30,12 @@ public sealed partial class CommandDeckRuntime
     public async ValueTask<ShortcutEditorSnapshot> ChangeShortcutAsync( ProtocolRequest request, CancellationToken cancellationToken )
     {
         // Reject empty routed probes before accessing any files or processes.
-        var edit = request.Shortcut ?? throw new InvalidOperationException( "A shortcut edit is required." );
+        var edit = request.Shortcut;
+        if ( edit is null )
+        {
+            throw new InvalidOperationException( "A shortcut edit is required." );
+        }
+
         await _shortcutEdits.WaitAsync( cancellationToken ).ConfigureAwait( false );
         try
         {
@@ -38,7 +44,8 @@ public sealed partial class CommandDeckRuntime
             if ( editor.ConflictDescription is null )
             {
                 List<Keybinding> hints = [.. editor.Bindings.Where( static row => !row.LauncherHotkey )];
-                var launcherChord = editor.HotkeyManaged ? editor.Hotkey : inventory.FirstOrDefault( static row => row.Description == HyprlandHotkeyConfig.BindingDescription )?.Chord;
+                var launcherChord = editor.HotkeyManaged ? editor.Hotkey : inventory.FirstOrDefault( static row => row.Description ==
+                     HyprlandHotkeyConfig.BindingDescription )?.Chord;
                 if ( editor.Bindings.Any( row => row.LauncherHotkey && row.Chord.Length == 0 &&
                     ShortcutLua.CanonicalChord( row.OriginalChord ) == ShortcutLua.CanonicalChord( launcherChord ?? "" ) ) )
                 {
@@ -52,8 +59,12 @@ public sealed partial class CommandDeckRuntime
 
                 _keybindings?.ApplyInventory( hints );
             }
+
             return editor;
         }
-        finally { _shortcutEdits.Release( ); }
+        finally
+        {
+            _shortcutEdits.Release( );
+        }
     }
 }

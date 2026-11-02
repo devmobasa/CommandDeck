@@ -16,7 +16,8 @@ public sealed class ShortcutSourceResolver( string hyprDirectory, string omarchy
         List<ResolvedShortcut> result = [];
         HashSet<string> visited = new( StringComparer.Ordinal );
         var before = true;
-        Visit( Path.Combine( hyprDirectory, "hyprland.lua" ), result, visited, ref before, reachable: true, mainSource is null ? null : LuaBindingReader.Read( mainSource ) );
+        Visit( Path.Combine( hyprDirectory, "hyprland.lua" ), result, visited, ref before, reachable: true,
+             mainSource is null ? null : LuaBindingReader.Read( mainSource ) );
         if ( before )
         {
             result = result.Select( static source => source with { BeforeModule = false } ).ToList( );
@@ -35,18 +36,21 @@ public sealed class ShortcutSourceResolver( string hyprDirectory, string omarchy
                 Visit( file, result, visited, ref unreachable, reachable: false );
             }
         }
+
         return result;
     }
 
     private void Visit( string file, List<ResolvedShortcut> result, HashSet<string> visited, ref bool before, bool reachable, LuaSource? sourceOverride = null )
     {
-        if ( visited.Count >= 512 || !visited.Add( file ) || !File.Exists( file ) || Path.GetFileName( file ) is "commanddeck.lua" or "commanddeck_keys.lua" || new FileInfo( file ).Length > 1_048_576 )
+        if ( visited.Count >= 512 || !visited.Add( file ) || !File.Exists( file ) ||
+             Path.GetFileName( file ) is "commanddeck.lua" or "commanddeck_keys.lua" || new FileInfo( file ).Length > 1_048_576 )
         {
             return;
         }
 
         var source = sourceOverride ?? Parse( file );
-        var events = source.Requires.Where( static require => require.Ordered ).Select( static require => (require.Offset, Require: ( LuaRequire? ) require, Bind: ( LuaBindingCall? ) null) )
+        var events = source.Requires.Where( static require => require.Ordered ).Select( static require => (require.Offset,
+             Require: ( LuaRequire? ) require, Bind: ( LuaBindingCall? ) null) )
             .Concat( source.Bindings.Select( static bind => (bind.Offset, Require: ( LuaRequire? ) null, Bind: ( LuaBindingCall? ) bind) ) )
             .OrderBy( static item => item.Offset );
         foreach ( var item in events )
@@ -54,7 +58,11 @@ public sealed class ShortcutSourceResolver( string hyprDirectory, string omarchy
             if ( item.Require is { } require )
             {
                 if ( require.Module == "hypr.commanddeck" )
-                { before = false; continue; }
+                {
+                    before = false;
+                    continue;
+                }
+
                 if ( reachable && Resolve( require.Module ) is { } path )
                 {
                     Visit( path, result, visited, ref before, reachable );
@@ -71,6 +79,7 @@ public sealed class ShortcutSourceResolver( string hyprDirectory, string omarchy
     public static string BindingId( string file, string chord, string description, string submap = "" )
     {
         var identity = file + "\n" + ShortcutLua.CanonicalChord( chord ) + "\n" + description + (submap.Length == 0 ? "" : "\n" + submap);
+
         return Convert.ToHexString( SHA256.HashData( Encoding.UTF8.GetBytes( identity ) ) );
     }
 
@@ -84,17 +93,21 @@ public sealed class ShortcutSourceResolver( string hyprDirectory, string omarchy
 
         var source = LuaBindingReader.Read( content );
         _cache[path] = (content, source);
+
         return source;
     }
 
     private string? Resolve( string module )
     {
-        if ( module.Split( '.' ).Any( static part => part.Length == 0 || !part.All( static character => char.IsAsciiLetterOrDigit( character ) || character == '_' ) ) )
+        if ( module.Split( '.' ).Any( static part => part.Length == 0 || !part.All( static character => char.IsAsciiLetterOrDigit( character ) ||
+             character == '_' ) ) )
         {
             return null;
         }
 
         var relative = module.Replace( '.', Path.DirectorySeparatorChar ) + ".lua";
-        return module.StartsWith( "hypr.", StringComparison.Ordinal ) ? Path.Combine( hyprDirectory, relative[5..] ) : Path.Combine( omarchyDirectory, relative );
+
+        return module.StartsWith( "hypr.", StringComparison.Ordinal ) ? Path.Combine( hyprDirectory,
+             relative[5..] ) : Path.Combine( omarchyDirectory, relative );
     }
 }

@@ -30,12 +30,14 @@ public static partial class Program
         True( valid.Bindings.All( static bind => bind.Literal ) );
         Equal( "Quoted \"title\" -- not comment", valid.Bindings[0].Description );
         Equal( "Terminal", valid.Bindings[1].Description );
-        foreach ( var expression in new[] { "command", "\"a\" .. \"b\"", "function() end", "hl.dsp.exec_cmd(command)", "{ launch = o.launch(\"x\") }", "{ n = 1 + 2 }" } )
+        foreach ( var expression in new[] { "command", "\"a\" .. \"b\"", "function() end", "hl.dsp.exec_cmd(command)",
+             "{ launch = o.launch(\"x\") }", "{ n = 1 + 2 }" } )
         {
             var source = LuaBindingReader.Read( $"o.bind(\"SUPER + X\", \"Unsafe\", {expression})" );
             Equal( 1, source.Bindings.Count );
             True( !source.Bindings[0].Literal, expression );
         }
+
         var blocks = LuaBindingReader.Read( ShortcutDefaultsFixture );
         True( !blocks.Bindings.Single( static bind => bind.Description == "Workspace" ).Literal );
         True( !blocks.Bindings.Single( static bind => bind.Description == "Capture" ).Literal );
@@ -78,10 +80,26 @@ public static partial class Program
     ];
 
     private static ShortcutEditorService ShortcutService( HotkeyFixture fixture, ExternalProcessRunner? runner = null, TimeProvider? clock = null ) =>
-        new( fixture.Paths, Path.Combine( fixture.Root, "omarchy" ), runner ?? (static ( _, args, _, _ ) => ValueTask.FromResult( ShortcutProcessResult( args[0] == "configerrors" ? "" : args[0] == "-j" ? ShortcutFixtureInventoryJson : "ok" ) )),
+        new( fixture.Paths, Path.Combine( fixture.Root, "omarchy" ), runner ?? (static ( _, args, _, _ ) =>
+             ValueTask.FromResult( ShortcutProcessResult( ShortcutFixtureOutput( args[0] ) ) )),
             static ( ) => true, clock );
 
-    private static ProcessResult ShortcutProcessResult( string output, int exitCode = 0 ) => new( ) { ExitCode = exitCode, StandardOutput = output, StandardError = "" };
+    private static string ShortcutFixtureOutput( string command )
+    {
+        return command switch
+        {
+            "configerrors" => "",
+            "-j" => ShortcutFixtureInventoryJson,
+            _ => "ok"
+        };
+    }
+
+    private static ProcessResult ShortcutProcessResult( string output, int exitCode = 0 ) => new( )
+    {
+        ExitCode = exitCode,
+        StandardOutput = output,
+        StandardError = ""
+    };
 
     private static async Task ShortcutSourcePolicyAndCacheAsync( )
     {
@@ -102,10 +120,12 @@ public static partial class Program
         True( !snapshot.Bindings.Single( static row => row.Description == "Browser" ).Changeable );
         File.WriteAllText( fixture.Paths.Bindings, "hl.bind('SUPER + B', hl.dsp.exec_cmd('browser'), {description='Browser'})\n" );
         var orderedMain = File.ReadAllText( fixture.Paths.MainConfig );
-        File.WriteAllText( fixture.Paths.MainConfig, orderedMain.Replace( "require(\"hypr.bindings\")", "if enabled then require(\"hypr.bindings\") end", StringComparison.Ordinal ) );
+        File.WriteAllText( fixture.Paths.MainConfig, orderedMain.Replace( "require(\"hypr.bindings\")",
+             "if enabled then require(\"hypr.bindings\") end", StringComparison.Ordinal ) );
         snapshot = await service.SnapshotAsync( ShortcutInventoryFixture, default );
         True( !snapshot.Bindings.Single( static row => row.Description == "Browser" ).Changeable );
-        File.WriteAllText( fixture.Paths.MainConfig, orderedMain.Replace( "require(\"hypr.bindings\")", "if package.searchpath(\"hypr.bindings\", package.path) then require(\"hypr.bindings\") end", StringComparison.Ordinal ) );
+        File.WriteAllText( fixture.Paths.MainConfig, orderedMain.Replace( "require(\"hypr.bindings\")",
+             "if package.searchpath(\"hypr.bindings\", package.path) then require(\"hypr.bindings\") end", StringComparison.Ordinal ) );
         snapshot = await service.SnapshotAsync( ShortcutInventoryFixture, default );
         True( snapshot.Bindings.Single( static row => row.Description == "Browser" ).Changeable );
         File.AppendAllText( fixture.Paths.Bindings, "local hl = {}\n" );
@@ -126,10 +146,12 @@ public static partial class Program
         var snapshot = await service.SnapshotAsync( ShortcutInventoryFixture, default );
         var menu = snapshot.Bindings.Single( static row => row.Description == "Menu" );
         var terminal = snapshot.Bindings.Single( static row => row.Description == "Terminal" );
-        var conflict = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+T" }, false, ShortcutInventoryFixture, default );
+        var conflict = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+T" }, false,
+             ShortcutInventoryFixture, default );
         Equal( "Terminal", conflict.ConflictDescription );
         True( !File.Exists( service.ModuleFile ) );
-        snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+T", Replace = true }, false, ShortcutInventoryFixture, default );
+        snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+T", Replace = true }, false,
+             ShortcutInventoryFixture, default );
         Equal( 2, snapshot.ChangeCount );
         var lua = File.ReadAllText( service.ModuleFile );
         True( lua.Contains( "hl.unbind(\"SUPER + Q\")", StringComparison.Ordinal ) );
@@ -139,11 +161,18 @@ public static partial class Program
         snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutRestore, new( ) { Id = menu.Id }, true, ShortcutInventoryFixture, default );
         Equal( 0, snapshot.ChangeCount );
         True( !File.Exists( service.ModuleFile ) );
-        await ThrowsAsync<InvalidOperationException>( async ( ) => await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id }, false, ShortcutInventoryFixture, default ) );
+        await ThrowsAsync<InvalidOperationException>( async ( ) => await service.ChangeAsync( ProtocolOperations.ShortcutSet,
+             new( ) { Id = menu.Id }, false, ShortcutInventoryFixture, default ) );
         snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id }, true, ShortcutInventoryFixture, default );
         Equal( 1, snapshot.ChangeCount );
         True( !File.ReadAllText( service.ModuleFile ).Contains( "o.bind(", StringComparison.Ordinal ) );
-        snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = "added:fixture", Description = "A \"title\"", Command = "echo 'quote'\nnext\\path", Chord = "Super+F12" }, false, ShortcutInventoryFixture, default );
+        snapshot = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( )
+        {
+            Id = "added:fixture",
+            Description = "A \"title\"",
+            Command = "echo 'quote'\nnext\\path",
+            Chord = "Super+F12"
+        }, false, ShortcutInventoryFixture, default );
         var calls = LuaBindingReader.Read( File.ReadAllText( service.ModuleFile ) ).Bindings;
         Equal( "A \"title\"", calls.Single( ).Description );
         True( calls.Single( ).Literal );
@@ -161,6 +190,11 @@ public static partial class Program
 
     private static async Task ShortcutReloadFailureRestoresFilesAsync( )
     {
+        if ( OperatingSystem.IsWindows( ) )
+        {
+            throw new SpecSkippedException( "This fixture requires Unix symbolic links and modes." );
+        }
+
         using HotkeyFixture fixture = new( );
         PrepareShortcutSources( fixture );
         var fails = false;
@@ -179,6 +213,7 @@ public static partial class Program
 
             Equal( "reload", arguments[0] );
             reloads++;
+
             return ValueTask.FromResult( ShortcutProcessResult( fails ? "broken" : "ok", fails ? 1 : 0 ) );
         } );
         var snapshot = await service.SnapshotAsync( ShortcutInventoryFixture, default );
@@ -186,11 +221,27 @@ public static partial class Program
         await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = id, Chord = "Super+J" }, false, ShortcutInventoryFixture, default );
         var old = File.ReadAllText( service.ModuleFile );
         fails = true;
-        await ThrowsAsync<InvalidOperationException>( async ( ) => await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = id, Chord = "Super+K" }, false, ShortcutInventoryFixture, default ) );
+        await ThrowsAsync<InvalidOperationException>( async ( ) => await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( )
+        {
+            Id = id,
+            Chord = "Super+K"
+        }, false, ShortcutInventoryFixture, default ) );
         Equal( old, File.ReadAllText( service.ModuleFile ) );
         Equal( old, File.ReadAllText( service.ModuleFile + ".bak" ) );
         Equal( "SUPER + J", (await service.SnapshotAsync( ShortcutInventoryFixture, default )).Bindings.Single( row => row.Id == id ).Chord );
         Equal( 3, reloads );
+
+        var target = Path.Combine( fixture.Root, "linked-keys.lua" );
+        File.Move( service.ModuleFile, target );
+        File.SetUnixFileMode( target, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead );
+        File.CreateSymbolicLink( service.ModuleFile, Path.GetRelativePath( Path.GetDirectoryName( service.ModuleFile )!, target ) );
+        var link = new FileInfo( service.ModuleFile ).LinkTarget;
+        await ThrowsAsync<InvalidOperationException>( async ( ) => await service.ChangeAsync(
+            ProtocolOperations.ShortcutResetAll, new( ) { Id = "all" }, true, ShortcutInventoryFixture, default ) );
+        Equal( link, new FileInfo( service.ModuleFile ).LinkTarget );
+        Equal( old, File.ReadAllText( target ) );
+        Equal( UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead, File.GetUnixFileMode( target ) );
+        Equal( "SUPER + J", (await service.SnapshotAsync( ShortcutInventoryFixture, default )).Bindings.Single( row => row.Id == id ).Chord );
     }
 
     private static async Task ShortcutWriteFailureKeepsModuleAsync( )
@@ -200,7 +251,8 @@ public static partial class Program
         var blocked = Path.Combine( fixture.Root, "directory" );
         File.WriteAllText( module, "old" );
         Directory.CreateDirectory( blocked );
-        await ThrowsAsync<IOException>( async ( ) => await ShortcutFileTransaction.ApplyAsync( new Dictionary<string, string?>( StringComparer.Ordinal ) { [module] = "new", [blocked] = "bad" },
+        await ThrowsAsync<IOException>( async ( ) =>
+             await ShortcutFileTransaction.ApplyAsync( new Dictionary<string, string?>( StringComparer.Ordinal ) { [module] = "new", [blocked] = "bad" },
             static _ => ValueTask.CompletedTask, default ) );
         Equal( "old", File.ReadAllText( module ) );
         Equal( "old", File.ReadAllText( module + ".bak" ) );

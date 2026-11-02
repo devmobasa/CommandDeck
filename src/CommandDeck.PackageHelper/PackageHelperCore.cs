@@ -47,10 +47,12 @@ internal sealed partial class PackageHelperCore( PackageHelperOptions options )
     private const string PackageNamesDetail = "package.names";
     private const string OperationIdPrefix = "package-";
     private const int TokenHexCharacters = 64;
+    private const int MaximumRetainedTerminalOperations = 64;
 
     private readonly PackageHelperOptions _options = options;
     private readonly Lock _gate = new( );
     private readonly Dictionary<string, MutableOperation> _operations = new( StringComparer.Ordinal );
+    private readonly Queue<string> _terminalOperations = new( );
     private readonly Channel<string> _pending = Channel.CreateUnbounded<string>( new UnboundedChannelOptions { SingleReader = true } );
     private string? _activeOperationId;
 
@@ -160,6 +162,7 @@ internal sealed partial class PackageHelperCore( PackageHelperOptions options )
                 operation.Message = "The operation was cancelled before it started.";
                 _activeOperationId = null;
                 cancelled = operation;
+                RetainTerminalOperation( operation );
             }
         }
 
@@ -332,6 +335,17 @@ internal sealed partial class PackageHelperCore( PackageHelperOptions options )
         Convert.ToHexStringLower( Guid
             .NewGuid( )
             .ToByteArray( ) );
+
+    // Called under _gate only after reaching a terminal state. Queued and
+    // running operations are never candidates for eviction.
+    private void RetainTerminalOperation( MutableOperation operation )
+    {
+        _terminalOperations.Enqueue( operation.OperationId );
+        while ( _terminalOperations.Count > MaximumRetainedTerminalOperations )
+        {
+            _operations.Remove( _terminalOperations.Dequeue( ) );
+        }
+    }
 
     private void Publish( MutableOperation operation )
     {

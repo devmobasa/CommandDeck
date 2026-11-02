@@ -220,7 +220,9 @@ public sealed partial class ExtensionPeer : IAsyncDisposable
                     .ConfigureAwait( false );
             }
         }
-        catch ( OperationCanceledException ) when ( _lifetime.IsCancellationRequested ) { }
+        catch ( OperationCanceledException ) when ( _lifetime.IsCancellationRequested )
+        {
+        }
         catch ( Exception exception )
         {
             Stop( exception );
@@ -402,7 +404,9 @@ public sealed partial class ExtensionPeer : IAsyncDisposable
                     .WaitAsync( TimeSpan.FromSeconds( 2 ) )
                     .ConfigureAwait( false );
             }
-            catch ( TimeoutException ) { }
+            catch ( TimeoutException )
+            {
+            }
         }
         finally
         {

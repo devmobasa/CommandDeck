@@ -97,7 +97,10 @@ public static partial class Program
             Equal( revision, reopened.Document.Revision );
             Equal( currentDigest, reopened.Find( key ).Digest );
         }
-        finally { Directory.Delete( root, true ); }
+        finally
+        {
+            Directory.Delete( root, true );
+        }
     }
 
     private static async Task ExtensionMultiTargetOpensX64Async( )

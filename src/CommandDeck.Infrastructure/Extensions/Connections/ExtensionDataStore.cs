@@ -99,7 +99,10 @@ public sealed class ExtensionDataStore : IDisposable
             {
                 ViewValidation.ValidateId( request.Key );
             }
-            catch ( InvalidDataException ) { throw new ExtensionApplicationException( ExtensionErrorCodes.InvalidRequest ); }
+            catch ( InvalidDataException )
+            {
+                throw new ExtensionApplicationException( ExtensionErrorCodes.InvalidRequest );
+            }
 
             if ( request.Operation == ExtensionDataOperations.Delete )
             {
@@ -124,7 +127,10 @@ public sealed class ExtensionDataStore : IDisposable
             {
                 Validate( current.Values );
             }
-            catch ( InvalidDataException ) { throw new ExtensionApplicationException( ExtensionErrorCodes.QuotaExceeded ); }
+            catch ( InvalidDataException )
+            {
+                throw new ExtensionApplicationException( ExtensionErrorCodes.QuotaExceeded );
+            }
 
             var revision = checked(current.Revision + 1);
             var json = JsonSerializer.Serialize( current.Values, ExtensionRegistryJsonContext.Default.DictionaryStringJsonElement );

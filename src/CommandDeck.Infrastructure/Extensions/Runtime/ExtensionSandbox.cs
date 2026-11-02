@@ -122,7 +122,9 @@ public static class ExtensionSandbox
                 {
                     await relay.ConfigureAwait( false );
                 }
-                catch ( Exception exception ) when ( exception is OperationCanceledException or IOException or SocketException ) { }
+                catch ( Exception exception ) when ( exception is OperationCanceledException or IOException or SocketException )
+                {
+                }
             }
         }
     }
@@ -143,8 +145,7 @@ public static class ExtensionSandbox
     {
         var stat = File.ReadAllText( $"/proc/{pid}/stat" );
 
-        var fields = stat[(stat.LastIndexOf( ')' ) + 2)..]
-            .Split( ' ' );
+        var fields = stat[(stat.LastIndexOf( ')' ) + 2)..].Split( ' ' );
 
         return fields[0] == "Z" ? -1 : long.Parse( fields[19], System.Globalization.CultureInfo.InvariantCulture );
     }

@@ -34,7 +34,9 @@ public static class AgentToolCatalog
         {
             Name = AgentToolNames.Search,
             Description =
-                "Search the CommandDeck launcher for applications, windows, files, configuration keys, commands, and quicklinks. Returns result IDs, invocation references and available action IDs. Use before commanddeck_invoke.",
+                ("Search the CommandDeck launcher for applications, windows, files, configuration keys, commands, and " +
+                    "quicklinks. Returns result IDs, invocation references and available action IDs. Use before " +
+                    "commanddeck_invoke."),
             InputSchemaJson =
                 """{"type":"object","properties":{"query":{"type":"string","description":"Launcher query text; supports prefixes like app:, win:, file:, cfg:"},"limit":{"type":"integer","minimum":1,"maximum":16}},"required":["query"]}"""
         } );
@@ -43,7 +45,9 @@ public static class AgentToolCatalog
         {
             Name = AgentToolNames.Invoke,
             Description =
-                "Propose invoking one action of a search result by resultId, actionId and invocationReference from the same search response. Benign actions (launch, focus, copy) run at once; others require the user's confirmation card. Never assume success until the tool returns.",
+                ("Propose invoking one action of a search result by resultId, actionId and invocationReference from " +
+                    "the same search response. Benign actions (launch, focus, copy) run at once; others require the " +
+                    "user's confirmation card. Never assume success until the tool returns."),
             InputSchemaJson =
                 """{"type":"object","properties":{"resultId":{"type":"string"},"actionId":{"type":"string"},"invocationReference":{"type":"string"},"rationale":{"type":"string"}},"required":["resultId","actionId","invocationReference"]}"""
         } );
@@ -54,7 +58,8 @@ public static class AgentToolCatalog
         tools.Add( new AgentToolDefinition
         {
             Name = AgentToolNames.ListDirectory,
-            Description = "List a directory under the user's home. Paths may use ~. Access is brokered by CommandDeck and may require the user's approval.",
+            Description = ("List a directory under the user's home. Paths may use ~. Access is brokered by CommandDeck and may " +
+                "require the user's approval."),
             InputSchemaJson = """{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}"""
         } );
 
@@ -86,7 +91,8 @@ public static class AgentToolCatalog
         {
             Name = AgentToolNames.ProposePackageChange,
             Description =
-                "Propose installing or removing official Arch packages. CommandDeck builds an exact preview and the user confirms with Polkit; the tool returns the outcome.",
+                ("Propose installing or removing official Arch packages. CommandDeck builds an exact preview and the " +
+                    "user confirms with Polkit; the tool returns the outcome."),
             InputSchemaJson =
                 """{"type":"object","properties":{"operation":{"type":"string","enum":["install","remove"]},"packages":{"type":"array","items":{"type":"string"},"maxItems":16},"rationale":{"type":"string"}},"required":["operation","packages"]}"""
         } );
@@ -98,7 +104,8 @@ public static class AgentToolCatalog
         {
             Name = AgentToolNames.RunCommand,
             Description =
-                "Propose running one literal command (argv array, no shell) as the user. CommandDeck shows the exact command and waits for confirmation; bounded output is returned.",
+                ("Propose running one literal command (argv array, no shell) as the user. CommandDeck shows the exact " +
+                    "command and waits for confirmation; bounded output is returned."),
             InputSchemaJson =
                 """{"type":"object","properties":{"argv":{"type":"array","items":{"type":"string"},"minItems":1,"maxItems":64},"cwd":{"type":"string"},"rationale":{"type":"string"}},"required":["argv"]}"""
         } );
@@ -122,7 +129,8 @@ public static class AgentToolCatalog
         if ( hasContext )
         {
             filesystem =
-                "To read a file use commanddeck_read_file, to list a folder use commanddeck_list_directory, and to search files use commanddeck_search_text. ";
+                ("To read a file use commanddeck_read_file, to list a folder use commanddeck_list_directory, and to " +
+                    "search files use commanddeck_search_text. ");
         }
         else
         {

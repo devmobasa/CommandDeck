@@ -59,10 +59,6 @@ internal static class DisplaySizingMigration
 
     private static bool ReadExistingState( string databasePath, string stateDirectory )
     {
-        return File.Exists( databasePath ) ||
-               (Directory.Exists( stateDirectory ) &&
-                Directory
-                    .EnumerateFileSystemEntries( stateDirectory )
-                    .Any( ));
+        return File.Exists( databasePath ) || File.Exists( Path.Combine( stateDirectory, "display-size" ) );
     }
 }

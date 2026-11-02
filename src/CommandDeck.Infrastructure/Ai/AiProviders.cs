@@ -134,8 +134,7 @@ public sealed class AiProviderRegistry : IAsyncDisposable
     {
         private AiProviderRegistry? _registry = registry;
 
-        public void Dispose( ) => Interlocked
-            .Exchange( ref _registry, null )
+        public void Dispose( ) => Interlocked.Exchange( ref _registry, null )
             ?.ReleaseLease( );
     }
 
@@ -351,8 +350,10 @@ public sealed class UnsupportedAiProvider : IAiProvider
     public ValueTask<IReadOnlyList<AiModelDescriptor>> DiscoverModelsAsync( CancellationToken cancellationToken ) =>
         ValueTask.FromException<IReadOnlyList<AiModelDescriptor>>( new NotSupportedException( "AI provider adapter is unsupported." ) );
 
-    public AiPreparedProviderRequest PrepareRequest( AiPrompt prompt ) =>
+    public AiPreparedProviderRequest PrepareRequest( AiPrompt prompt )
+    {
         throw new NotSupportedException( "AI provider adapter is unsupported." );
+    }
 
     public async IAsyncEnumerable<AiProviderStreamEvent> StreamAsync( AiPreparedProviderRequest request,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken )

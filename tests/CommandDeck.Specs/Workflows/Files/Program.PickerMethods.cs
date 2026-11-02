@@ -29,7 +29,11 @@ public static partial class Program
             var qs = Path.Combine( directory, "qs" );
 
             await File.WriteAllTextAsync( qs,
-                "#!/usr/bin/python3\nimport os, json, stat\np=os.environ['COMMANDDECK_PICKER_INPUT']\nassert stat.S_IMODE(os.stat(p).st_mode)==0o600\nassert stat.S_IMODE(os.stat(os.path.dirname(p)).st_mode)==0o700\nassert json.load(open(p))['choices'][1]['label']=='Two'\nopen(os.environ['COMMANDDECK_PICKER_OUTPUT'],'w').write('1')\nprint('UI logs must not reach stdout')\n" );
+                ("#!/usr/bin/python3\nimport os, json, stat\np=os.environ['COMMANDDECK_PICKER_INPUT']\nassert " +
+                    "stat.S_IMODE(os.stat(p).st_mode)==0o600\nassert " +
+                    "stat.S_IMODE(os.stat(os.path.dirname(p)).st_mode)==0o700\nassert " +
+                    "json.load(open(p))['choices'][1]['label']=='Two'\nopen(os.environ['COMMANDDECK_PICKER_OUTPUT'],'w').w" +
+                    "rite('1')\nprint('UI logs must not reach stdout')\n") );
 
             File.SetUnixFileMode( qs, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute );
 

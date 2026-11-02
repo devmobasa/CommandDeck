@@ -51,7 +51,7 @@ The installer stops the running daemon, then:
 3. Creates the default configuration if you do not have one.
 4. Installs the Omarchy plugin in `~/.config/omarchy/plugins/local.commanddeck`.
 5. Checks that the installed binary and plugin match the release.
-6. Indexes your folders and installs the Ctrl+Space hotkey.
+6. Indexes your folders and preserves Settings shortcuts. Fresh installs use Ctrl+Space.
 7. Imports the session environment, then enables and starts the service.
 8. Reloads Hyprland, restarts the Omarchy shell, and enables the plugin.
 9. Checks the live installation with `commanddeck doctor` and a test search.
@@ -73,7 +73,7 @@ The installer keeps plugin, binding, and configuration backups under
 | Option | Effect |
 |---|---|
 | `--dry-run` | Check the requirements, the release files, and the hotkey. Show what would be installed, and change nothing. |
-| `--hotkey="SUPER + SPACE"` | Bind a different chord. The default is `CTRL + SPACE`. |
+| `--hotkey="SUPER + SPACE"` | Set the launcher chord explicitly. Without this option, keep saved shortcut choices. Fresh installs use `CTRL + SPACE`. |
 | `--reset-config` | Move the CommandDeck configuration folder to `~/.local/state/commanddeck/config-backups/`, then create the default configuration. Catalog and other state stay. |
 | `--from=DIR` | Install a different publish folder. The default is the release's `bin/` folder. |
 
@@ -185,7 +185,9 @@ The script validates the repository and publishes the Native AOT build to
 same installer that a release uses, so the install steps are those in
 [Download, check, and install](#download-check-and-install). It finishes when
 the plugin has registered the hotkey's global shortcut. Pass
-`--hotkey="SUPER + SPACE"` (or another chord) to bind a different chord.
+`--hotkey="SUPER + SPACE"` (or another chord) to set the launcher chord explicitly.
+Without it, upgrades keep the launcher chord, removed bindings, replacements,
+and shared bindings saved in Settings. Fresh installs use Ctrl+Space.
 Existing configuration is preserved. Plugin, binding, and configuration
 backups are kept under `~/.local/state/commanddeck/`.
 
@@ -240,7 +242,7 @@ binding or enable it. Add the hotkey with the installed binary:
 
 ```bash
 commanddeck hotkey check --chord "SUPER + SPACE"    # validate only; changes nothing
-commanddeck hotkey install                          # Ctrl+Space
+commanddeck hotkey install                          # preserve saved choices; fresh default: Ctrl+Space
 commanddeck hotkey install --chord "SUPER + SPACE"  # or another chord
 hyprctl reload
 hyprctl configerrors
@@ -268,8 +270,11 @@ plugin registers inside `omarchy-shell`, so a key press starts no process. The
 standalone host does not register the shortcut.
 
 Rerunning the command changes nothing when the module and line are current; it
-never adds a second require line. A changed chord rewrites only the module. An
-edited file is first copied to `~/.local/state/commanddeck/binding-backups/`.
+never adds a second require line. Without `--chord`, it preserves Settings
+overrides, launcher suppression, and shared bindings. An explicit chord updates
+the generated modules and saved shortcut state together. Changes to user
+configuration files are backed up under `~/.local/state/commanddeck/binding-backups/`.
+Generated shortcut files keep a `.bak` copy.
 The command also removes the `-- BEGIN COMMANDDECK CTRL SPACE` block that earlier
 installers appended to `~/.config/hypr/bindings.lua`. If `bindings.lua` already
 binds the chord to CommandDeck itself, the command leaves your binding in place

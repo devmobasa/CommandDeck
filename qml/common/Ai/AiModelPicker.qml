@@ -2,6 +2,7 @@ import ".."
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../ListKeys.js" as ListKeys
+import "../FocusTrap.js" as FocusTrap
 import QtQuick.Layouts
 
 // Searchable chooser for models returned by an explicit provider test. Opening
@@ -15,6 +16,7 @@ FocusScope {
   property bool opened: false
   property var models: []
   property string currentModelId: ""
+  readonly property bool settingsTabFence: true
   readonly property alias searchControl: searchField
   readonly property alias listControl: modelList
   readonly property var filteredModels: {
@@ -27,6 +29,10 @@ FocusScope {
 
   signal selected(string modelId)
   signal dismissed()
+
+  function cycleFocus(forward) {
+    FocusTrap.cycleTargets([searchField, modelList], forward)
+  }
 
   visible: opened
   focus: opened
@@ -73,7 +79,7 @@ FocusScope {
       event.accepted = true
     } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
       // The chooser is a two-part modal: search and list share the keyboard.
-      searchField.forceActiveFocus()
+      root.cycleFocus(event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))
       event.accepted = true
     }
   }

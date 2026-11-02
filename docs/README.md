@@ -60,9 +60,9 @@ them on.
 
 ### Settings
 
-Open Settings with the gear button or **Ctrl+,**. Settings has six pages:
-Search, AI, Editors, Filters, Shortcuts, and Customization. You can search the
-cards on these pages to find a control. The configuration file,
+Open Settings with the gear button or **Ctrl+,**. Settings has seven pages:
+Search, AI, Editors, Filters, Shortcuts, Customization, and Diagnostics.
+You can search the cards on these pages to find a control. The configuration file,
 `~/.config/commanddeck/commanddeck.jsonc`, holds the other options.
 
 ### AI

@@ -94,12 +94,10 @@ public static partial class Program
         Equal( 2, server.Requests.Count );
 
         True( server
-            .Requests[0]
-            .Contains( "\"method\":\"client.window_title.set\",\"params\":{\"title\":\"commanddeck-herdr-raw\"}", StringComparison.Ordinal ) );
+            .Requests[0].Contains( "\"method\":\"client.window_title.set\",\"params\":{\"title\":\"commanddeck-herdr-raw\"}", StringComparison.Ordinal ) );
 
         True( server
-            .Requests[1]
-            .Contains( "\"method\":\"client.window_title.clear\",\"params\":{}", StringComparison.Ordinal ) );
+            .Requests[1].Contains( "\"method\":\"client.window_title.clear\",\"params\":{}", StringComparison.Ordinal ) );
 
         static ProcessResult WindowListResponse( IReadOnlyList<string> args )
         {
@@ -123,7 +121,10 @@ public static partial class Program
         };
 
         HerdrWindowActivator activator = new( new HerdrClient( fake.Runner, static ( ) => true ), HerdrWindowTitleClient.SendAsync,
-            ( _, _, _, _ ) => throw new InvalidOperationException( "Hyprland must not run." ), static ( ) => true,
+            ( _, _, _, _ ) =>
+            {
+                throw new InvalidOperationException( "Hyprland must not run." );
+            }, static ( ) => true,
             static ( ) => "commanddeck-herdr-malformed" );
 
         var outcome = await activator.ActivateAsync( HerdrTargetKinds.Tab, CancellationToken.None );
@@ -138,7 +139,8 @@ public static partial class Program
         await using HerdrTitleServer server = new(
             "{\"padding\":\"" +
             new string( 'x', 16_384 ) +
-            "\",\"id\":\"commanddeck:window-title\",\"result\":{\"type\":\"client_window_title\",\"changed\":true,\"reason\":\"set\"}}",
+            ((("\",\"id\":\"commanddeck:window-title\",\"result\":{\"type\":\"client_window_title\",\"changed\":true,\"reason\":\"se")) +
+                "t\"}}"),
             TitleResponse( "cleared" ) );
 
         HerdrFake fake = new( )
@@ -197,9 +199,18 @@ public static partial class Program
         HerdrFake fake = new( );
 
         HerdrWindowActivator activator = new( new HerdrClient( fake.Runner, static ( ) => true ),
-            ( _, _, _ ) => throw new InvalidOperationException( "Herdr title API must not run." ),
-            ( _, _, _, _ ) => throw new InvalidOperationException( "Hyprland must not run." ), static ( ) => false,
-            static ( ) => throw new InvalidOperationException( "A marker must not be created." ) );
+            ( _, _, _ ) =>
+            {
+                throw new InvalidOperationException( "Herdr title API must not run." );
+            },
+            ( _, _, _, _ ) =>
+            {
+                throw new InvalidOperationException( "Hyprland must not run." );
+            }, static ( ) => false,
+            static ( ) =>
+            {
+                throw new InvalidOperationException( "A marker must not be created." );
+            } );
 
         var outcome = await activator.ActivateAsync( HerdrTargetKinds.Tab, CancellationToken.None );
         True( outcome.Succeeded );
@@ -224,7 +235,10 @@ public static partial class Program
         };
 
         HerdrWindowActivator activator = new( new HerdrClient( fake.Runner, static ( ) => true ), HerdrWindowTitleClient.SendAsync,
-            ( _, _, _, _ ) => throw new InvalidOperationException( "Hyprland must not run." ), static ( ) => true,
+            ( _, _, _, _ ) =>
+            {
+                throw new InvalidOperationException( "Hyprland must not run." );
+            }, static ( ) => true,
             static ( ) => "commanddeck-herdr-interrupted" );
 
         if ( cancel )
@@ -241,12 +255,10 @@ public static partial class Program
         Equal( 2, server.Requests.Count );
 
         True( server
-            .Requests[0]
-            .Contains( "client.window_title.set", StringComparison.Ordinal ) );
+            .Requests[0].Contains( "client.window_title.set", StringComparison.Ordinal ) );
 
         True( server
-            .Requests[1]
-            .Contains( "client.window_title.clear", StringComparison.Ordinal ) );
+            .Requests[1].Contains( "client.window_title.clear", StringComparison.Ordinal ) );
     }
 
     private static string TitleResponse( string reason ) =>

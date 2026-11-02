@@ -73,7 +73,8 @@ try
     await WaitFile( endpoint );
     var debuggerLog = Path.Combine( root, "gdb.log" );
 
-    var start = Info( "/usr/bin/gdb", "--nx", "--quiet", "-ex", "set pagination off", "-ex", "set confirm off", "-ex", "set logging file " + debuggerLog, "-ex", "set logging enabled on", "-ex", "target remote | " + Quote( host ) + " extension-debug-connect --socket " + Quote( endpoint ) );
+    var start = Info( "/usr/bin/gdb", "--nx", "--quiet", "-ex", "set pagination off", "-ex", "set confirm off", "-ex", "set logging file " +
+         debuggerLog, "-ex", "set logging enabled on", "-ex", "target remote | " + Quote( host ) + " extension-debug-connect --socket " + Quote( endpoint ) );
 
     start.RedirectStandardInput = true;
     debugger = Process.Start( start )!;
@@ -126,7 +127,8 @@ try
 
     var reopened = await client.Call( "extension.open", CreateOpenInput( key ) );
 
-    DevCheck.That( reopened.Any( n => n["extensionSession"]?["status"]?.GetValue<string>( ) == "view" && n["extensionSession"]?["debug"] is null ), "Ordinary reopen inherited debugging" );
+    DevCheck.That( reopened.Any( n => n["extensionSession"]?["status"]?.GetValue<string>( ) == "view" &&
+         n["extensionSession"]?["debug"] is null ), "Ordinary reopen inherited debugging" );
 
     await client.Call( "extension.close", CreateBackActionInput( reopened ) );
     var shortLease = await Arm( 3 );
@@ -142,7 +144,8 @@ try
         .AsArray( )
         .All( n => n!["stderr"] is null ), "Child stderr leaked without explicit opt-in" );
 
-    Console.WriteLine( "PASS development debugging: reviewed attachment, real GDB registers, suspended open and callback deadlines, visible lease, revoke/expiry cleanup, release reopen, bounded metadata-only diagnostics." );
+    Console.WriteLine( ("PASS development debugging: reviewed attachment, real GDB registers, suspended open and callback " +
+        "deadlines, visible lease, revoke/expiry cleanup, release reopen, bounded metadata-only diagnostics.") );
 }
 finally
 {
@@ -250,7 +253,8 @@ static JsonObject CreateBackActionInput( List<JsonNode> reopened )
 {
     return new( )
     {
-        ["sessionId"] = reopened.Last( n => n["extensionSession"]?["status"]?.GetValue<string>( ) == "view" )["extensionSession"]!["sessionId"]!.GetValue<string>( )
+        ["sessionId"] = reopened.Last( n => n["extensionSession"]?["status"]?.GetValue<string>( ) ==
+             "view" )["extensionSession"]!["sessionId"]!.GetValue<string>( )
     };
 }
 static class DevCheck
@@ -262,6 +266,7 @@ static class DevCheck
             throw new InvalidOperationException( message );
         }
     }
+
     public static async Task ExercisePausedCallback( Process debugger, string debuggerLog, DevClient client, JsonNode view )
     {
         using ( var interrupt = Process.Start( Info( "/usr/bin/kill", "-INT", debugger.Id.ToString( ) ) )! )
@@ -289,8 +294,10 @@ static class DevCheck
         await debugger.StandardInput.WriteLineAsync( "continue" );
         await debugger.StandardInput.FlushAsync( );
 
-        DevCheck.That( (await saving).Any( n => n["extensionSession"]?["content"]?["title"]?.GetValue<string>( ) == "Draft saved" ), "Paused callback did not complete after continuing" );
+        DevCheck.That( (await saving).Any( n => n["extensionSession"]?["content"]?["title"]?.GetValue<string>( ) == "Draft saved" ),
+             "Paused callback did not complete after continuing" );
     }
+
     public static ProcessStartInfo Info( string executable, params string[] values )
     {
         var info = new ProcessStartInfo( executable ) { RedirectStandardOutput = true, RedirectStandardError = true };
@@ -302,6 +309,7 @@ static class DevCheck
 
         return info;
     }
+
     public static string Quote( string value ) => "'" + value.Replace( "'", "'\\''", StringComparison.Ordinal ) + "'";
     public static async Task WaitFile( string path )
     {
@@ -352,6 +360,7 @@ sealed class DevClient : IDisposable
         _reader = new StreamReader( stream );
         _writer = new StreamWriter( stream, new UTF8Encoding( false ) ) { AutoFlush = true };
     }
+
     public static async Task<DevClient> Connect( string path )
     {
         var socket = new Socket( AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified );
@@ -359,6 +368,7 @@ sealed class DevClient : IDisposable
 
         return new DevClient( socket );
     }
+
     public async Task<List<JsonNode>> Call( string operation, JsonObject fields, bool error = false )
     {
         fields = ( JsonObject ) fields.DeepClone( );
@@ -393,10 +403,12 @@ sealed class DevClient : IDisposable
             }
         }
 
-        DevCheck.That( messages.Any( n => n["requestId"]!.GetValue<int>( ) == id && n["type"]!.GetValue<string>( ) == "error" ) == error, operation + ": " + string.Join( "\n", messages ) );
+        DevCheck.That( messages.Any( n => n["requestId"]!.GetValue<int>( ) == id && n["type"]!.GetValue<string>( ) == "error" ) == error,
+             operation + ": " + string.Join( "\n", messages ) );
 
         return messages;
     }
+
     public void Dispose( )
     {
         _writer.Dispose( );

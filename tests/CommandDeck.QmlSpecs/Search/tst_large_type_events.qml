@@ -6,6 +6,8 @@ import "../../../qml/common/Launcher/LargeType.js" as LargeType
 
 EventPathFixture {
   id: scene
+  property bool helperTestsEnabled: true
+  function productionJourney(deck) { events.productionJourney(deck) }
 
   SignalSpy { id: requested; target: scene.part_searchField; signalName: "largeTypeRequested" }
 
@@ -19,6 +21,55 @@ EventPathFixture {
   SignalSpy { id: dismissals; target: surface; signalName: "dismissed" }
 
   EventPathTestCase {
+    id: events
+    when: scene.helperTestsEnabled && windowShown
+
+    function productionJourney(deck) {
+      events.parent = deck.testSearchInput
+      deck.close()
+      deck.coachSeen = true
+      deck.daemonAvailable = true
+      deck.reconciliationPending = false
+      deck.open("{}")
+      const input = deck.testSearchInput
+      waitForValue(input, "activeFocus", true)
+      keyClick(Qt.Key_A, Qt.ControlModifier)
+      typeText("original query")
+      compare(input.text, "original query")
+      for (const route of ["Escape", "Ctrl+L", "click"]) {
+        keyClick(Qt.Key_L, Qt.ControlModifier)
+        compare(deck.largeTypeText, "original query")
+        const overlay = largeTypeSurface(deck.testSurfaceWindow.contentItem)
+        verify(overlay !== null)
+        waitForValue(overlay, "activeFocus", true)
+        compare(overlay.label.text, "original query")
+        if (route === "Escape") keyClick(Qt.Key_Escape)
+        else if (route === "Ctrl+L") keyClick(Qt.Key_L, Qt.ControlModifier)
+        else mouseClick(overlay)
+        // Deliver typing immediately: queued focus repair must not swallow it.
+        keyClick(Qt.Key_X)
+        compare(deck.largeTypeText, "")
+        verify(input.activeFocus, route + " restores search focus")
+        compare(input.text, "original queryx", route + " preserves the query and accepts immediate typing")
+        compare(deck.queryText, "original queryx")
+        keyClick(Qt.Key_Backspace)
+        keyClick(Qt.Key_L, Qt.ControlModifier)
+        compare(deck.largeTypeText, "original query", "Large Type reopens after " + route)
+        waitForValue(overlay, "activeFocus", true)
+        keyClick(Qt.Key_Escape)
+        waitForValue(input, "activeFocus", true)
+      }
+      deck.close()
+    }
+
+    function largeTypeSurface(parent) {
+      if (parent.Accessible.name === "Large Type") return parent
+      for (const child of parent.children || []) {
+        const found = largeTypeSurface(child)
+        if (found) return found
+      }
+      return null
+    }
     fixture: scene
     name: "CommandDeck_large_type"
 
@@ -36,7 +87,7 @@ EventPathFixture {
     }
 
     function test_ctrl_l_asks_with_the_typed_text() {
-      fixture.part_searchField.inputControl.forceActiveFocus()
+      mouseClick(fixture.part_searchField.inputControl)
       fixture.part_searchField.setInputText("call me")
       keyClick(Qt.Key_L, Qt.ControlModifier)
       compare(requested.count, 1)

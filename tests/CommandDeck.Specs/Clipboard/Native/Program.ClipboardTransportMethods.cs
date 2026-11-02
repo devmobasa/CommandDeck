@@ -37,7 +37,9 @@ public static partial class Program
         {
             await sending;
         }
-        catch ( Exception exception ) when ( exception is OperationCanceledException or System.Threading.Channels.ChannelClosedException ) { }
+        catch ( Exception exception ) when ( exception is OperationCanceledException or System.Threading.Channels.ChannelClosedException )
+        {
+        }
 
         True( !Directory.Exists( $"/proc/{pid}" ), "helper was reaped before disposal completed" );
     }
@@ -98,7 +100,8 @@ public static partial class Program
         start.ArgumentList.Add( "--transport-probe" );
         await ExerciseClipboardTransportAsync( start );
 
-        Console.WriteLine( "Native AOT clipboard transport: inherited handle isolation and cancellation under bidirectional backpressure passed." );
+        Console.WriteLine( ("Native AOT clipboard transport: inherited handle isolation and cancellation under bidirectional " +
+            "backpressure passed.") );
 
         return 0;
     }

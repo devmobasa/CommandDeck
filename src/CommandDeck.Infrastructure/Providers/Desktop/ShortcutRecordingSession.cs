@@ -4,6 +4,8 @@ namespace CommandDeck;
 // serialized with the watchdog so a late start cannot outlive its stop.
 public sealed class ShortcutRecordingSession : IAsyncDisposable
 {
+    private const int RecordingLeaseSeconds = 10;
+
     private readonly ExternalProcessRunner _run;
     private readonly Func<bool> _available;
     private readonly Func<bool> _sessionAvailable;
@@ -35,12 +37,13 @@ public sealed class ShortcutRecordingSession : IAsyncDisposable
             }
             // Arm before dispatch; an ambiguous dispatch failure still gets reset.
             _owner = owner;
-            _watchdog.Change( TimeSpan.FromSeconds( 10 ), Timeout.InfiniteTimeSpan );
+            _watchdog.Change( TimeSpan.FromSeconds( RecordingLeaseSeconds ), Timeout.InfiniteTimeSpan );
             try
             {
                 await DispatchAsync( ShortcutLua.RecordingSubmap, cancellationToken ).ConfigureAwait( false );
                 var current = await _run( ToolExecutables.Hyprctl, ["submap"], HyprlandDispatch.Timeout, cancellationToken ).ConfigureAwait( false );
-                if ( current is not { ExitCode: 0, TimedOut: false, AnyOutputLimitExceeded: false } || current.StandardOutput.Trim( ) != ShortcutLua.RecordingSubmap )
+                if ( current is not { ExitCode: 0, TimedOut: false, AnyOutputLimitExceeded: false } || current.StandardOutput.Trim( ) !=
+                     ShortcutLua.RecordingSubmap )
                 {
                     throw new InvalidOperationException( "Hyprland did not enter the recording submap." );
                 }
@@ -48,14 +51,19 @@ public sealed class ShortcutRecordingSession : IAsyncDisposable
             catch
             {
                 await ResetAsync( ).ConfigureAwait( false );
+
                 throw;
             }
             // Preparation can consume part of the provisional safety lease.
             // Give the confirmed capture its full window before acknowledging it.
-            _watchdog.Change( TimeSpan.FromSeconds( 10 ), Timeout.InfiniteTimeSpan );
+            _watchdog.Change( TimeSpan.FromSeconds( RecordingLeaseSeconds ), Timeout.InfiniteTimeSpan );
+
             return true;
         }
-        finally { _gate.Release( ); }
+        finally
+        {
+            _gate.Release( );
+        }
     }
 
     public async ValueTask StopAsync( string? owner = null )
@@ -70,7 +78,10 @@ public sealed class ShortcutRecordingSession : IAsyncDisposable
 
             await ResetAsync( ).ConfigureAwait( false );
         }
-        finally { _gate.Release( ); }
+        finally
+        {
+            _gate.Release( );
+        }
     }
 
     public async ValueTask ResetOnStartupAsync( CancellationToken cancellationToken )
@@ -114,6 +125,7 @@ public sealed class ShortcutRecordingSession : IAsyncDisposable
         catch
         {
             _watchdog.Change( TimeSpan.FromSeconds( 1 ), Timeout.InfiniteTimeSpan );
+
             throw;
         }
     }
@@ -121,13 +133,19 @@ public sealed class ShortcutRecordingSession : IAsyncDisposable
     private async Task StopAfterTimeoutAsync( )
     {
         try
-        { await StopAsync( ).ConfigureAwait( false ); }
-        catch ( Exception exception ) when ( exception is IOException or InvalidOperationException ) { /* watchdog retries */ }
+        {
+            await StopAsync( ).ConfigureAwait( false );
+        }
+        catch ( Exception exception ) when ( exception is IOException or InvalidOperationException )
+        {
+            /* watchdog retries */
+        }
     }
 
     private async ValueTask DispatchAsync( string submap, CancellationToken cancellationToken )
     {
-        var result = await _run( ToolExecutables.Hyprctl, [HyprlandDispatch.Command, "submap", submap], HyprlandDispatch.Timeout, cancellationToken ).ConfigureAwait( false );
+        var result = await _run( ToolExecutables.Hyprctl, [HyprlandDispatch.Command, "submap", submap], HyprlandDispatch.Timeout,
+             cancellationToken ).ConfigureAwait( false );
         if ( !HyprlandDispatch.WasAccepted( result ) )
         {
             throw new InvalidOperationException( "Hyprland could not change the recording submap. Press Escape to leave it." );

@@ -139,7 +139,9 @@ public static partial class Program
 
                 throw new InvalidOperationException( $"Accepted invalid frame: {text}" );
             }
-            catch ( Exception exception ) when ( exception is InvalidDataException or JsonException ) { }
+            catch ( Exception exception ) when ( exception is InvalidDataException or JsonException )
+            {
+            }
         }
 
         var badUtf8 = Encoding.UTF8.GetBytes( "{\"jsonrpc\":\"2.0\",\"id\":\"h:1\",\"result\":\"x\"}" );

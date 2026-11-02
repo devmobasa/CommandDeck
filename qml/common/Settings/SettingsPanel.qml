@@ -119,9 +119,12 @@ SettingsPanelState {
   onVisibleChanged: {
     if (!visible) settingsSearch.text = ""
     if (visible) Qt.callLater(function() {
+      if (!root.visible) return
       root.synchronizeAiChoices()
       root.maybeRefreshAgentModels()
-      settingsSearch.forceActiveFocus()
+      if (aiRemoveConfirmation.opened) aiRemoveConfirmation.cancelControl.forceActiveFocus()
+      else if (aiProviderEditor.opened) aiProviderEditor.restoreFocus()
+      else settingsSearch.forceActiveFocus()
     })
   }
   onAiProvidersChanged: Qt.callLater(root.synchronizeAiChoices)

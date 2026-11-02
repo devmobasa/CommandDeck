@@ -55,13 +55,11 @@ internal static class BoundedProcess
         }
 
         var truncated = false;
-
-        var outputTask = ReadAsync( process.StandardOutput, maximumOutputBytes, ( ) => truncated = true, cancellationToken );
-
-        var errorTask = ReadAsync( process.StandardError, maximumOutputBytes, ( ) => truncated = true, cancellationToken );
-
         using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource( cancellationToken );
         timeoutSource.CancelAfter( timeout );
+        var outputTask = ReadAsync( process.StandardOutput, maximumOutputBytes, ( ) => truncated = true, timeoutSource.Token );
+        var errorTask = ReadAsync( process.StandardError, maximumOutputBytes, ( ) => truncated = true, timeoutSource.Token );
+        var readers = Task.WhenAll( outputTask, errorTask );
         var timedOut = false;
 
         try
@@ -69,6 +67,10 @@ internal static class BoundedProcess
             await process
                 .WaitForExitAsync( timeoutSource.Token )
                 .ConfigureAwait( false );
+
+            await readers.WaitAsync( timeoutSource.Token )
+                .ConfigureAwait( false );
+            timeoutSource.Token.ThrowIfCancellationRequested( );
         }
         catch ( OperationCanceledException )
         {
@@ -83,6 +85,12 @@ internal static class BoundedProcess
             {
                 throw;
             }
+        }
+        finally
+        {
+            await timeoutSource.CancelAsync( )
+                .ConfigureAwait( false );
+            await readers.ConfigureAwait( false );
         }
 
         var standardOutput = await outputTask.ConfigureAwait( false );
@@ -106,9 +114,16 @@ internal static class BoundedProcess
 
         while ( true )
         {
-            var read = await reader
-                .BaseStream.ReadAsync( buffer, cancellationToken )
-                .ConfigureAwait( false );
+            int read;
+            try
+            {
+                read = await reader.BaseStream.ReadAsync( buffer, cancellationToken )
+                    .ConfigureAwait( false );
+            }
+            catch ( OperationCanceledException ) when ( cancellationToken.IsCancellationRequested )
+            {
+                break;
+            }
 
             if ( read == 0 )
             {

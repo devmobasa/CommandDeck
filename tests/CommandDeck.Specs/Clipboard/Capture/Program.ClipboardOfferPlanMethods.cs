@@ -19,7 +19,8 @@ public static partial class Program
         Equal( 16 * 1024 * 1024 + 2 * 1024 * 1024 + 4 * 64 * 1024 + 8192, plan.ReservedBytes );
 
         Equal(
-            "x-special/gnome-copied-files|text/plain|text/plain;charset=utf-8|TEXT/URI-LIST|text/uri-list|text/html|text/html;charset=utf-8|image/png|chromium/x-source-url",
+            ("x-special/gnome-copied-files|text/plain|text/plain;charset=utf-8|TEXT/URI-LIST|text/uri-list|text/ht" +
+                "ml|text/html;charset=utf-8|image/png|chromium/x-source-url"),
             string.Join( '|', plan.Offers.Select( static offer => offer.RawName ) ) );
 
         foreach ( var offer in plan.Offers )

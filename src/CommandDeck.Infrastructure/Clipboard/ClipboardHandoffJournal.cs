@@ -51,8 +51,12 @@ public sealed class ClipboardHandoffJournal : IDisposable
             throw new IOException( "Handoff journal must have mode 0600." );
         }
 
-        _connection = new SqliteConnection( new SqliteConnectionStringBuilder { DataSource = fullPath, Mode = SqliteOpenMode.ReadWrite, Pooling = false }
-            .ToString( ) );
+        _connection = new SqliteConnection( new SqliteConnectionStringBuilder
+        {
+            DataSource = fullPath,
+            Mode = SqliteOpenMode.ReadWrite,
+            Pooling = false
+        }.ToString( ) );
 
         try
         {
@@ -64,7 +68,8 @@ public sealed class ClipboardHandoffJournal : IDisposable
             {
                 Execute(
                     "BEGIN IMMEDIATE; CREATE TABLE header(version INTEGER NOT NULL, boot TEXT NOT NULL, checksum TEXT NOT NULL); " +
-                    "CREATE TABLE slots(slot INTEGER PRIMARY KEY CHECK(slot BETWEEN 0 AND 1), body TEXT NOT NULL, checksum TEXT NOT NULL); " +
+                    ("CREATE TABLE slots(slot INTEGER PRIMARY KEY CHECK(slot BETWEEN 0 AND 1), body TEXT NOT NULL, " +
+                        "checksum TEXT NOT NULL); ") +
                     "INSERT INTO header VALUES(1,$boot,$checksum); COMMIT;", ("$boot", bootId), ("$checksum", Digest( "1\n" + bootId )) );
             }
 
@@ -273,7 +278,9 @@ public sealed class ClipboardHandoffJournal : IDisposable
                 {
                     Execute( "ROLLBACK" );
                 }
-                catch ( SqliteException ) { }
+                catch ( SqliteException )
+                {
+                }
 
                 throw;
             }
@@ -351,7 +358,8 @@ public sealed class ClipboardHandoffJournal : IDisposable
             record.BootId, record.WorkerIdentity, record.ManagerIdentity, record.Phase.ToString( ), record.Outcome.ToString( ), record.Work.ToString( ),
             record.WorkerReaped.ToString( ), "1" );
 
-        Execute( "INSERT INTO slots VALUES($slot,$body,$checksum) ON CONFLICT(slot) DO UPDATE SET body=excluded.body,checksum=excluded.checksum",
+        Execute( ("INSERT INTO slots VALUES($slot,$body,$checksum) ON CONFLICT(slot) DO UPDATE SET " +
+            "body=excluded.body,checksum=excluded.checksum"),
             ("$slot", record.Slot), ("$body", body), ("$checksum", Digest( body )) );
     }
 

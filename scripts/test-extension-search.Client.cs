@@ -14,7 +14,8 @@ sealed partial class SearchClient
             var id = ++_request;
             pending.Add( id );
 
-            await _writer.WriteLineAsync( new JsonObject { ["version"] = 3, ["requestId"] = id, ["operation"] = "search", ["query"] = prefix + (index == 11 ? "Meeting" : "Meet" + index), ["limit"] = 50 }.ToJsonString( ) );
+            await _writer.WriteLineAsync( new JsonObject { ["version"] = 3, ["requestId"] = id, ["operation"] = "search", ["query"] = prefix +
+                 (index == 11 ? "Meeting" : "Meet" + index), ["limit"] = 50 }.ToJsonString( ) );
 
             await Task.Delay( 25 );
         }
@@ -50,6 +51,7 @@ sealed partial class SearchClient
 
         return latest;
     }
+
     public async Task<List<JsonNode>> Call( string operation, JsonObject fields, bool error = false )
     {
         var id = ++_request;
@@ -103,7 +105,8 @@ sealed partial class SearchClient
             }
         }
 
-        var failed = messages.Any( message => message["type"]?.GetValue<string>( ) == "error" || message["extensionSession"]?["status"]?.GetValue<string>( ) == "failed" );
+        var failed = messages.Any( message => message["type"]?.GetValue<string>( ) == "error" ||
+             message["extensionSession"]?["status"]?.GetValue<string>( ) == "failed" );
         if ( failed != error )
         {
             throw new InvalidOperationException( operation + ": " + string.Join( "\n", messages ) );

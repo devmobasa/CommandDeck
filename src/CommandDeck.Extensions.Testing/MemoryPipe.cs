@@ -10,8 +10,25 @@ internal sealed class MemoryPipe : Stream
     public override bool CanRead => true;
     public override bool CanWrite => true;
     public override bool CanSeek => false;
-    public override long Length => throw new NotSupportedException( );
-    public override long Position { get => throw new NotSupportedException( ); set => throw new NotSupportedException( ); }
+    public override long Length
+    {
+        get
+        {
+            throw new NotSupportedException( );
+        }
+    }
+
+    public override long Position
+    {
+        get
+        {
+            throw new NotSupportedException( );
+        }
+        set
+        {
+            throw new NotSupportedException( );
+        }
+    }
 
     public override async ValueTask<int> ReadAsync( Memory<byte> buffer, CancellationToken cancellationToken = default )
     {
@@ -61,10 +78,20 @@ internal sealed class MemoryPipe : Stream
         .GetAwaiter( )
         .GetResult( );
 
-    public override void Flush( ) { }
+    public override void Flush( )
+    {
+    }
+
     public override Task FlushAsync( CancellationToken cancellationToken ) => Task.CompletedTask;
-    public override long Seek( long offset, SeekOrigin origin ) => throw new NotSupportedException( );
-    public override void SetLength( long value ) => throw new NotSupportedException( );
+    public override long Seek( long offset, SeekOrigin origin )
+    {
+        throw new NotSupportedException( );
+    }
+
+    public override void SetLength( long value )
+    {
+        throw new NotSupportedException( );
+    }
 
     protected override void Dispose( bool disposing )
     {

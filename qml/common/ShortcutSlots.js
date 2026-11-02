@@ -31,7 +31,7 @@ function entryForSlot(shortcuts, slot) {
 // The chord the action menu shows for an action: a fixed meaning first, then
 // the second or third action slot, else "" (the menu shows Ctrl+number).
 function labelFor(shortcuts, actionId) {
-  if (actionId === "change-shortcut") return "Alt+K"
+  if (actionId === Ui.ResultAction.ChangeShortcut) return "Alt+K"
   const entries = (shortcuts || []).filter(value => value.id === actionId)
   const fixed = entries.find(value =>
     value.slot !== Ui.ShortcutSlot.Secondary && value.slot !== Ui.ShortcutSlot.Tertiary)

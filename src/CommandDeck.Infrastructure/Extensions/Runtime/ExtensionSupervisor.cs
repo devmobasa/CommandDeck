@@ -34,9 +34,7 @@ public sealed class ExtensionSupervisor( string hostExecutable, IReadOnlyList<st
 
         _ = ExtensionSandbox.BuildArguments( artifactDirectory, entrypoint );
 
-        var identity = Convert
-            .ToHexString( SHA256.HashData( Encoding.UTF8.GetBytes( installationKey ) ) )[..PackageIdentityCharacters]
-            .ToLowerInvariant( );
+        var identity = Convert.ToHexString( SHA256.HashData( Encoding.UTF8.GetBytes( installationKey ) ) )[..PackageIdentityCharacters].ToLowerInvariant( );
 
         var packageSlice = $"commanddeck-extensions-p{identity}.slice";
 
@@ -91,7 +89,9 @@ public sealed class ExtensionSupervisor( string hostExecutable, IReadOnlyList<st
                 await StopUnitAsync( unit, cleanup.Token )
                     .ConfigureAwait( false );
             }
-            catch ( OperationCanceledException ) when ( cleanup.IsCancellationRequested ) { }
+            catch ( OperationCanceledException ) when ( cleanup.IsCancellationRequested )
+            {
+            }
 
             try
             {
@@ -100,7 +100,9 @@ public sealed class ExtensionSupervisor( string hostExecutable, IReadOnlyList<st
                     process.Kill( entireProcessTree: true );
                 }
             }
-            catch ( InvalidOperationException ) { }
+            catch ( InvalidOperationException )
+            {
+            }
 
             process.Dispose( );
 

@@ -155,6 +155,7 @@ public static partial class Program
     private static async Task SystemdEditingAsync( )
     {
         var root = SpecTemporaryFiles.CreateDirectory( "commanddeck-systemd-editor-" ).FullName;
+        using var launch = await CreateEditorLaunchFixtureAsync( root );
 
         try
         {

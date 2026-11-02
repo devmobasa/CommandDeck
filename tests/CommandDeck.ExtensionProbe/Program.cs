@@ -43,7 +43,8 @@ internal static partial class Program
 
                         initialized = true;
 
-                        return JsonSerializer.SerializeToElement( new InitializeResult( new ProtocolVersion( ), "0.1.0-preview.1", ["probe"] ), ExtensionJsonContext.Default.InitializeResult );
+                        return JsonSerializer.SerializeToElement( new InitializeResult( new ProtocolVersion( ), "0.1.0-preview.1", ["probe"] ),
+                             ExtensionJsonContext.Default.InitializeResult );
                     case ExtensionMethods.Initialized when initialized:
                         ready = true;
 

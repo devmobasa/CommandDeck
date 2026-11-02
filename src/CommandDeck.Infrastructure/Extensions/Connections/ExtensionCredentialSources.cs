@@ -111,13 +111,17 @@ internal sealed class NoCredentialSource : ICredentialSource
         return ValueTask.FromResult<string?>( null );
     }
 
-    public ValueTask<string> BeginLoginAsync( CancellationToken cancellationToken ) =>
+    public ValueTask<string> BeginLoginAsync( CancellationToken cancellationToken )
+    {
         throw new InvalidOperationException( "OAuth is unavailable or already in progress." );
+    }
 
     public ValueTask<string> DisconnectAsync( bool remoteRevoke, CancellationToken cancellationToken ) =>
         ValueTask.FromResult( CredentialStatusText.LocalDisconnect );
 
-    public void Dispose( ) { }
+    public void Dispose( )
+    {
+    }
 }
 
 internal sealed class StaticBearerSource( AiCredentialLease credential, string status ) : ICredentialSource
@@ -138,8 +142,10 @@ internal sealed class StaticBearerSource( AiCredentialLease credential, string s
         }
     }
 
-    public ValueTask<string> BeginLoginAsync( CancellationToken cancellationToken ) =>
+    public ValueTask<string> BeginLoginAsync( CancellationToken cancellationToken )
+    {
         throw new InvalidOperationException( "OAuth is unavailable or already in progress." );
+    }
 
     public ValueTask<string> DisconnectAsync( bool remoteRevoke, CancellationToken cancellationToken )
     {

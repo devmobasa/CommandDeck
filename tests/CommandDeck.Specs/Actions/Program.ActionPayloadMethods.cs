@@ -206,11 +206,15 @@ public static partial class Program
             ValueTask.FromResult<IReadOnlyList<SearchResult>>( [result] );
 
         public ValueTask<IReadOnlyList<SearchResult>> SearchSourcesAsync( ParsedQuery query, IReadOnlyList<string> sourceIds, int limit,
-            CancellationToken cancellationToken ) =>
+            CancellationToken cancellationToken )
+        {
             throw new InvalidOperationException( "Application invocation should use the application query." );
+        }
 
-        public ValueTask<IReadOnlyList<SearchResult>> GetHomeResultsAsync( LauncherPreferences preferences, int limit, CancellationToken cancellationToken ) =>
+        public ValueTask<IReadOnlyList<SearchResult>> GetHomeResultsAsync( LauncherPreferences preferences, int limit, CancellationToken cancellationToken )
+        {
             throw new InvalidOperationException( "Application invocation should not read Home." );
+        }
     }
 
     private static int RunActionPayloadFixture( string fileName, string? value )

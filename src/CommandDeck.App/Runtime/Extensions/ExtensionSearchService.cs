@@ -46,8 +46,7 @@ public sealed partial class ExtensionSearchService : ICommandProvider, IAsyncDis
 
             foreach ( var stale in GetExpiredExtensionOwners( ) )
             {
-                _owners[stale]
-                    .Dispose( );
+                _owners[stale].Dispose( );
 
                 _owners.Remove( stale );
             }
@@ -306,7 +305,10 @@ internal sealed class ExtensionSearchWorker( ExtensionPackageRegistry registry, 
         try
         {
             peer = new ExtensionPeer( process.Input, process.Output, true, [],
-                ( _, _ ) => throw new InvalidDataException( "Search cannot call host methods." ) );
+                ( _, _ ) =>
+                {
+                    throw new InvalidDataException( "Search cannot call host methods." );
+                } );
 
             peer.Start( );
 

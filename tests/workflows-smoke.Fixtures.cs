@@ -43,7 +43,8 @@ static partial class WorkflowSmoke
     {
         var row = (await client.SearchAsync( "proj: Workflow" ))[0];
 
-        Require( ( string? ) row["subtitle"] == project && (( string? ) row["detailMarkdown"])!.Contains( "workflow-test", StringComparison.Ordinal ), "Project checkout and Git status" );
+        Require( ( string? ) row["subtitle"] == project && (( string? ) row["detailMarkdown"])!.Contains( "workflow-test",
+             StringComparison.Ordinal ), "Project checkout and Git status" );
 
         Console.WriteLine( "PASS project checkout and Git status" );
     }
@@ -55,7 +56,8 @@ static partial class WorkflowSmoke
         var outcome = await client.InvokeAsync( row, "snippet-preview", new JsonObject { ["inputValues"] = new JsonObject { ["name"] = "Ada {date}" } } );
 
         Require( Succeeded( outcome ) && ( string? ) outcome["detailMarkdown"] == "Hello Ada {date}", "Snippet preview" );
-        Require( Succeeded( await client.InvokeAsync( row, "snippet-copy", new JsonObject { ["inputValues"] = new JsonObject { ["name"] = "Ada" } } ) ), "Snippet copy" );
+        Require( Succeeded( await client.InvokeAsync( row, "snippet-copy",
+             new JsonObject { ["inputValues"] = new JsonObject { ["name"] = "Ada" } } ) ), "Snippet copy" );
         Require( await File.ReadAllTextAsync( clipboard ) == "Hello Ada", "Snippet clipboard contents" );
         Console.WriteLine( "PASS snippet inputs, preview, and copy" );
     }
@@ -64,9 +66,14 @@ static partial class WorkflowSmoke
     {
         var row = (await client.SearchAsync( "script: Echo" ))[0];
 
-        Require( !Succeeded( await client.InvokeAsync( row, "run", new JsonObject { ["inputValues"] = new JsonObject { ["value"] = "blocked" } } ) ), "Script requires confirmation" );
+        Require( !Succeeded( await client.InvokeAsync( row, "run",
+             new JsonObject { ["inputValues"] = new JsonObject { ["value"] = "blocked" } } ) ), "Script requires confirmation" );
 
-        var outcome = await client.InvokeAsync( row, "run", new JsonObject { ["confirmed"] = true, ["inputValues"] = new JsonObject { ["value"] = "literal $(not-a-command)" } } );
+        var outcome = await client.InvokeAsync( row, "run", new JsonObject
+        {
+            ["confirmed"] = true,
+            ["inputValues"] = new JsonObject { ["value"] = "literal $(not-a-command)" }
+        } );
 
         Require( Succeeded( outcome ) && ( string? ) outcome["detailMarkdown"] == "literal $(not-a-command)", "Literal script output" );
 
@@ -149,9 +156,11 @@ static partial class WorkflowSmoke
         }
 
         Require( selected[0]["fileSelection"]!.AsArray( ).Count == 2, "Retain both selections" );
-        Require( Succeeded( (await client.RequestAsync( "files.batch", new JsonObject { ["actionId"] = "copy-paths" } ))[0]["actionResult"]!.AsObject( ) ), "Copy selected paths" );
+        Require( Succeeded( (await client.RequestAsync( "files.batch",
+             new JsonObject { ["actionId"] = "copy-paths" } ))[0]["actionResult"]!.AsObject( ) ), "Copy selected paths" );
         Require( new HashSet<string>( await File.ReadAllLinesAsync( clipboard ) ).SetEquals( [first, second] ), "Literal selected paths" );
-        Require( Succeeded( (await client.RequestAsync( "files.batch", new JsonObject { ["actionId"] = "open" } ))[0]["actionResult"]!.AsObject( ) ), "Open selected files" );
+        Require( Succeeded( (await client.RequestAsync( "files.batch",
+             new JsonObject { ["actionId"] = "open" } ))[0]["actionResult"]!.AsObject( ) ), "Open selected files" );
 
         Require( (await File.ReadAllLinesAsync( opened ))
             .Select( line => ( string ) JsonNode.Parse( line )![0]! )
@@ -160,8 +169,13 @@ static partial class WorkflowSmoke
 
         await client.RequestAsync( "files.clear" );
 
-        Require( !Succeeded( (await client.RequestAsync( "files.batch", new JsonObject { ["actionId"] = "open" } ))[0]["actionResult"]!.AsObject( ) ), "Cleared selection cannot open files" );
-        Require( ( string? ) (await client.RequestAsync( "files.select", new JsonObject { ["resultId"] = "forged", ["enabled"] = true } ))[0]["type"] == "error", "Reject forged selection" );
+        Require( !Succeeded( (await client.RequestAsync( "files.batch",
+             new JsonObject { ["actionId"] = "open" } ))[0]["actionResult"]!.AsObject( ) ), "Cleared selection cannot open files" );
+        Require( ( string? ) (await client.RequestAsync( "files.select", new JsonObject
+        {
+            ["resultId"] = "forged",
+            ["enabled"] = true
+        } ))[0]["type"] == "error", "Reject forged selection" );
 
         Console.WriteLine( "PASS folder browsing and retained multi-file actions over the socket" );
     }
@@ -275,7 +289,8 @@ static partial class WorkflowSmoke
 
             Require( name.StartsWith( "wayland-", StringComparison.Ordinal ), "Synthetic Wayland server did not start: " + name );
 
-            environment[CommandDeck.EnvironmentVariableNames.WaylandDisplay] = Path.Combine( environment[CommandDeck.XdgEnvironmentNames.RuntimeDirectory], name );
+            environment[CommandDeck.EnvironmentVariableNames.WaylandDisplay] = Path.Combine( environment[CommandDeck.XdgEnvironmentNames.RuntimeDirectory],
+                 name );
 
             return fixture;
         }

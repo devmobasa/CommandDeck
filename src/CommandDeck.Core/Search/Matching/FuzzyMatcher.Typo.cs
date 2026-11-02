@@ -116,7 +116,7 @@ public static partial class FuzzyMatcher
         {
             var candidateCharacter = candidate[start + column - 1];
             var candidateLetter = char.IsLetter( candidateCharacter );
-            var replace = SameCharacter( queryCharacter, candidateCharacter ) ? 0 : queryLetter && candidateLetter ? 1 : unreachable;
+            var replace = ReplacementDistance( queryCharacter, candidateCharacter, queryLetter && candidateLetter, unreachable );
             var transposed = row > 1 && column > 1 && queryLetter && candidateLetter &&
                              SameCharacter( queryCharacter, candidate[start + column - 2] ) &&
                              SameCharacter( query[row - 2], candidateCharacter );
@@ -131,6 +131,16 @@ public static partial class FuzzyMatcher
         dropped.Rotate( );
 
         return smallest;
+    }
+
+    private static int ReplacementDistance( char query, char candidate, bool bothLetters, int unreachable )
+    {
+        if ( SameCharacter( query, candidate ) )
+        {
+            return 0;
+        }
+
+        return bothLetters ? 1 : unreachable;
     }
 
     private static bool CannotMatchTypo( string query )

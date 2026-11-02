@@ -62,7 +62,8 @@ namespace CommandDeck.ExtensionSample
 
             try
             {
-                var saved = await context.Data.WriteAsync( DraftKey, JsonSerializer.SerializeToElement( draft, DraftJsonContext.Default.Draft ), _storageRevision, cancellationToken );
+                var saved = await context.Data.WriteAsync( DraftKey, JsonSerializer.SerializeToElement( draft, DraftJsonContext.Default.Draft ),
+                     _storageRevision, cancellationToken );
 
                 _storageRevision = saved.Revision;
 
@@ -78,14 +79,24 @@ namespace CommandDeck.ExtensionSample
             {
                 _form = _form with
                 {
-                    Error = exception.IsConflict ? "The draft changed elsewhere. Close and reopen before saving again." : "The draft could not be saved. Check permissions and reopen before trying again."
+                    Error = DescribeSaveFailure( exception )
                 };
             }
 
             await context.Views.ReplaceAsync( _form, cancellationToken );
         }
 
-        private static FormView CreateDraftForm( Draft draft )
+        private static string DescribeSaveFailure( ExtensionRpcException exception )
+    {
+        if ( exception.IsConflict )
+        {
+            return "The draft changed elsewhere. Close and reopen before saving again.";
+        }
+
+        return "The draft could not be saved. Check permissions and reopen before trying again.";
+    }
+
+    private static FormView CreateDraftForm( Draft draft )
         {
             return new FormView
             {
@@ -99,7 +110,8 @@ namespace CommandDeck.ExtensionSample
                     FormField
                         .Multiline( BodyFieldId, "Draft", 8192 )
                         .WithDefault( draft.Body ),
-                    FormField.Choice( CategoryFieldId, "Category", [new( NoteCategory, "Note" ), new( TaskCategory, "Task" )] ) with { DefaultValue = JsonSerializer.SerializeToElement( draft.Category, DraftJsonContext.Default.String ) },
+                    FormField.Choice( CategoryFieldId, "Category", [new( NoteCategory, "Note" ), new( TaskCategory,
+                         "Task" )] ) with { DefaultValue = JsonSerializer.SerializeToElement( draft.Category, DraftJsonContext.Default.String ) },
                     FormField
                         .Checkbox( DoneFieldId, "Completed" )
                         .WithDefault( draft.Done )

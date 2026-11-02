@@ -8,7 +8,8 @@ public static partial class Program
         PrepareShortcutSources( fixture );
         await using var service = ShortcutService( fixture );
         var menu = (await service.SnapshotAsync( ShortcutInventoryFixture, default )).Bindings.Single( static row => row.Description == "Menu" );
-        var conflict = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+F8" }, false, ShortcutInventoryFixture, default );
+        var conflict = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+F8" }, false,
+             ShortcutInventoryFixture, default );
         Equal( "Late", conflict.ConflictDescription );
         await ThrowsAsync<InvalidOperationException>( async ( ) => await service.ChangeAsync( ProtocolOperations.ShortcutSet,
             new( ) { Id = menu.Id, Chord = "Super+F8", Replace = true }, false, ShortcutInventoryFixture, default ) );
@@ -28,9 +29,11 @@ public static partial class Program
         var generated = before.Bindings.Where( static row => row.Description == "Workspace" ).ToList( );
         Equal( 2, generated.Select( static row => row.Id ).Distinct( StringComparer.Ordinal ).Count( ) );
         var menu = before.Bindings.Single( static row => row.Description == "Menu" );
-        var first = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+1", Replace = true }, false, inventory, default );
+        var first = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+1", Replace = true }, false,
+             inventory, default );
         True( first.Bindings.Any( static row => row.Description == "Workspace" && row.Chord == "Super+2" ) );
-        var second = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+2", Replace = true }, false, inventory, default );
+        var second = await service.ChangeAsync( ProtocolOperations.ShortcutSet, new( ) { Id = menu.Id, Chord = "Super+2", Replace = true },
+             false, inventory, default );
         Equal( 2, second.Bindings.Count( static row => row.Description == "Workspace" && row.Chord.Length == 0 ) );
         var lua = File.ReadAllText( service.ModuleFile );
         True( lua.Contains( "hl.unbind(\"Super + 1\")", StringComparison.Ordinal ) );

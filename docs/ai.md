@@ -41,6 +41,10 @@ App Server with a CommandDeck-owned login; the user's own `~/.codex` login is
 not read or written. Optional Claude Code, Cursor, and Grok backends have their
 own owned homes and narrower, answer-only capability profiles.
 
+If the assistant asks several questions at once, answer them one at a time.
+CommandDeck sends all answers together after the last question. Escape parks
+the pending request; returning to it keeps the answers already entered.
+
 The selected backend's CLI and the configured Bubblewrap/systemd tools must be
 available. Version constraints and configured executable paths are described in
 [the agent configuration](configuration.md#agent).

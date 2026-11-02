@@ -6,6 +6,7 @@ QtObject {
   id: assertions
   required property var host
   property QuicklinkReconnectAssertions reconnectSpec: QuicklinkReconnectAssertions { host: assertions.host }
+  property ShortcutReconnectAssertions shortcutReconnect: ShortcutReconnectAssertions { host: assertions.host }
   function find(item, name) {
     if (item.objectName === name) return item
     for (const child of item.children || []) {
@@ -15,6 +16,7 @@ QtObject {
     return null
   }
   function run() {
+    shortcutReconnect.start()
     const panel = host.part_settings
     const controller = panel.quicklinksController
     panel.visible = true

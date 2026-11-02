@@ -46,7 +46,10 @@ public static partial class Program
             True( stored.Any( result => result.Kind == "file" ) );
             True( stored.All( result => result.Kind != "quicklink" ) );
         }
-        finally { Directory.Delete( root, recursive: true ); }
+        finally
+        {
+            Directory.Delete( root, recursive: true );
+        }
 
         static SourcePreference CreateSourcePreference( SourcePreference source )
         {
@@ -141,7 +144,10 @@ public static partial class Program
             True( unavailable.Message?.Contains( "Web fallback reset to the default.", StringComparison.Ordinal ) == true );
             True( (await store.CheckIntegrityAsync( default )).Succeeded );
         }
-        finally { Directory.Delete( root, recursive: true ); }
+        finally
+        {
+            Directory.Delete( root, recursive: true );
+        }
     }
 
     private static async Task QuicklinkAliasesShareNamespacesAsync( )
@@ -188,6 +194,9 @@ public static partial class Program
 
             Equal( "configdocs", (await store.GetQuicklinksAsync( default )).Quicklinks.Single( entry => entry.Source == "configured" ).Quicklink.Alias );
         }
-        finally { Directory.Delete( root, recursive: true ); }
+        finally
+        {
+            Directory.Delete( root, recursive: true );
+        }
     }
 }

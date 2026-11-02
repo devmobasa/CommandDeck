@@ -391,6 +391,9 @@ Clipboard History accepts Ctrl+Shift+letter or Ctrl+Alt+letter while CommandDeck
 The filter finds descriptions or keys such as `super+space`, `ctrl k`, and `shift super b`.
 It lists all bindings on a key in Hyprland's order. Hyprland can run more than one binding on the same key.
 Submap bindings show their submap and stay read-only.
+Added shortcuts appear once in filtered results. After recording, restoring,
+or adding a binding, keyboard focus returns to its updated pill unless you
+move to another control while it saves.
 
 Desktop changes take priority over the original configuration. CommandDeck can move a binding when its
 source contains a literal binding call loaded before the CommandDeck module. An info button explains
@@ -408,6 +411,9 @@ Added shortcuts appear under **Added by you**; their restore button removes them
 The installed CommandDeck hotkey module captures desktop chords in a temporary recording submap.
 The pill shows **Preparing…** until capture is ready, then **Type Shortcut…**. Keys pressed while preparing are ignored.
 Escape leaves it. Recording also ends on focus loss, hiding Settings, disconnection, or a ten-second timeout.
+Shortcut edits wait until the connection and refreshed Settings state are ready.
+If the connection drops during a save, review the refreshed binding before trying
+again; CommandDeck does not repeat an uncertain edit automatically.
 Without the module, Hyprland can intercept keys during recording. Manually configured launcher hotkeys
 stay read-only; run `commanddeck hotkey install` to let Settings manage the launcher hotkey.
 

@@ -39,6 +39,8 @@ public sealed class UnixProtocolClient : IAsyncDisposable
                 .ConnectAsync( new UnixDomainSocketEndPoint( resolved ), cancellationToken )
                 .ConfigureAwait( false );
 
+            UnixPeerIdentity.Verify( socket, UnixPeerIdentity.CurrentUserId( ) );
+
             return new UnixProtocolClient( socket );
         }
         catch

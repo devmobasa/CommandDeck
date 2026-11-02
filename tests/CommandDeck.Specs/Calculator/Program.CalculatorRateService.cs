@@ -6,7 +6,8 @@ namespace CommandDeck.Specs;
 public static partial class Program
 {
     private const string CalculatorRatesXml =
-        "<Envelope><Cube><Cube time='2026-10-21'><Cube currency='USD' rate='1.1234'/><Cube currency='GBP' rate='0.83825'/></Cube></Cube></Envelope>";
+        ("<Envelope><Cube><Cube time='2026-10-21'><Cube currency='USD' rate='1.1234'/><Cube currency='GBP' " +
+            "rate='0.83825'/></Cube></Cube></Envelope>");
 
     private sealed class CalculatorClock : TimeProvider
     {
@@ -242,7 +243,10 @@ public static partial class Program
             Equal( 1, staleHandler.Calls );
         }
 
-        using CalculatorRateHandler disabledHandler = new( _ => throw new InvalidOperationException( "Network disabled" ) );
+        using CalculatorRateHandler disabledHandler = new( _ =>
+        {
+            throw new InvalidOperationException( "Network disabled" );
+        } );
 
         await using ( CurrencyRateService disabled = new( path, false, clock, disabledHandler ) )
         {

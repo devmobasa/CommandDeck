@@ -16,11 +16,17 @@ public static partial class Program
             using CancellationTokenSource deadline = new( TimeSpan.FromSeconds( 5 ) );
 
             await using ExtensionPeer host = new( pipes.Host, pipes.Host, true, [ExtensionMethods.CommandData],
-                ( _, _ ) => throw new ExtensionApplicationException( ExtensionErrorCodes.RevisionConflict ) );
+                ( _, _ ) =>
+                {
+                    throw new ExtensionApplicationException( ExtensionErrorCodes.RevisionConflict );
+                } );
 
             host.Start( );
 
-            await using ExtensionPeer child = new( pipes.Child, pipes.Child, false, [], ( _, _ ) => throw new InvalidOperationException( ) );
+            await using ExtensionPeer child = new( pipes.Child, pipes.Child, false, [], ( _, _ ) =>
+            {
+                throw new InvalidOperationException( );
+            } );
 
             child.Start( );
 
@@ -85,7 +91,10 @@ public static partial class Program
             {
                 await context.Data.WriteAsync( "draft", JsonElement.Parse( "1" ), -1, cancellationToken );
             }
-            catch ( ExtensionRpcException exception ) { Codes.Add( exception.ErrorCode ); }
+            catch ( ExtensionRpcException exception )
+            {
+                Codes.Add( exception.ErrorCode );
+            }
 
             var oversized = JsonElement.Parse( "\"" + new string( 'x', 17000 ) + "\"" );
 
@@ -93,7 +102,10 @@ public static partial class Program
             {
                 await context.Data.WriteAsync( "draft", oversized, 0, cancellationToken );
             }
-            catch ( ExtensionRpcException exception ) { Codes.Add( exception.ErrorCode ); }
+            catch ( ExtensionRpcException exception )
+            {
+                Codes.Add( exception.ErrorCode );
+            }
 
             await context.Views.ReplaceAsync( new DetailView { Id = "data", Title = "Data" }, cancellationToken );
         }
@@ -103,7 +115,8 @@ public static partial class Program
 
     private static void ExtensionErrorFramesAreStrict( )
     {
-        const string valid = "{\"jsonrpc\":\"2.0\",\"id\":\"h:1\",\"error\":{\"code\":-32001,\"message\":\"safe\",\"data\":{\"code\":\"revision_conflict\"}}}";
+        const string valid = ((("{\"jsonrpc\":\"2.0\",\"id\":\"h:1\",\"error\":{\"code\":-32001,\"message\":\"safe\",\"data\":{\"code\":\"revision_conflic")) +
+            "t\"}}}");
 
         Equal( "revision_conflict", ExtensionFraming.Parse( Encoding.UTF8.GetBytes( valid ) ).Error!.Data!.Code );
 
@@ -120,7 +133,9 @@ public static partial class Program
 
                 throw new InvalidOperationException( "Invalid error data was accepted." );
             }
-            catch ( Exception exception ) when ( exception is InvalidDataException or JsonException ) { }
+            catch ( Exception exception ) when ( exception is InvalidDataException or JsonException )
+            {
+            }
         }
 
         True( new ExtensionRpcException( -32001, "safe", "future_code" ).ErrorCode is null );

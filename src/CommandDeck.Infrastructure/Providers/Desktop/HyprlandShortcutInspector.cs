@@ -7,6 +7,7 @@ public static class HyprlandShortcutInspector
 {
     private const string CodePrefix = "code:";
 
+    private const int MaximumSubmapCharacters = 200;
     private const int SuperModifierMask = 64;
     private const int ControlModifierMask = 4;
     private const int AltModifierMask = 8;
@@ -20,7 +21,6 @@ public static class HyprlandShortcutInspector
     ];
 
     public const int MaximumKeybindings = 1024;
-    private const int MaximumDescriptionCharacters = 200;
     private const string Xf86Prefix = "XF86";
 
     public static async ValueTask<IReadOnlyList<ShortcutBinding>> InspectAsync( CancellationToken cancellationToken ) =>
@@ -91,8 +91,8 @@ public static class HyprlandShortcutInspector
                 bindings.Add( new Keybinding
                 {
                     Chord = chord,
-                    Description = CleanText( JsonElementReader.ReadString( bind, "description" ), MaximumDescriptionCharacters ),
-                    Submap = CleanText( JsonElementReader.ReadString( bind, "submap" ), MaximumDescriptionCharacters )
+                    Description = CleanText( JsonElementReader.ReadString( bind, "description" ), ShortcutLimits.MaximumDescriptionCharacters ),
+                    Submap = CleanText( JsonElementReader.ReadString( bind, "submap" ), MaximumSubmapCharacters )
                 } );
             }
 
@@ -227,8 +227,7 @@ public static class HyprlandShortcutInspector
                 {
                     if ( MatchesTarget( command, description, target ) )
                     {
-                        chords[target.Id]
-                            .Add( chord );
+                        chords[target.Id].Add( chord );
                     }
                 }
             }
@@ -292,9 +291,7 @@ public static class HyprlandShortcutInspector
         "SPACE" => "Space",
         "RETURN" => "Enter",
         _ when key.Length == 1 => key.ToUpperInvariant( ),
-        _ => string.Concat( key[..1]
-            .ToUpperInvariant( ), key[1..]
-            .ToLowerInvariant( ) )
+        _ => string.Concat( key[..1].ToUpperInvariant( ), key[1..].ToLowerInvariant( ) )
     };
 
     private static long GetInt64( JsonElement element, string property )

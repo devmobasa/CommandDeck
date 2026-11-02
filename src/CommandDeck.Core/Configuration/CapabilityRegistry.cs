@@ -27,22 +27,29 @@ public static class CapabilityRegistry
         new( "Hyprland inspection", "On", "Windows/workspaces/monitors", "None except transient results", "Search", "Disable provider" ),
         new( "Hyprland actions", "On", "Current compositor state", "Hyprland IPC action", "Explicit Enter/action", "Disable provider/action" ),
         new( "Window commands", "On", "Hyprland's active window and monitor layout when a window command matches the search",
-            "Hyprland IPC float, resize, move, fullscreen, monitor, or workspace dispatches to the window focused before the launcher opened, by its literal address",
+            ("Hyprland IPC float, resize, move, fullscreen, monitor, or workspace dispatches to the window " +
+                "focused before the launcher opened, by its literal address"),
             "Explicit Enter/action on a matching search row or `ctl:`", "Disable the Desktop controls source" ),
-        new( "Process signals", "On", "Name, state, start time, owner, memory, and CPU time of the user's own processes from /proc, only for a `kill:` search",
+        new( "Process signals", "On", ("Name, state, start time, owner, memory, and CPU time of the user's own processes from /proc, only " +
+            "for a `kill:` search"),
             "SIGTERM or SIGKILL through a pidfd to the chosen process after its PID, start time, and owner are checked again",
             "Confirmed Terminate or Force kill naming the PID and process", "Cancel the confirmation; disable the Processes source" ),
         new( "Color picker", "On when hyprpicker is installed", "Screen pixels, inside hyprpicker after the launcher closes",
             "The picked color to the clipboard through hyprpicker --autocopy", "Explicit Enter on Pick Color; a 300 ms user timer starts hyprpicker",
             "Escape in hyprpicker; disable the Desktop controls source" ),
         new( "Desktop controls", "On", "Whether wpctl, playerctl, and rfkill are on PATH",
-            "Literal wpctl, playerctl, or rfkill argv for the default audio sink/source, the active media player, or the Wi-Fi/Bluetooth soft block",
+            ("Literal wpctl, playerctl, or rfkill argv for the default audio sink/source, the active media " +
+                "player, or the Wi-Fi/Bluetooth soft block"),
             "Explicit Enter/action on a matching search row or `ctl:`", "Disable the Desktop controls source" ),
         new( "Run a program", "On", "Whether the first word after `>` is a program on PATH or an absolute executable path",
-            "The typed literal argv, launched detached like an application or in the terminal; Copy Command sends its text to wl-copy",
+            ("The typed literal argv, launched detached like an application or in the terminal; Copy Command " +
+                "sends its text to wl-copy"),
             "Explicit Enter or action on the `>` Run row", "Disable the Commands & Quicklinks source" ),
         new( "Calculator", "On", "Query expression",
-            "CommandDeck lazily sends exactly one HTTPS GET to https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml with only User-Agent: CommandDeck, no cookies and no query content; only after a currency expression with no fresh cache; at most once per 6 hours after success or 30 minutes after failure; rates cached in the state directory",
+            ("CommandDeck lazily sends exactly one HTTPS GET to " +
+                "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml with only User-Agent: CommandDeck, no " +
+                "cookies and no query content; only after a currency expression with no fresh cache; at most once " +
+                "per 6 hours after success or 30 minutes after failure; rates cached in the state directory"),
             "Inline arithmetic, conversions and date counts; `=` for explicit expressions",
             "`search.calculator.inline=false`; disable provider; `search.calculator.exchangeRates=false`" ),
         new( "Quicklinks", "On", "User config/query", "URL to browser", "Explicit action", "Remove quicklink" ),

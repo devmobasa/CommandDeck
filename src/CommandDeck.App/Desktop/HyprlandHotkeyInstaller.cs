@@ -40,9 +40,10 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     // Makes the checks that Install makes before it writes, and writes nothing.
-    public string Check( string chord )
+    public string Check( string? chord = null )
     {
-        var normalized = HyprlandHotkeyConfig.NormalizeChord( chord );
+        var current = File.Exists( paths.HotkeyFile ) ? HyprlandHotkeyConfig.ReadChord( File.ReadAllText( paths.HotkeyFile ) ) : null;
+        var normalized = HyprlandHotkeyConfig.NormalizeChord( chord ?? current ?? HyprlandHotkeyConfig.DefaultChord );
 
         if ( !File.Exists( paths.MainConfig ) )
         {
@@ -52,7 +53,7 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
         return normalized;
     }
 
-    public IReadOnlyList<string> Install( string chord )
+    public IReadOnlyList<string> Install( string? chord = null )
     {
         var normalized = Check( chord );
         List<string> messages = [];
@@ -66,12 +67,13 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
             return messages;
         }
 
-        if ( HyprlandHotkeyConfig.MentionsChord( bindings, normalized ) )
+        if ( chord is not null && HyprlandHotkeyConfig.MentionsChord( bindings, normalized ) )
         {
             messages.Add( $"Note: {paths.Bindings} also binds {normalized}; the CommandDeck binding loads later and replaces it." );
         }
 
-        var generated = HyprlandHotkeyConfig.GenerateFile( normalized );
+        var updates = PlanInstallation( chord );
+        var generated = updates[paths.HotkeyFile]!;
         var current = File.Exists( paths.HotkeyFile ) ? File.ReadAllText( paths.HotkeyFile ) : null;
         if ( current != generated )
         {
@@ -80,10 +82,12 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
                 messages.Add( $"Backed up an unrelated {paths.HotkeyFile} to {Backup( paths.HotkeyFile )}" );
             }
 
-            WriteAtomically( paths.HotkeyFile, generated );
-
-            messages.Add( $"Wrote {paths.HotkeyFile}: {normalized} toggles CommandDeck through {HyprlandHotkeyConfig.ShortcutId}." );
+            messages.Add( $"Regenerated {paths.HotkeyFile} with saved shortcuts and {HyprlandHotkeyConfig.ShortcutId}." );
         }
+
+        var changed = updates.Where( update => !HasContent( update.Key, update.Value ) )
+            .ToDictionary( static update => update.Key, static update => update.Value, StringComparer.Ordinal );
+        ShortcutFileTransaction.ApplyAsync( changed, static _ => ValueTask.CompletedTask, CancellationToken.None ).AsTask( ).GetAwaiter( ).GetResult( );
 
         var main = File.ReadAllText( paths.MainConfig );
         var required = HyprlandHotkeyConfig.EnsureRequire( main );
@@ -96,11 +100,29 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
 
         if ( messages.Count == 0 )
         {
-            messages.Add( $"The {normalized} CommandDeck hotkey is already installed." );
+            var message = chord is null ? "Saved shortcut choices are already installed." : $"The {normalized} CommandDeck hotkey is already installed.";
+            messages.Add( message );
         }
 
         return messages;
     }
+
+    private IReadOnlyDictionary<string, string?> PlanInstallation( string? chord )
+    {
+        var omarchy = Environment.GetEnvironmentVariable( "OMARCHY_PATH" ) ?? "/usr/share/omarchy";
+        var editor = new ShortcutEditorService( paths, omarchy, inHyprland: static ( ) => false );
+        try
+        {
+            return editor.PlanInstallation( chord );
+        }
+        finally
+        {
+            editor.DisposeAsync( ).AsTask( ).GetAwaiter( ).GetResult( );
+        }
+    }
+
+    private static bool HasContent( string path, string? content ) =>
+        content is null ? !File.Exists( path ) && new FileInfo( path ).LinkTarget is null : File.Exists( path ) && File.ReadAllText( path ) == content;
 
     // Removes the require line before the module, so Hyprland never requires a
     // missing file. A module CommandDeck did not generate is left in place.

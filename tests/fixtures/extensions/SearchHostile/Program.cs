@@ -19,7 +19,8 @@ sealed class Hostile : IExtensionCommand, IExtensionSearchProvider
     public string SearchId => "probe";
     public ValueTask OpenAsync( CommandContext context, CancellationToken token ) => Show( context, "Sibling ready", token );
     public ValueTask HandleAsync( CommandContext context, CommandEvent commandEvent, CancellationToken token ) => Show( context, "Sibling alive", token );
-    private static ValueTask Show( CommandContext context, string title, CancellationToken token ) => context.Views.ReplaceAsync( new DetailView { Id = "idle", Title = title, Actions = [ViewAction.Callback( "ping", "Ping" )] }, token );
+    private static ValueTask Show( CommandContext context, string title, CancellationToken token ) =>
+         context.Views.ReplaceAsync( new DetailView { Id = "idle", Title = title, Actions = [ViewAction.Callback( "ping", "Ping" )] }, token );
     public async ValueTask<ExtensionSearchResponse> SearchAsync( SearchContext context, CancellationToken token )
     {
         if ( context.Query == "hang" )
@@ -51,8 +52,12 @@ sealed class Hostile : IExtensionCommand, IExtensionSearchProvider
                 File.WriteAllText( "/extension/escaped.txt", "query" );
                 mutable = true;
             }
-            catch ( IOException ) { }
-            catch ( UnauthorizedAccessException ) { }
+            catch ( IOException )
+            {
+            }
+            catch ( UnauthorizedAccessException )
+            {
+            }
 
             var network = false;
 
@@ -61,7 +66,9 @@ sealed class Hostile : IExtensionCommand, IExtensionSearchProvider
                 using var socket = new Socket( AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp );
                 network = true;
             }
-            catch ( SocketException ) { }
+            catch ( SocketException )
+            {
+            }
 
             var hostHome = Directory
                 .EnumerateFileSystemEntries( "/home" )

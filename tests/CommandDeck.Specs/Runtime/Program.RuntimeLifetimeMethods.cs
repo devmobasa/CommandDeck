@@ -47,7 +47,10 @@ public static partial class Program
             RuntimeConstructionOptions failing = new( )
             {
                 AgentBackendFactory = ( _, _ ) => backend,
-                CliAgentBackendFactory = ( _, _ ) => throw new InvalidOperationException( "injected after indexer and backend construction" )
+                CliAgentBackendFactory = ( _, _ ) =>
+                {
+                    throw new InvalidOperationException( "injected after indexer and backend construction" );
+                }
             };
 
             await ThrowsAsync<InvalidOperationException>( async ( ) => await CommandDeckRuntime.CreateAsync( config, failing, default ) );

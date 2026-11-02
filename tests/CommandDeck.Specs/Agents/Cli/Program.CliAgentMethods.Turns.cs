@@ -170,7 +170,8 @@ public static partial class Program
                 else if ( argv == "auth login" )
                 {
                     process.Stdout.Write(
-                        "Opening browser to sign in…\nIf the browser didn't open, visit: https://claude.com/oauth?code=true&state=abc\nPaste code here if prompted > " );
+                        ("Opening browser to sign in…\nIf the browser didn't open, visit: " +
+                            "https://claude.com/oauth?code=true&state=abc\nPaste code here if prompted > ") );
 
                     await process.Stdin.Closed.Task;
                     authenticated = process.Stdin.Text == "pasted-code\n";
@@ -202,13 +203,16 @@ public static partial class Program
                     process.Stdout.WriteLine( "{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"sess-1\"}" );
 
                     process.Stdout.WriteLine(
-                        "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Hel\"}}}" );
+                        ((("{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"He")) +
+                            "l\"}}}") );
 
                     process.Stdout.WriteLine(
-                        "{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"lo\"}}}" );
+                        ((("{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"lo")) +
+                            "\"}}}") );
 
                     process.Stdout.WriteLine(
-                        "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"Hello\",\"session_id\":\"sess-1\",\"usage\":{\"input_tokens\":3,\"output_tokens\":2}}" );
+                        ((("{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"Hello\",\"session_id\":\"sess-1\",\"usage\"")) +
+                            ":{\"input_tokens\":3,\"output_tokens\":2}}") );
 
                     process.Exit( 0 );
                 }
@@ -229,7 +233,9 @@ public static partial class Program
                 if ( string.Join( ' ', request.Arguments ) == "login --device-auth" )
                 {
                     process.Stdout.Write(
-                        "\nTo sign in, open this URL in your browser:\n\n  https://accounts.x.ai/oauth2/device?user_code=ABCD-EFGH\n\nConfirm this code in your browser:\n\n  ABCD-EFGH\n\nWaiting for authorization...\n" );
+                        ("\nTo sign in, open this URL in your browser:\n\n  " +
+                            "https://accounts.x.ai/oauth2/device?user_code=ABCD-EFGH\n\nConfirm this code in your browser:\n\n  " +
+                            "ABCD-EFGH\n\nWaiting for authorization...\n") );
 
                     await authorize.Task;
                     Directory.CreateDirectory( Path.Combine( request.HomePath, ".grok" ) );

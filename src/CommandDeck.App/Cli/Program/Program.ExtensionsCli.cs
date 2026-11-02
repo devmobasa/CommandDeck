@@ -66,22 +66,32 @@ public static partial class Program
     private static void PrintExtensionsHelp( )
     {
         Console.WriteLine(
-            "extensions list|inspect|install|attach|logs|debug|debug-stop|enable|disable|remove|rollback|grants|configure [package-id] [--archive path] [--digest sha256] [--allow capability,...] [--yes] [--json]" );
+            ("extensions list|inspect|install|attach|logs|debug|debug-stop|enable|disable|remove|rollback|grants|c" +
+                "onfigure [package-id] [--archive path] [--digest sha256] [--allow capability,...] [--yes] [--json]") );
 
         Console.WriteLine(
-            "Debug: development packages only; --command ID --digest SHA256 --seconds 1..300 --yes. Open that command, then connect GDB to the returned socket. debug-stop revokes the lease. logs --include-stderr explicitly includes untrusted child text that may contain sensitive data." );
+            ("Debug: development packages only; --command ID --digest SHA256 --seconds 1..300 --yes. Open that " +
+                "command, then connect GDB to the returned socket. debug-stop revokes the lease. logs " +
+                "--include-stderr explicitly includes untrusted child text that may contain sensitive data.") );
 
         Console.WriteLine(
-            "Configure: --settings-file FILE.json --expected-revision REVISION. Inspect first; the file replaces non-secret settings. An empty object restores declared defaults." );
+            ("Configure: --settings-file FILE.json --expected-revision REVISION. Inspect first; the file replaces " +
+                "non-secret settings. An empty object restores declared defaults.") );
 
         Console.WriteLine(
-            "Connections: connections|connection-set|connection-remove|connection-login PACKAGE. Set uses --connection-file FILE.json --yes; remove/login use --connection NAME --yes. Remove optionally uses --remote-revoke. Credentials and roots last only for this daemon session." );
+            ("Connections: connections|connection-set|connection-remove|connection-login PACKAGE. Set uses " +
+                "--connection-file FILE.json --yes; remove/login use --connection NAME --yes. Remove optionally uses " +
+                "--remote-revoke. Credentials and roots last only for this daemon session.") );
 
         Console.WriteLine(
-            "effects-reset PACKAGE --yes [--include-legacy] clears remote-write history and permits previously used request keys to be sent again. --include-legacy also clears unattributed legacy history for all packages." );
+            ("effects-reset PACKAGE --yes [--include-legacy] clears remote-write history and permits previously " +
+                "used request keys to be sent again. --include-legacy also clears unattributed legacy history for " +
+                "all packages.") );
 
         Console.WriteLine(
-            "Inspect an archive, then install its reviewed digest with --yes. New packages are disabled. Enable the package and the master switch separately. Omit package-id only for the master enable or disable switch." );
+            ("Inspect an archive, then install its reviewed digest with --yes. New packages are disabled. Enable " +
+                "the package and the master switch separately. Omit package-id only for the master enable or disable " +
+                "switch.") );
     }
 
     private static ProtocolRequest CreateExtensionManagementRequest( CliArguments arguments, string action, string? key, long expectedRevision,
@@ -113,8 +123,7 @@ public static partial class Program
                 DebugSeconds = int.Parse( arguments.GetOption( CliOptionNames.Seconds ) ?? "0", System.Globalization.CultureInfo.InvariantCulture ),
                 Confirmed = arguments.HasFlag( CliOptionNames.Yes ),
                 EraseSettings = arguments.HasFlag( CliOptionNames.EraseSettings ),
-                Grants = arguments
-                    .GetOption( CliOptionNames.Allow )
+                Grants = arguments.GetOption( CliOptionNames.Allow )
                     ?.Split( ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries )
             }
         };
@@ -129,7 +138,8 @@ public static partial class Program
         else
         {
             Console.WriteLine(
-                $"Extensions {(result.Enabled ? EnabledValue : DisabledValue)}; registry revision {result.Revision}; {result.Total} retained packages." );
+                ($"Extensions {(result.Enabled ? EnabledValue : DisabledValue)}; registry revision " +
+                    $"{result.Revision}; {result.Total} retained packages.") );
 
             if ( result.Error is not null )
             {
@@ -163,7 +173,8 @@ public static partial class Program
 
             if ( result.Debug is { } debug )
             {
-                Console.WriteLine( $"Debug lease: {debug.CommandId}, expires {debug.ExpiresAt:O}, socket {debug.SocketPath}, consumed {debug.Consumed}" );
+                Console.WriteLine( ($"Debug lease: {debug.CommandId}, expires {debug.ExpiresAt:O}, socket " +
+                    $"{debug.SocketPath}, consumed {debug.Consumed}") );
             }
 
             foreach ( var diagnostic in result.Diagnostics )

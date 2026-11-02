@@ -82,7 +82,9 @@ public sealed partial class ExtensionDebugTransport : IDisposable
                 .WhenAll( read, write )
                 .ConfigureAwait( false );
         }
-        catch ( OperationCanceledException ) when ( !cancellationToken.IsCancellationRequested ) { }
+        catch ( OperationCanceledException ) when ( !cancellationToken.IsCancellationRequested )
+        {
+        }
     }
 
     private async Task ReadTerminalAsync( Stream target, CancellationToken token )

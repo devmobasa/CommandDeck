@@ -15,6 +15,7 @@ QtObject {
   property var inspector: null
   property var agent: null
   property var clipboard: null
+  property SettingsChildDialogAssertions childDialogs: SettingsChildDialogAssertions { host: journeys }
   readonly property var agentRow: ({
     id: "agent:conversation", kind: Protocol.ResultKinds.Assistant, title: "Assistant conversation",
     actions: [{ id: "open", title: "Open conversation", kind: Protocol.ActionKinds.AgentOpen }]
@@ -278,6 +279,7 @@ QtObject {
           "clicking the clipboard row opens the browser with its search focused")
         journeys.press(Qt.Key_Escape)
       },
+      ...journeys.childDialogs.steps(),
       () => {
         journeys.searchReady("the launcher keeps search ready after every surface journey")
         journeys.deck().close()

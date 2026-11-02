@@ -36,7 +36,15 @@ public static class AuthorCommands
         if ( command is HelpCommand or HelpOption )
         {
             Console.WriteLine(
-                "commanddeck-ext new --directory DIR --id org.example.draft --name NAME --feed DIR\ncommanddeck-ext check|build --directory DIR\ncommanddeck-ext pack|dev --directory DIR --output FILE.cdext\ncommanddeck-ext update|attach|reload --host PATH --archive FILE.cdext --digest SHA256 --yes [--allow capability,...] [--socket PATH]\ndev creates a separate .development identity with a unique build version. Inspect its archive, then attach/reload the reviewed digest. For native debugging use commanddeck extensions debug PACKAGE --command ID --digest SHA256 --seconds 300 --yes; open the command through its explicit extension filter.\nBuild and pack execute your project's MSBuild targets. Check only validates the manifest and project layout. Update installs the reviewed archive through the daemon; it does not enable or open it." );
+                ("commanddeck-ext new --directory DIR --id org.example.draft --name NAME --feed DIR\ncommanddeck-ext " +
+                    "check|build --directory DIR\ncommanddeck-ext pack|dev --directory DIR --output " +
+                    "FILE.cdext\ncommanddeck-ext update|attach|reload --host PATH --archive FILE.cdext --digest SHA256 " +
+                    "--yes [--allow capability,...] [--socket PATH]\ndev creates a separate .development identity with a " +
+                    "unique build version. Inspect its archive, then attach/reload the reviewed digest. For native " +
+                    "debugging use commanddeck extensions debug PACKAGE --command ID --digest SHA256 --seconds 300 " +
+                    "--yes; open the command through its explicit extension filter.\nBuild and pack execute your " +
+                    "project's MSBuild targets. Check only validates the manifest and project layout. Update installs " +
+                    "the reviewed archive through the daemon; it does not enable or open it.") );
 
             return 0;
         }
@@ -195,8 +203,16 @@ public static class AuthorCommands
         throw new ArgumentException( "Missing value: " + key );
     }
 
-    private static string Required( Dictionary<string, string> options, string key ) =>
-        options.TryGetValue( key, out var value ) && !string.IsNullOrWhiteSpace( value ) ? value : throw new ArgumentException( "Required option: " + key );
+    private static string Required( Dictionary<string, string> options, string key )
+    {
+        options.TryGetValue( key, out var value );
+        if ( string.IsNullOrWhiteSpace( value ) )
+        {
+            throw new ArgumentException( "Required option: " + key );
+        }
+
+        return value;
+    }
 
     private static async Task<int> RunProcessAsync( string executable, string directory, IEnumerable<string> args, CancellationToken cancellationToken )
     {

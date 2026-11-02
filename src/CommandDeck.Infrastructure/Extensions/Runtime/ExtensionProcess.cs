@@ -100,7 +100,9 @@ public sealed class ExtensionProcess : IExtensionProcess
                 }
             }
         }
-        catch ( Exception exception ) when ( exception is IOException or OperationCanceledException or ObjectDisposedException ) { }
+        catch ( Exception exception ) when ( exception is IOException or OperationCanceledException or ObjectDisposedException )
+        {
+        }
     }
 
     public async ValueTask DisposeAsync( )
@@ -149,7 +151,9 @@ public sealed class ExtensionProcess : IExtensionProcess
                     .WaitAsync( TimeSpan.FromMilliseconds( ShutdownTimeoutMilliseconds ) )
                     .ConfigureAwait( false );
             }
-            catch ( TimeoutException ) { }
+            catch ( TimeoutException )
+            {
+            }
 
             _process.Dispose( );
             _lifetime.Dispose( );
@@ -176,7 +180,9 @@ public sealed class ExtensionProcess : IExtensionProcess
                     _process.Kill( entireProcessTree: true );
                 }
             }
-            catch ( InvalidOperationException ) { }
+            catch ( InvalidOperationException )
+            {
+            }
         }
     }
 }

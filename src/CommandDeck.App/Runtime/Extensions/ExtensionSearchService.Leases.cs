@@ -147,7 +147,9 @@ public sealed partial class ExtensionSearchService
                 .WhenAll( workers )
                 .ConfigureAwait( false );
         }
-        catch ( OperationCanceledException ) { }
+        catch ( OperationCanceledException )
+        {
+        }
     }
 
     public async ValueTask DisposeAsync( )

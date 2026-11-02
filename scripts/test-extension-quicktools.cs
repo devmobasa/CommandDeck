@@ -54,7 +54,8 @@ try
         start.ArgumentList.Add( arg );
     }
 
-    start.Environment[CommandDeck.EnvironmentVariableNames.ExecutablePath] = bin + ":" + Environment.GetEnvironmentVariable( CommandDeck.EnvironmentVariableNames.ExecutablePath );
+    start.Environment[CommandDeck.EnvironmentVariableNames.ExecutablePath] = bin + ":" +
+         Environment.GetEnvironmentVariable( CommandDeck.EnvironmentVariableNames.ExecutablePath );
     start.Environment["COMMANDDECK_TEST_EFFECTS"] = root;
     daemon = Process.Start( start )!;
     stdout = daemon.StandardOutput.ReadToEndAsync( );
@@ -183,7 +184,8 @@ try
 
         var inspected = await Cli( "inspect", "--archive", variant );
 
-        var installed = await Cli( "install", "--archive", variant, "--digest", inspected["archiveDigest"]!.GetValue<string>( ), "--allow", "clipboard.write,desktop.open-url", "--yes" );
+        var installed = await Cli( "install", "--archive", variant, "--digest", inspected["archiveDigest"]!.GetValue<string>( ), "--allow",
+             "clipboard.write,desktop.open-url", "--yes" );
 
         await Cli( "enable", id );
 
@@ -198,7 +200,8 @@ try
 
     Check( File.ReadAllLines( Path.Combine( root, "copied" ) ).Length == 3, "A view command used invocation-only effects" );
 
-    Console.WriteLine( "PASS Quick Tools: inert discovery, denied grants, three no-view completions/reopens, exact clipboard, List/Detail assets, exact URL, revocation and replay rejection." );
+    Console.WriteLine( ("PASS Quick Tools: inert discovery, denied grants, three no-view completions/reopens, exact " +
+        "clipboard, List/Detail assets, exact URL, revocation and replay rejection.") );
 }
 finally
 {
@@ -274,7 +277,8 @@ static JsonObject CreateOpenInput( string command, string key )
     return new( )
     {
         ["resultId"] = "extension:" + key + ":" + command,
-        ["extensionInput"] = new JsonObject { ["features"] = new JsonArray( "commands@1", "commands.no-view@1", "effects.copy-text@1", "assets.png@1", "views.list@1", "views.detail@1", "views.stack@1", "actions.open-url@1" ) }
+        ["extensionInput"] = new JsonObject { ["features"] = new JsonArray( "commands@1", "commands.no-view@1", "effects.copy-text@1",
+             "assets.png@1", "views.list@1", "views.detail@1", "views.stack@1", "actions.open-url@1" ) }
     };
 }
 

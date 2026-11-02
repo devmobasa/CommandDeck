@@ -47,7 +47,8 @@ public sealed partial class ClipboardHistoryStore
                 }
 
                 Execute( "CREATE TABLE settings(enabled INTEGER NOT NULL); INSERT INTO settings VALUES(0); " +
-                         "CREATE TABLE entries(id TEXT PRIMARY KEY,text TEXT NOT NULL,copied INTEGER NOT NULL,pinned INTEGER NOT NULL DEFAULT 0)" );
+                         ("CREATE TABLE entries(id TEXT PRIMARY KEY,text TEXT NOT NULL,copied INTEGER NOT NULL,pinned INTEGER " +
+                             "NOT NULL DEFAULT 0)") );
             }
             else if ( existing != 2 )
             {
@@ -105,7 +106,9 @@ public sealed partial class ClipboardHistoryStore
         var maximumText = allowRich ? 65536 : 32768;
 
         RequireValidRows( "entries",
-            $"typeof(id)!='text' OR length(id) NOT IN {identityLengths} OR typeof(text)!='text' OR typeof(copied)!='integer' OR copied NOT BETWEEN -62135596800 AND 253402300799 OR typeof(pinned)!='integer' OR length(cast(text AS blob))>{maximumText}" );
+            ($"typeof(id)!='text' OR length(id) NOT IN {identityLengths} OR typeof(text)!='text' OR typeof(copied)!='integer' OR copied " +
+                $"NOT BETWEEN -62135596800 AND 253402300799 OR " +
+                $"typeof(pinned)!='integer' OR length(cast(text AS blob))>{maximumText}") );
 
         using var command = _connection.CreateCommand( );
         command.CommandText = "SELECT id,cast(text AS blob),copied,pinned FROM entries LIMIT 1001";

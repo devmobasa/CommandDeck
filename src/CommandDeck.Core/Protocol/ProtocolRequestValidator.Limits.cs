@@ -31,7 +31,6 @@ public static partial class ProtocolRequestValidator
     private const int MaximumExtensionFormKeyCharacters = 64;
     private const int MaximumExtensionFormValues = 32;
     private const int MaximumExtensionHandleCharacters = 64;
-    private const int MaximumExtensionItemIdCharacters = 128;
     private const int MaximumExtensionSearchLeaseCharacters = 64;
     private const int MaximumGrantIdCharacters = 96;
     private const int MaximumGrantKindCharacters = 32;

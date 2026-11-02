@@ -63,12 +63,12 @@ Rectangle {
     // Question card.
     Text {
       Layout.fillWidth: true
-      visible: pendingCard.host.pendingKind === Protocol.AgentPendingRequestKinds.Question && pendingCard.host.firstQuestion !== null
+      visible: pendingCard.host.pendingKind === Protocol.AgentPendingRequestKinds.Question && pendingCard.host.currentQuestion !== null
       textFormat: Text.PlainText
-      text: pendingCard.host.firstQuestion
-        ? String(pendingCard.host.firstQuestion.header || "")
-          + (pendingCard.host.firstQuestion.header && pendingCard.host.firstQuestion.prompt ? " — " : "")
-          + String(pendingCard.host.firstQuestion.prompt || "")
+      text: pendingCard.host.currentQuestion
+        ? String(pendingCard.host.currentQuestion.header || "")
+          + (pendingCard.host.currentQuestion.header && pendingCard.host.currentQuestion.prompt ? " — " : "")
+          + String(pendingCard.host.currentQuestion.prompt || "")
         : ""
       color: pendingCard.host.theme.text
       wrapMode: Text.Wrap
@@ -83,8 +83,8 @@ Rectangle {
 
       Repeater {
         id: optionRepeater
-        model: pendingCard.host.firstQuestion && pendingCard.host.firstQuestion.options
-          ? pendingCard.host.firstQuestion.options : []
+        model: pendingCard.host.currentQuestion && pendingCard.host.currentQuestion.options
+          ? pendingCard.host.currentQuestion.options : []
 
         delegate: AgentButton {
           id: optionButton
@@ -105,8 +105,8 @@ Rectangle {
     RowLayout {
       Layout.fillWidth: true
       visible: pendingCard.host.pendingKind === Protocol.AgentPendingRequestKinds.Question
-        && (pendingCard.host.firstQuestion === null
-          || pendingCard.host.firstQuestion.allowFreeText !== false)
+        && (pendingCard.host.currentQuestion === null
+          || pendingCard.host.currentQuestion.allowFreeText !== false)
       spacing: pendingCard.host.theme.gap
 
       AgentField {

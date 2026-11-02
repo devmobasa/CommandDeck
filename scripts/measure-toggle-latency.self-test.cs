@@ -101,7 +101,8 @@ static class CleanupProcessTest
 
             if ( !passed )
             {
-                Console.Error.WriteLine( $"Isolated {via} {signal}: exit {child.ExitCode}, cleanup {cleaned}, toggle alive at hide {toggleAlive}; {await output}{await error}" );
+                Console.Error.WriteLine( ($"Isolated {via} {signal}: exit {child.ExitCode}, cleanup {cleaned}, toggle alive at hide " +
+                    $"{toggleAlive}; {await output}{await error}") );
             }
 
             return passed;
@@ -294,11 +295,16 @@ static class SelfTest
 
         var lines = RecordedEvents.Split( '\n' );
 
-        Check( lines.Count( line => LayerEvents.Matches( line, ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ) ) == 2, "openlayer matches only the launcher namespace" );
-        Check( lines.Count( line => LayerEvents.Matches( line, ToggleLatency.CloseLayerEvent, ToggleLatency.Namespace ) ) == 1, "closelayer matches the launcher namespace" );
-        Check( !LayerEvents.Matches( "openlayer>>commanddeck-hud", ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ), "the HUD namespace is not the launcher" );
-        Check( LayerEvents.Matches( "openlayer>>commanddeck\r", ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ), "a trailing carriage return is ignored" );
-        Check( !LayerEvents.Matches( ">>commanddeck", ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ) && !LayerEvents.Matches( "", ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ), "malformed lines never match" );
+        Check( lines.Count( line => LayerEvents.Matches( line, ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ) ) == 2,
+             "openlayer matches only the launcher namespace" );
+        Check( lines.Count( line => LayerEvents.Matches( line, ToggleLatency.CloseLayerEvent, ToggleLatency.Namespace ) ) == 1,
+             "closelayer matches the launcher namespace" );
+        Check( !LayerEvents.Matches( "openlayer>>commanddeck-hud", ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ),
+             "the HUD namespace is not the launcher" );
+        Check( LayerEvents.Matches( "openlayer>>commanddeck\r", ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ),
+             "a trailing carriage return is ignored" );
+        Check( !LayerEvents.Matches( ">>commanddeck", ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ) && !LayerEvents.Matches( "",
+             ToggleLatency.OpenLayerEvent, ToggleLatency.Namespace ), "malformed lines never match" );
         Check( LayerEvents.HasLayer( RecordedLayers, ToggleLatency.Namespace ), "an open launcher is found in hyprctl layers" );
         Check( !LayerEvents.HasLayer( RecordedLayers, "commanddeck-hud" ), "an absent namespace is not found" );
         Check( LayerEvents.HasShortcut( """[{"name":"commanddeck:toggle","description":"Toggle CommandDeck"}]""" ), "the registered shortcut is found" );
@@ -310,7 +316,8 @@ static class SelfTest
             .Select( static value => value * 10.0 )
             .Reverse( )];
 
-        Check( Percentiles.NearestRank( twenty, 0.50 ) == 100 && Percentiles.NearestRank( twenty, 0.95 ) == 190, "nearest-rank p50 and p95 of 20 unsorted samples" );
+        Check( Percentiles.NearestRank( twenty, 0.50 ) == 100 && Percentiles.NearestRank( twenty, 0.95 ) == 190,
+             "nearest-rank p50 and p95 of 20 unsorted samples" );
         Check( Percentiles.NearestRank( [42.5], 0.95 ) == 42.5, "one sample is every percentile" );
 
         double[] hundred = [.. Enumerable
@@ -328,8 +335,11 @@ static class SelfTest
         Check( Options.Parse( ["--live", "--samples", "5", "--path", "shell"] ) == new Options( 5, 2000, "shell" ), "options parse" );
         Check( HasExpectedOptionRejections( ), "invalid options are rejected" );
         Check( HyprlandSession.Refusal( static _ => null, static _ => true ) is not null, "no Hyprland session is refused" );
-        Check( HyprlandSession.Refusal( static name => name == CommandDeck.EnvironmentVariableNames.HyprlandInstanceSignature ? "sig" : "/run/user/1", static _ => false ) is not null, "missing sockets are refused" );
-        Check( HyprlandSession.Refusal( static name => name == CommandDeck.EnvironmentVariableNames.HyprlandInstanceSignature ? "sig" : "/run/user/1", static _ => true ) is null, "a live session is accepted" );
+        Check( HyprlandSession.Refusal( static name => name ==
+             CommandDeck.EnvironmentVariableNames.HyprlandInstanceSignature ? "sig" : "/run/user/1", static _ => false ) is not null,
+             "missing sockets are refused" );
+        Check( HyprlandSession.Refusal( static name => name ==
+             CommandDeck.EnvironmentVariableNames.HyprlandInstanceSignature ? "sig" : "/run/user/1", static _ => true ) is null, "a live session is accepted" );
 
         var window = Path.Combine( "qml", "common", "Launcher", "CommandDeckWindow.qml" );
 

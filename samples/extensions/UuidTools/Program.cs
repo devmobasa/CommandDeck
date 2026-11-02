@@ -103,6 +103,7 @@ sealed class UuidsCommand : IExtensionCommand
                 .ToString( ) )
             .ToArray( );
     }
+
     private bool TryReadCurrentPage( string[] parts, out int index )
     {
         index = 0;

@@ -11,7 +11,10 @@ public static partial class ConfigurationValidator
         if ( HasInvalidQueryHistoryLimits( options ) )
         {
             throw new InvalidOperationException(
-                $"Query history retention must be {OptionLimits.Privacy.QueryHistoryRetentionDays.Minimum}-{OptionLimits.Privacy.QueryHistoryRetentionDays.Maximum} days with {OptionLimits.Privacy.MaximumQueryHistoryEntries.Minimum}-{OptionLimits.Privacy.MaximumQueryHistoryEntries.Maximum} entries." );
+                ($"Query history retention must be {OptionLimits.Privacy.QueryHistoryRetentionDays.Minimum}" +
+                    $"-{OptionLimits.Privacy.QueryHistoryRetentionDays.Maximum} days with " +
+                    $"{OptionLimits.Privacy.MaximumQueryHistoryEntries.Minimum}-{OptionLimits.Privacy.MaximumQueryHistoryEntries.Maximum}" +
+                    $" entries.") );
         }
 
         ValidateIndexing( options.Indexing );
@@ -32,7 +35,10 @@ public static partial class ConfigurationValidator
         if ( HasInvalidClipboardHistoryLimits( options ) )
         {
             throw new InvalidOperationException(
-                $"Clipboard history requires {OptionLimits.ClipboardHistory.MaximumEntries.Minimum}–{OptionLimits.ClipboardHistory.MaximumEntries.Maximum} entries and {OptionLimits.ClipboardHistory.RetentionHours.Minimum}–{OptionLimits.ClipboardHistory.RetentionHours.Maximum} retention hours." );
+                ($"Clipboard history requires {OptionLimits.ClipboardHistory.MaximumEntries.Minimum}" +
+                    $"–{OptionLimits.ClipboardHistory.MaximumEntries.Maximum} entries and " +
+                    $"{OptionLimits.ClipboardHistory.RetentionHours.Minimum}–{OptionLimits.ClipboardHistory.RetentionHours.Maximum}" +
+                    $" retention hours.") );
         }
 
         if ( HasInvalidScriptDirectories( options ) )
@@ -48,7 +54,8 @@ public static partial class ConfigurationValidator
         if ( HasInvalidProjects( projects ) )
         {
             throw new InvalidOperationException(
-                $"Projects require a title, absolute or ~/ path, and valid editor arguments (maximum {OptionLimits.CommandDeck.Projects.Maximum} projects)." );
+                ($"Projects require a title, absolute or ~/ path, and valid editor " +
+                    $"arguments (maximum {OptionLimits.CommandDeck.Projects.Maximum} projects).") );
         }
     }
 
@@ -78,13 +85,15 @@ public static partial class ConfigurationValidator
             if ( HasInvalidEngineName( engine ) )
             {
                 throw new InvalidOperationException(
-                    $"Web engine '{engine.Id}' name must be {OptionLimits.WebEngine.Name.Minimum}-{OptionLimits.WebEngine.Name.Maximum} characters without controls." );
+                    ($"Web engine '{engine.Id}' name must be {OptionLimits.WebEngine.Name.Minimum}" +
+                        $"-{OptionLimits.WebEngine.Name.Maximum} characters without controls.") );
             }
 
             if ( HasInvalidEngineTemplate( engine ) )
             {
                 throw new InvalidOperationException(
-                    $"Web engine '{engine.Id}' urlTemplate must be {OptionLimits.WebEngine.UrlTemplate.Minimum}-{OptionLimits.WebEngine.UrlTemplate.Maximum} characters and contain the " +
+                    ($"Web engine '{engine.Id}' urlTemplate must be {OptionLimits.WebEngine.UrlTemplate.Minimum}" +
+                        $"-{OptionLimits.WebEngine.UrlTemplate.Maximum} characters and contain the ") +
                     "{query} placeholder." );
             }
 
@@ -102,7 +111,8 @@ public static partial class ConfigurationValidator
         if ( IsInvalidEngineAlias( value ) )
         {
             throw new InvalidOperationException(
-                $"Web engine '{engineId}' alias must use {OptionLimits.WebEngine.Alias.Minimum}-{OptionLimits.WebEngine.Alias.Maximum} ASCII letters, digits, dots, " +
+                ($"Web engine '{engineId}' alias must use {OptionLimits.WebEngine.Alias.Minimum}" +
+                    $"-{OptionLimits.WebEngine.Alias.Maximum} ASCII letters, digits, dots, ") +
                 "underscores, or hyphens, and must start with a letter or digit." );
         }
 
@@ -234,7 +244,8 @@ public static partial class ConfigurationValidator
         if ( IsInvalidIdentifier( value ) )
         {
             throw new InvalidOperationException(
-                $"{label} must use {OptionLimits.Identifiers.MinimumCharacters}-{OptionLimits.Identifiers.MaximumCharacters} ASCII letters, digits, dots, underscores, or hyphens, " +
+                ($"{label} must use {OptionLimits.Identifiers.MinimumCharacters}-{OptionLimits.Identifiers.MaximumCharacters}" +
+                    $" ASCII letters, digits, dots, underscores, or hyphens, ") +
                 "and must start with a letter or digit." );
         }
     }

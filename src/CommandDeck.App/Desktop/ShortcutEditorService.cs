@@ -10,6 +10,7 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
     private readonly ExternalProcessRunner _run;
     private readonly Func<bool> _inHyprland;
     private readonly SemaphoreSlim _gate = new( 1, 1 );
+
     public ShortcutRecordingSession Recording { get; }
     public string ModuleFile => Path.Combine( _paths.HyprDirectory, "commanddeck_keys.lua" );
 
@@ -20,7 +21,8 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
         _stateFile = Path.Combine( Path.GetDirectoryName( paths.BackupDirectory )!, "shortcut-overrides.json" );
         _sources = new( paths.HyprDirectory, omarchyDirectory );
         _run = runner ?? RunAsync;
-        _inHyprland = inHyprland ?? (static ( ) => !string.IsNullOrEmpty( Environment.GetEnvironmentVariable( EnvironmentVariableNames.HyprlandInstanceSignature ) ));
+        _inHyprland = inHyprland ?? (static ( ) =>
+             !string.IsNullOrEmpty( Environment.GetEnvironmentVariable( EnvironmentVariableNames.HyprlandInstanceSignature ) ));
         Recording = new( _run, ( ) => _inHyprland( ) && ModuleInstalled( ), clock, _inHyprland );
     }
 
@@ -31,14 +33,20 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
         ProcessRunner.RunAsync( executable, arguments, null, null, timeout, token );
 
     private bool ModuleInstalled( ) => File.Exists( _paths.HotkeyFile ) && HyprlandHotkeyConfig.IsGenerated( File.ReadAllText( _paths.HotkeyFile ) ) &&
-        File.Exists( _paths.MainConfig ) && LuaBindingReader.Read( File.ReadAllText( _paths.MainConfig ) ).Requires.Any( static require => require.Ordered && require.Module == "hypr.commanddeck" );
+        File.Exists( _paths.MainConfig ) && LuaBindingReader.Read( File.ReadAllText( _paths.MainConfig ) ).Requires.Any( static require =>
+             require.Ordered && require.Module == HyprlandHotkeyConfig.ModuleName );
 
     public async ValueTask<ShortcutEditorSnapshot> SnapshotAsync( IReadOnlyList<Keybinding> bindings, CancellationToken cancellationToken )
     {
         await _gate.WaitAsync( cancellationToken ).ConfigureAwait( false );
         try
-        { return Snapshot( bindings, ReadChanges( ) ); }
-        finally { _gate.Release( ); }
+        {
+            return Snapshot( bindings, ReadChanges( ) );
+        }
+        finally
+        {
+            _gate.Release( );
+        }
     }
 
     private List<ShortcutOverride> ReadChanges( ) => File.Exists( _stateFile )
@@ -67,7 +75,8 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
             var matches = sources.Where( source => source.Call.Description == binding.Description &&
                 ShortcutLua.CanonicalChord( source.Call.Chord ) == ShortcutLua.CanonicalChord( binding.Chord ) ).ToList( );
             var source = matches.LastOrDefault( ) ?? sources.FirstOrDefault( source => source.Call.Description == binding.Description );
-            var changeable = UniqueBinding( bindings, binding ) && matches.Count == 1 && source is { BeforeModule: true, Call.Literal: true } && binding.Submap.Length == 0;
+            var changeable = UniqueBinding( bindings, binding ) && matches.Count == 1 && source is { BeforeModule: true, Call.Literal: true } &&
+                 binding.Submap.Length == 0;
             var file = source?.File ?? _paths.MainConfig;
             var id = matches.Count == 1 && binding.Submap.Length == 0 ? source!.Id
                 : "readonly:" + ShortcutSourceResolver.BindingId( file, binding.Chord, binding.Description, binding.Submap );
@@ -88,6 +97,7 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
                 Reason = changeable ? "" : $"This binding is built by your Hyprland configuration (for example in a loop). Change it in {file}."
             } );
         }
+
         rows.AddRange( changes.Select( change => new Keybinding
         {
             Id = change.Id,
@@ -101,6 +111,7 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
             OriginalChord = change.OriginalChord,
             LauncherHotkey = change.LauncherHotkey
         } ) );
+
         return CreateSnapshot( rows, changes, conflictId, conflictDescription );
     }
 
@@ -110,12 +121,15 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
     private ShortcutEditorSnapshot CreateSnapshot( List<Keybinding> rows, List<ShortcutOverride> changes, string? conflictId, string? conflictDescription )
     {
         var installed = ModuleInstalled( );
+
         return new( )
         {
             Bindings = rows,
             ModuleInstalled = installed,
             HotkeyManaged = installed && !File.ReadAllText( _paths.HotkeyFile ).Contains( ShortcutLua.SupportOnlyMarker, StringComparison.Ordinal ),
-            Hotkey = installed && !ShortcutLua.IsHotkeySuppressed( changes, HyprlandHotkeyConfig.ReadChord( File.ReadAllText( _paths.HotkeyFile ) ) ?? "" ) ? HyprlandHotkeyConfig.ReadChord( File.ReadAllText( _paths.HotkeyFile ) ) ?? "" : "",
+            Hotkey = installed && !ShortcutLua.IsHotkeySuppressed( changes,
+                 HyprlandHotkeyConfig.ReadChord( File.ReadAllText( _paths.HotkeyFile ) ) ??
+                 "" ) ? HyprlandHotkeyConfig.ReadChord( File.ReadAllText( _paths.HotkeyFile ) ) ?? "" : "",
             ConfigurationPath = ModuleFile,
             ChangeCount = changes.Count,
             Lua = ExportChanges( changes ),
@@ -171,7 +185,8 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
                 var change = Prepare( changes, edit, snapshot, confirmed );
                 var conflicts = snapshot.Bindings.Where( row => row.Id != edit.Id && !row.LauncherHotkey && row.Submap.Length == 0 && row.Chord.Length > 0 &&
                     ShortcutLua.CanonicalChord( row.Chord ) == ShortcutLua.CanonicalChord( change.Chord ) ).ToList( );
-                var launcherConflict = inventory.FirstOrDefault( binding => binding.Description == HyprlandHotkeyConfig.BindingDescription && binding.Submap.Length == 0 &&
+                var launcherConflict = inventory.FirstOrDefault( binding => binding.Description == HyprlandHotkeyConfig.BindingDescription &&
+                     binding.Submap.Length == 0 &&
                     ShortcutLua.CanonicalChord( binding.Chord ) == ShortcutLua.CanonicalChord( change.Chord ) );
                 if ( launcherConflict is not null )
                 {
@@ -196,12 +211,18 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
                     var removal = ConflictRemoval( changes, conflict, snapshot );
                     Put( changes, removal with { Chord = "", ReplacedBy = edit.Id } );
                 }
+
                 Put( changes, change );
             }
+
             await SaveAsync( changes, previous, inventory, cancellationToken, originalHotkey ).ConfigureAwait( false );
+
             return await SnapshotAfterReloadAsync( inventory, previous, changes, cancellationToken ).ConfigureAwait( false );
         }
-        finally { _gate.Release( ); }
+        finally
+        {
+            _gate.Release( );
+        }
     }
 
     private async ValueTask<ShortcutEditorSnapshot> SnapshotAfterReloadAsync( IReadOnlyList<Keybinding> inventory, List<ShortcutOverride> previous,
@@ -210,6 +231,7 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
         try
         {
             var fresh = await ReadInventoryAsync( cancellationToken ).ConfigureAwait( false );
+
             return Snapshot( fresh, changes );
         }
         catch ( Exception exception ) when ( exception is IOException or InvalidOperationException )
@@ -220,6 +242,7 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
                 ShortcutLua.CanonicalChord( change.Chord ) == ShortcutLua.CanonicalChord( row.Chord ) ) );
             var originals = previous.Where( static change => change.OriginalChord.Length > 0 ).Select( static change =>
                 new Keybinding { Chord = change.OriginalChord, Description = change.Description } );
+
             return Snapshot( unaffected.Concat( originals ).ToList( ), changes );
         }
     }
@@ -270,6 +293,7 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
         }
 
         var restored = RestoreIds( changes, id );
+
         return changes.FirstOrDefault( change => change.HotkeyEdit && restored.Contains( change.Id ) )?.OriginalChord;
     }
 
@@ -298,6 +322,7 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
                 }
             }
         }
+
         return restored;
     }
 
@@ -321,12 +346,14 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
             throw new InvalidOperationException( "Hyprland reported configuration errors. The previous shortcut files were restored." );
         }
     }
+
     private IReadOnlyList<ResolvedShortcut> ReadSources( )
     {
         // A manual-hotkey user has no loader yet. Resolve against the same load
         // point we will install transactionally with the first desktop change.
         var main = !File.Exists( _paths.HotkeyFile ) && File.Exists( _paths.MainConfig )
             ? HyprlandHotkeyConfig.EnsureRequire( File.ReadAllText( _paths.MainConfig ) ) : null;
+
         return _sources.Read( main );
     }
 
@@ -344,18 +371,26 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
             if ( _inHyprland( ) && ModuleInstalled( ) )
             {
                 var module = File.ReadAllText( _paths.HotkeyFile );
-                if ( !module.Contains( ShortcutLua.ModuleDefinitions, StringComparison.Ordinal ) || module.IndexOf( ShortcutLua.ModuleDefinitions, StringComparison.Ordinal ) < module.IndexOf( ShortcutLua.KeysRequire, StringComparison.Ordinal ) || module.IndexOf( "hl.unbind(", StringComparison.Ordinal ) is var unbind && unbind >= 0 && unbind < module.IndexOf( ShortcutLua.KeysRequire, StringComparison.Ordinal ) )
+                if ( !module.Contains( ShortcutLua.ModuleDefinitions, StringComparison.Ordinal ) ||
+                     module.IndexOf( ShortcutLua.ModuleDefinitions, StringComparison.Ordinal ) < module.IndexOf( ShortcutLua.KeysRequire,
+                     StringComparison.Ordinal ) || module.IndexOf( "hl.unbind(", StringComparison.Ordinal ) is var unbind && unbind >= 0 &&
+                     unbind < module.IndexOf( ShortcutLua.KeysRequire, StringComparison.Ordinal ) )
                 {
                     var changes = ReadChanges( );
-                    await SaveAsync( changes, changes, await ReadInventoryAsync( cancellationToken ).ConfigureAwait( false ), cancellationToken ).ConfigureAwait( false );
+                    await SaveAsync( changes, changes, await ReadInventoryAsync( cancellationToken ).ConfigureAwait( false ), cancellationToken )
+                        .ConfigureAwait( false );
                 }
             }
+
             if ( !await Recording.StartAsync( owner, cancellationToken ).ConfigureAwait( false ) )
             {
                 throw new InvalidOperationException( "The recording module is unavailable. Try recording again." );
             }
         }
-        finally { _gate.Release( ); }
+        finally
+        {
+            _gate.Release( );
+        }
     }
 
     public async ValueTask<IReadOnlyList<Keybinding>> ReadInventoryAsync( CancellationToken cancellationToken )
@@ -379,7 +414,11 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
                 throw new JsonException( );
             }
         }
-        catch ( JsonException ) { throw new InvalidOperationException( "Could not read Hyprland shortcuts." ); }
+        catch ( JsonException )
+        {
+            throw new InvalidOperationException( "Could not read Hyprland shortcuts." );
+        }
+
         return HyprlandShortcutInspector.ParseKeybindings( result.StandardOutput );
     }
 

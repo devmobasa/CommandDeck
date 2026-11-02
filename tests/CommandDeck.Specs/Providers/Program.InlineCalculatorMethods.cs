@@ -36,7 +36,10 @@ public static partial class Program
 
     private static async Task InlineCalculatorArithmeticAsync( )
     {
-        CalculatorProvider provider = new( rates: ( ) => throw new InvalidOperationException( "Arithmetic must stay offline." ) );
+        CalculatorProvider provider = new( rates: ( ) =>
+        {
+            throw new InvalidOperationException( "Arithmetic must stay offline." );
+        } );
 
         foreach ( var (input, expected) in InlineArithmeticCases )
         {
@@ -71,7 +74,10 @@ public static partial class Program
         DateCalculatorClock clock = new( new DateTimeOffset( 2026, 10, 21, 12, 0, 0,
             TimeSpan.Zero ), TimeZoneInfo.Utc );
 
-        CalculatorProvider provider = new( clock: clock, rates: ( ) => throw new InvalidOperationException( "Date counts must stay offline." ) );
+        CalculatorProvider provider = new( clock: clock, rates: ( ) =>
+        {
+            throw new InvalidOperationException( "Date counts must stay offline." );
+        } );
 
         foreach ( var (phrase, title, subtitle, copied) in new[]
                  {

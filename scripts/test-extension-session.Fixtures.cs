@@ -12,36 +12,44 @@ static partial class Journey
         var session = view["sessionId"]!.GetValue<string>( );
 
         var detail = FindPublishedView( await client.Call( "extension.action", Input( session, 2, view["revision"]!.GetValue<long>( ),
-                    view["content"]!["items"]![0]!["actions"]![1]!["handle"]!.GetValue<string>( ), view["content"]!["items"]![0]!["id"]!.GetValue<string>( ) ) ) );
+                    view["content"]!["items"]![0]!["actions"]![1]!["handle"]!.GetValue<string>( ),
+                         view["content"]!["items"]![0]!["id"]!.GetValue<string>( ) ) ) );
 
         Check( detail["content"]!["kind"]!.GetValue<string>( ) == "detail", "Details did not push" );
         Check( detail["content"]!["depth"]!.GetValue<int>( ) == 2, "Missing stack depth" );
 
         await client.Call( "extension.present", Input( session, 3, detail["revision"]!.GetValue<long>( ) ) );
-        await client.Call( "extension.action", Input( session, 4, detail["revision"]!.GetValue<long>( ), detail["content"]!["actions"]![0]!["handle"]!.GetValue<string>( ) ) );
+        await client.Call( "extension.action", Input( session, 4, detail["revision"]!.GetValue<long>( ),
+             detail["content"]!["actions"]![0]!["handle"]!.GetValue<string>( ) ) );
 
         Check( await File.ReadAllTextAsync( clipboard ) == view["content"]!["items"]![0]!["title"]!.GetValue<string>( ), "Detail copy payload" );
 
-        var parent = FindPublishedView( await client.Call( "extension.action", Input( session, 5, detail["revision"]!.GetValue<long>( ), detail["content"]!["backHandle"]!.GetValue<string>( ) ) ) );
+        var parent = FindPublishedView( await client.Call( "extension.action", Input( session, 5, detail["revision"]!.GetValue<long>( ),
+             detail["content"]!["backHandle"]!.GetValue<string>( ) ) ) );
 
         Check( JsonNode.DeepEquals( parent["content"]!["items"]![0]!["id"], view["content"]!["items"]![0]!["id"] ), "Back lost parent content" );
 
         await client.Call( "extension.present", Input( session, 6, parent["revision"]!.GetValue<long>( ) ) );
-        await client.Call( "extension.action", Input( session, 7, detail["revision"]!.GetValue<long>( ), detail["content"]!["actions"]![0]!["handle"]!.GetValue<string>( ) ), true );
+        await client.Call( "extension.action", Input( session, 7, detail["revision"]!.GetValue<long>( ),
+             detail["content"]!["actions"]![0]!["handle"]!.GetValue<string>( ) ), true );
 
-        var page = FindPublishedView( await client.Call( "extension.action", Input( session, 8, parent["revision"]!.GetValue<long>( ), parent["content"]!["nextPage"]!.GetValue<string>( ) ) ) );
+        var page = FindPublishedView( await client.Call( "extension.action", Input( session, 8, parent["revision"]!.GetValue<long>( ),
+             parent["content"]!["nextPage"]!.GetValue<string>( ) ) ) );
 
         Check( !JsonNode.DeepEquals( page["content"]!["items"]![0]!["id"], parent["content"]!["items"]![0]!["id"] ), "Next page did not replace items" );
         Check( page["content"]!["items"]!.AsArray( ).Count == 8, "Pages were appended" );
         await client.Call( "extension.present", Input( session, 9, page["revision"]!.GetValue<long>( ) ) );
-        await client.Call( "extension.action", Input( session, 10, parent["revision"]!.GetValue<long>( ), parent["content"]!["nextPage"]!.GetValue<string>( ) ), true );
+        await client.Call( "extension.action", Input( session, 10, parent["revision"]!.GetValue<long>( ),
+             parent["content"]!["nextPage"]!.GetValue<string>( ) ), true );
 
-        var previous = FindPublishedView( await client.Call( "extension.action", Input( session, 11, page["revision"]!.GetValue<long>( ), page["content"]!["previousPage"]!.GetValue<string>( ) ) ) );
+        var previous = FindPublishedView( await client.Call( "extension.action", Input( session, 11, page["revision"]!.GetValue<long>( ),
+             page["content"]!["previousPage"]!.GetValue<string>( ) ) ) );
 
         Check( JsonNode.DeepEquals( previous["content"]!["items"]![0]!["id"], parent["content"]!["items"]![0]!["id"] ), "Previous page lost items" );
 
         await client.Call( "extension.present", Input( session, 12, previous["revision"]!.GetValue<long>( ) ) );
-        await client.Call( "extension.action", Input( session, 13, previous["revision"]!.GetValue<long>( ), previous["content"]!["actions"]![0]!["handle"]!.GetValue<string>( ) ) );
+        await client.Call( "extension.action", Input( session, 13, previous["revision"]!.GetValue<long>( ),
+             previous["content"]!["actions"]![0]!["handle"]!.GetValue<string>( ) ) );
         await client.Call( "extension.close", Input( session, 0, 0 ) );
     }
 
@@ -74,6 +82,7 @@ static partial class Journey
 
         return await output;
     }
+
     public static async Task Wait( Func<Task<bool>> predicate, string label, int seconds = 8 )
     {
         var deadline = DateTime.UtcNow.AddSeconds( seconds );
@@ -190,7 +199,8 @@ static partial class Journey
 
     private static async Task<HashSet<string>> FindTransientServicesAsync( )
     {
-        return (await Exec( CommandDeck.SystemdCommandNames.Control, CommandDeck.SystemdCommandNames.User, "list-units", "--all", "--plain", "--no-legend", "commanddeck-extension-*.service" ))
+        return (await Exec( CommandDeck.SystemdCommandNames.Control, "--user", "list-units", "--all", "--plain",
+             "--no-legend", "commanddeck-extension-*.service" ))
             .Split( '\n', StringSplitOptions.RemoveEmptyEntries )
             .Select( line => line.Split( ' ', StringSplitOptions.RemoveEmptyEntries )[0] )
             .ToHashSet( StringComparer.Ordinal );

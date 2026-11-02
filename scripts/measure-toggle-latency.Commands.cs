@@ -25,7 +25,8 @@ sealed partial class HyprlandSession
 
     public static async Task<HyprlandSession> ConnectAsync( Func<string, string?> environment, CancellationToken cancellationToken )
     {
-        var directory = Path.Combine( environment( CommandDeck.XdgEnvironmentNames.RuntimeDirectory )!, "hypr", environment( CommandDeck.EnvironmentVariableNames.HyprlandInstanceSignature )! );
+        var directory = Path.Combine( environment( CommandDeck.XdgEnvironmentNames.RuntimeDirectory )!, "hypr",
+             environment( CommandDeck.EnvironmentVariableNames.HyprlandInstanceSignature )! );
         Socket events = new( AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified );
 
         await events.ConnectAsync( new UnixDomainSocketEndPoint( Path.Combine( directory, ".socket2.sock" ) ), cancellationToken );
@@ -159,7 +160,8 @@ sealed partial class HyprlandSession
         };
     }
 
-    private static bool IsSessionEnvironmentMissing( [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] string? instance, [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] string? runtime )
+    private static bool IsSessionEnvironmentMissing( [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] string? instance,
+         [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] string? runtime )
     {
         return string.IsNullOrEmpty( instance ) || string.IsNullOrEmpty( runtime );
     }

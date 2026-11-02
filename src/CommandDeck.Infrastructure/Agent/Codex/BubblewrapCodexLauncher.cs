@@ -57,7 +57,7 @@ public sealed class BubblewrapCodexLauncher( string bubblewrapPath ) : IAgentPro
         return arguments;
     }
 
-    public ValueTask<IAgentProcessHandle> LaunchAsync( CodexLaunchRequest request, CancellationToken cancellationToken )
+    public async ValueTask<IAgentProcessHandle> LaunchAsync( CodexLaunchRequest request, CancellationToken cancellationToken )
     {
         ArgumentNullException.ThrowIfNull( request );
 
@@ -80,23 +80,35 @@ public sealed class BubblewrapCodexLauncher( string bubblewrapPath ) : IAgentPro
 
         Process process = new( ) { StartInfo = startInfo, EnableRaisingEvents = true };
 
+        var transferred = false;
         try
         {
-            if ( !process.Start( ) )
+            try
+            {
+                if ( !process.Start( ) )
+                {
+                    throw new AiOperationException( AiErrorCategories.Unavailable, safeSummary: "The sandboxed agent process could not start." );
+                }
+            }
+            catch ( Exception exception ) when ( exception is System.ComponentModel.Win32Exception or InvalidOperationException )
             {
                 throw new AiOperationException( AiErrorCategories.Unavailable, safeSummary: "The sandboxed agent process could not start." );
             }
+
+            cancellationToken.ThrowIfCancellationRequested( );
+            var handle = new ProcessAgentHandle( process );
+            transferred = true;
+
+            return handle;
         }
-        catch ( Exception exception ) when ( exception is System.ComponentModel.Win32Exception or InvalidOperationException )
+        finally
         {
-            process.Dispose( );
-
-            throw new AiOperationException( AiErrorCategories.Unavailable, safeSummary: "The sandboxed agent process could not start." );
+            if ( !transferred )
+            {
+                await AgentProcessStartup.DisposeAsync( process )
+                    .ConfigureAwait( false );
+            }
         }
-
-        cancellationToken.ThrowIfCancellationRequested( );
-
-        return ValueTask.FromResult<IAgentProcessHandle>( new ProcessAgentHandle( process ) );
     }
 
     private ProcessStartInfo CreateStartInfo( CodexLaunchRequest request )

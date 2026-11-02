@@ -241,13 +241,14 @@ Rectangle {
 
       FilterChip {
         required property var modelData
+        required property int index
         theme: root.theme
         label: {
           const value = root.controller.filterLabel(modelData)
           return modelData.excluded ? "Not " + value : value
         }
-        KeyNavigation.tab: searchInput
-        KeyNavigation.backtab: root.precedingTabStop || settingsButton
+        KeyNavigation.tab: root.filterChipAt(index + 1) || searchInput
+        KeyNavigation.backtab: root.filterChipAt(index - 1) || root.precedingTabStop || settingsButton
         onRemoveRequested: root.controller.removeFilter(modelData.id, modelData.excluded)
       }
     }
@@ -269,7 +270,7 @@ Rectangle {
       Accessible.name: "Search CommandDeck"
       Accessible.description: root.controller.searchAccessibilityDescription()
       KeyNavigation.tab: settingsButton
-      KeyNavigation.backtab: root.filterChipControl || root.precedingTabStop || settingsButton
+      KeyNavigation.backtab: root.filterChipAt(root.filterChipCount - 1) || root.precedingTabStop || settingsButton
 
       onTextChanged: {
         if (root.controller.tryConvertPrefix(text)) {

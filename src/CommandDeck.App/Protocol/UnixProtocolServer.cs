@@ -317,30 +317,17 @@ public sealed partial class UnixProtocolServer
 
     private static InvalidOperationException UnknownOperation( ProtocolRequest request ) => new( $"Unknown operation '{request.Operation}'." );
 
-    private static string RequireValue( string? value, string message ) =>
-        string.IsNullOrWhiteSpace( value ) ? throw new InvalidOperationException( message ) : value;
-
-    private void PrepareSocketPath( )
+    private static string RequireValue( string? value, string message )
     {
-        Directory.CreateDirectory( Path.GetDirectoryName( _socketPath )! );
-
-        if ( !File.Exists( _socketPath ) )
+        if ( string.IsNullOrWhiteSpace( value ) )
         {
-            return;
+            throw new InvalidOperationException( message );
         }
 
-        try
-        {
-            using Socket probe = new( AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified );
-            probe.Connect( new UnixDomainSocketEndPoint( _socketPath ) );
-
-            throw new InvalidOperationException( $"Another CommandDeck daemon is already listening on {_socketPath}." );
-        }
-        catch ( SocketException )
-        {
-            File.Delete( _socketPath );
-        }
+        return value;
     }
+
+    private void PrepareSocketPath( ) => UnixSocketPath.Prepare( _socketPath );
 
     private void TryDeleteSocket( )
     {

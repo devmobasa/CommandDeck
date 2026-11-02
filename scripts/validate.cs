@@ -260,7 +260,8 @@ sealed class Validation
 
     private bool HasInvalidArguments( string[] arguments )
     {
-        return _profile is not (PartialProfile or QmlProfile or DesktopProfile or ExtensionsProfile or AotProfile or LinuxProfile or AllProfile) || arguments.Length > 2 ||
+        return _profile is not (PartialProfile or QmlProfile or DesktopProfile or ExtensionsProfile or AotProfile or LinuxProfile or AllProfile) ||
+             arguments.Length > 2 ||
                     arguments.Length == 2 && arguments[1] != PreflightOnlyOption;
     }
 

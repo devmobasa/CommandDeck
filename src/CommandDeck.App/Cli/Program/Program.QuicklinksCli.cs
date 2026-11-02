@@ -50,7 +50,9 @@ public static partial class Program
         else
         {
             Console.Error.WriteLine(
-                "Use 'quicklinks', 'quicklinks add --title TITLE --url URL [--alias ALIAS] [--icon ICON]', 'quicklinks edit ID --title TITLE --url URL', 'quicklinks remove|disable|enable ID', or 'quicklinks restore BACKUP.json'." );
+                ("Use 'quicklinks', 'quicklinks add --title TITLE --url URL [--alias ALIAS] [--icon ICON]', " +
+                    "'quicklinks edit ID --title TITLE --url URL', 'quicklinks remove|disable|enable ID', or 'quicklinks " +
+                    "restore BACKUP.json'.") );
 
             return 2;
         }
@@ -71,7 +73,8 @@ public static partial class Program
                 var link = entry.Quicklink;
 
                 Console.WriteLine( PreferencesTextFormatter.EscapeTerminalText(
-                    $"{link.Id}\t{entry.Source}\t{(entry.Enabled ? EnabledValue : DisabledValue)}\t{link.Title}\t{link.UrlTemplate}\t{link.Alias}" ) );
+                    ($"{link.Id}\t{entry.Source}\t{(entry.Enabled ? EnabledValue : DisabledValue)}" +
+                        $"\t{link.Title}\t{link.UrlTemplate}\t{link.Alias}") ) );
             }
         }
 

@@ -73,7 +73,9 @@ internal sealed class ClipboardHostProcess : IAsyncDisposable
                 Stop( );
                 _process.WaitForExit( );
             }
-            catch ( InvalidOperationException ) { }
+            catch ( InvalidOperationException )
+            {
+            }
 
             _control.Dispose( );
             _acknowledgements.Dispose( );
@@ -270,7 +272,9 @@ internal sealed class ClipboardHostProcess : IAsyncDisposable
                 _process.Kill( entireProcessTree: true );
             }
         }
-        catch ( InvalidOperationException ) { }
+        catch ( InvalidOperationException )
+        {
+        }
     }
 
     public async ValueTask DisposeAsync( )

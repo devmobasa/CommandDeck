@@ -50,7 +50,9 @@ public static partial class Program
             {
                 await write;
             }
-            catch ( SocketException ) { }
+            catch ( SocketException )
+            {
+            }
         }
         finally
         {

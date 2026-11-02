@@ -132,11 +132,6 @@ SettingsCard {
     prompt: "Remove this user quicklink?"
     confirmLabel: "Remove"
     destructive: true
-    property bool settingsTabFence: true
-    function cycleFocus(forward) {
-      if (cancelControl.activeFocus) confirmControl.forceActiveFocus()
-      else cancelControl.forceActiveFocus()
-    }
     onCanceled: card.restoreFocus()
     onAccepted: {
       card.controller.submit(Protocol.QuicklinkStoreActions.Remove, { quicklinkId: card.removeId, confirmed: true })

@@ -274,9 +274,10 @@ public static partial class QueryParser
         List<QueryClause> clauses = [];
         foreach ( var clause in expression.Clauses )
         {
-            if ( IsNewClause( clauses, clause ) )
+            QueryClause canonical = new( ) { Field = clause.Field?.ToLowerInvariant( ), Text = clause.Text, Excluded = clause.Excluded };
+            if ( IsNewClause( clauses, canonical ) )
             {
-                clauses.Add( clause );
+                clauses.Add( canonical );
             }
         }
 

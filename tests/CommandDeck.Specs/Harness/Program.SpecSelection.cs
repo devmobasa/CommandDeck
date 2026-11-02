@@ -31,6 +31,7 @@ public static partial class Program
         await RunPackageCatalogRegistrationsAsync( );
         await RunAgentRegistrationsAsync( );
         await RunPackageHelperRegistrationsAsync( );
+        await RunUnconfirmedAuditRegistrationsAsync( );
         await RunAgentCliRegistrationsAsync( );
         await RunCliAgentRegistrationsAsync( );
         await RunProviderRegistrationsAsync( );
