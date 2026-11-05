@@ -234,17 +234,8 @@ PanelWindow {
     color: launcherWindow.part_appTheme.panelBackground
     border.width: 1
     border.color: launcherWindow.part_appTheme.border
+    // The card appears and hides at once: the first frame after an open is final.
     opacity: launcherWindow.host.opened && !launcherWindow.host.draggingOut ? 1 : 0
-    transform: Translate {
-      id: paletteOffset
-      y: launcherWindow.host.opened ? 0 : -6
-      Behavior on y {
-        NumberAnimation { duration: launcherWindow.part_appTheme.durationNormal }
-      }
-    }
-    Behavior on opacity {
-      NumberAnimation { duration: launcherWindow.part_appTheme.durationNormal }
-    }
 
     MouseArea {
       anchors.fill: parent
@@ -254,7 +245,7 @@ PanelWindow {
     PresentationFrameProbe {
       timing: launcherWindow.host.part_lifecycle.timing
       presenting: launcherWindow.presenting && launcherWindow.visible
-      complete: palettePanel.opacity === 1 && paletteOffset.y === 0
+      complete: palettePanel.opacity === 1
         && launcherWindow.host.daemonAvailable && !launcherWindow.host.part_searchSession.searching
         && (launcherWindow.host.hasResults || launcherWindow.host.showEmptyState || launcherWindow.host.showNoResults)
       inputFocused: launcherWindow.part_searchBar.inputControl.activeFocus
