@@ -12,13 +12,14 @@ function searchStarting(root, identity) {
     root.filePreview = null
   }
 
-  if (root.part_rows.count === 0 && !root.reconciliationPending) {
+  if (root.part_rows.count === 0 && !root.reconciliationPending && root.opened) {
     root.statusText = "Searching…"
   }
 }
 
+// A search made while closed announces nothing: no one is looking.
 function searchCommitted(root, results) {
-  if (results.length > 0 && !root.reconciliationPending) {
+  if (results.length > 0 && !root.reconciliationPending && root.opened) {
     root.statusText = root.resultStatus(results)
   }
   retargetPendingActions(root, false)
@@ -35,9 +36,11 @@ function searchFinished(root, completion) {
 
   const status = root.actionRefreshChanged ? "This item changed; review it again"
     : root.resultStatus(root.part_searchSession.pendingResults)
-  root.statusText = completion && completion.complete === false
-    ? status + " · Some sources did not finish"
-    : status
+  if (root.opened) {
+    root.statusText = completion && completion.complete === false
+      ? status + " · Some sources did not finish"
+      : status
+  }
   retargetPendingActions(root, true)
 }
 

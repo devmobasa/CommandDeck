@@ -307,6 +307,7 @@ static class ToggleLatency
 
         Console.WriteLine( setup );
         Console.WriteLine( Percentiles.Describe( "card       ", [.. samples.Select( static sample => sample.Card )] ) );
+        Console.WriteLine( Percentiles.Describe( "actionable ", [.. samples.Select( static sample => sample.Actionable )] ) );
         Console.WriteLine( Percentiles.Describe( "first frame", [.. samples.Select( static sample => sample.FirstFrame )] ) );
         Console.WriteLine( Percentiles.Describe( "keyboard   ", [.. samples.Select( static sample => sample.Keyboard )] ) );
         Console.WriteLine( Percentiles.Describe( "close      ", [.. samples.Select( static sample => sample.Close )] ) );

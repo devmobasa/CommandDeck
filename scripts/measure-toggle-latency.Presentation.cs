@@ -5,7 +5,7 @@ using System.Text.Json;
 // What the launcher reports about its latest open (PresentationTiming.qml).
 // Times are Date.now() milliseconds since the Unix epoch; 0 means not seen.
 sealed record PresentationState(
-    double Generation, bool Opened, double OpenedAt, double FirstFrameAt, double CompleteFrameAt, double KeyboardReadyAt,
+    double Generation, bool Opened, double OpenedAt, double FirstFrameAt, double CompleteFrameAt, double KeyboardReadyAt, double ActionableAt,
     int FramesBeforeComplete, double FirstFrameRatio, double CompleteFrameRatio, string Screen, string Renderer )
 {
     public const string Method = "presentationState";
@@ -27,7 +27,7 @@ sealed record PresentationState(
 
     public bool IsCompleteFor( double generation )
     {
-        return Generation == generation && CompleteFrameAt > 0 && KeyboardReadyAt > 0;
+        return Generation == generation && CompleteFrameAt > 0 && KeyboardReadyAt > 0 && ActionableAt > 0;
     }
 
     private static PresentationState? FromElement( JsonElement root )
@@ -38,7 +38,8 @@ sealed record PresentationState(
         }
 
         return new( generation, IsTrue( root, "opened" ), Number( root, "openedAt" ), Number( root, "firstFrameAt" ),
-            Number( root, "completeFrameAt" ), Number( root, "keyboardReadyAt" ), ( int ) Number( root, "framesBeforeComplete" ),
+            Number( root, "completeFrameAt" ), Number( root, "keyboardReadyAt" ), Number( root, "actionableAt" ),
+            ( int ) Number( root, "framesBeforeComplete" ),
             Number( root, "firstFrameRatio" ), Number( root, "completeFrameRatio" ), Text( root, "screen" ), Text( root, "renderer" ) );
     }
 
@@ -154,21 +155,22 @@ sealed class SampleClock
     }
 }
 
-// One open and close. Card, first frame and shortcut come from the launcher's
-// clock (1 ms resolution); keyboard and close are polled from Hyprland.
+// One open and close. Card, actionable, first frame and shortcut come from the
+// launcher's clock (1 ms resolution); keyboard and close are polled from Hyprland.
 sealed record OpenSample(
-    double Card, double FirstFrame, double Keyboard, double Close, double? Shortcut, double? Mapped, PresentationState State )
+    double Card, double Actionable, double FirstFrame, double Keyboard, double Close, double? Shortcut, double? Mapped, PresentationState State )
 {
     public static OpenSample? From( PresentationState state, SampleClock clock, double keyboard, double? mapped, double close )
     {
         var card = clock.Until( state.CompleteFrameAt );
+        var actionable = clock.Until( state.ActionableAt );
         var firstFrame = clock.Until( state.FirstFrameAt );
-        if ( card is null || firstFrame is null )
+        if ( card is null || actionable is null || firstFrame is null )
         {
             return null;
         }
 
-        return new( card.Value, firstFrame.Value, keyboard, close, clock.Until( state.OpenedAt ), mapped, state );
+        return new( card.Value, actionable.Value, firstFrame.Value, keyboard, close, clock.Until( state.OpenedAt ), mapped, state );
     }
 
     public string Describe( int sample )
@@ -176,7 +178,8 @@ sealed record OpenSample(
         var mapped = Mapped is { } value ? string.Create( CultureInfo.InvariantCulture, $", surface mapped {value:F1} ms" ) : "";
 
         return string.Create( CultureInfo.InvariantCulture,
-            $"sample {sample,3}: card {Card,6:F1} ms   first frame {FirstFrame,6:F1} ms   keyboard {Keyboard,6:F1} ms   close {Close,5:F1} ms" +
+            $"sample {sample,3}: card {Card,6:F1} ms   actionable {Actionable,6:F1} ms   first frame {FirstFrame,6:F1} ms   " +
+            $"keyboard {Keyboard,6:F1} ms   close {Close,5:F1} ms" +
             $"   (shortcut {Shortcut ?? 0:F1} ms{mapped}, {State.FramesBeforeComplete} frames before, " +
             $"scale {State.FirstFrameRatio:0.##} -> {State.CompleteFrameRatio:0.##}, {State.Screen})" );
     }

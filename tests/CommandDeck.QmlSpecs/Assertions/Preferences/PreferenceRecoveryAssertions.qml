@@ -301,10 +301,12 @@ QtObject {
     host.part_integratedDeck.toggle("{}")
     host.expect(host.part_integratedDeck.aiState === "idle" && host.part_integratedDeck.aiOutput.length === 0
         && host.part_integratedDeck.aiTestController.lastDraft === null
-        && host.part_integratedDeck.sentRequests.length === aiCloseRequestCount + 2
+        && host.part_integratedDeck.sentRequests.length === aiCloseRequestCount + 3
         && host.part_integratedDeck.sentRequests[aiCloseRequestCount].operation === Protocol.Operations.LauncherOpenCancel
-        && host.part_integratedDeck.sentRequests[aiCloseRequestCount + 1].operation === Protocol.Operations.AiClear,
-      "integrated hotkey close purges the AI modal and connection-owned content")
+        && host.part_integratedDeck.sentRequests[aiCloseRequestCount + 1].operation === Protocol.Operations.AiClear
+        && host.part_integratedDeck.sentRequests[aiCloseRequestCount + 2].operation === Protocol.Operations.Search
+        && host.part_integratedDeck.sentRequests[aiCloseRequestCount + 2].query === "",
+      "integrated hotkey close purges the AI modal and connection-owned content, then searches Home ahead")
     host.part_integratedDeck.toggle("{}")
     host.part_integratedDeck.handleMessage({
       type: Protocol.Messages.AiPreflightResult,
@@ -429,6 +431,7 @@ QtObject {
       "bridge announces reconnection only after a successful protocol probe")
     host.part_integratedDeck.settingsOpen = false
     const beforeClipboardGeneration = host.part_integratedDeck.part_lifecycle.openGeneration
+    const clipboardRequestStart = host.part_integratedDeck.sentRequests.length
     host.part_integratedDeck.open({filterId: "clipboard", query: "fixture"})
     const clipboardOpen = host.part_integratedDeck.sentRequests.filter(value => value.operation === Protocol.Operations.ClipboardOpen).slice(-1)[0]
     host.expect(host.part_integratedDeck.part_clipboardController.opened
@@ -438,8 +441,11 @@ QtObject {
       "sole clipboard scope opens the browser with a prepublished launcher generation")
     host.part_integratedDeck.close()
     host.expect(!host.part_integratedDeck.part_clipboardController.opened
-        && host.part_integratedDeck.sentRequests.slice(-1)[0].operation === Protocol.Operations.LauncherOpenCancel,
-      "launcher close revokes clipboard generation and clears displayed history")
+        && host.part_integratedDeck.sentRequests.slice(clipboardRequestStart)
+          .some(value => value.operation === Protocol.Operations.LauncherOpenCancel)
+        && host.part_integratedDeck.sentRequests.slice(-1)[0].operation === Protocol.Operations.Search
+        && host.part_integratedDeck.sentRequests.slice(-1)[0].query === "",
+      "launcher close revokes clipboard generation and clears displayed history; Home is searched ahead")
 
     Object.assign(context, { customizable, reorderRequest, filterAliasRequest, rejectedFilterAlias, savedSearch, savedSearchRequest, rejectedSavedSearch, customizationReset, resetBootstrap, editedPreferences, rejectedPreferenceRequest, reloadCountBeforeError, rollbackReload, settingsRequestCount, aiRequest, aiCloseRequestCount, staleExportRequest, disconnectRequestCount, reconciliationWarning, reconnectStart, reconciliationPreferences, reconciliationSearch, retryStart, retryPreferences, retrySearch })
   }

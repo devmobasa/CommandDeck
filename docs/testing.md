@@ -428,11 +428,12 @@ plugin must come from the same checkout. After
 
 Each sample sends `hl.dsp.global("commanddeck:toggle")` through Hyprland's
 request socket. This is the dispatcher that the hotkey binding calls. A sample
-reports four times from that request:
+reports five times from that request:
 
 | Time | Meaning | Source |
 |---|---|---|
-| card | The first frame that shows the final card: fully opaque, in its final position, with settled results, the empty state, or no results | The launcher |
+| card | The first frame that shows the final card: fully opaque, in its final position, with rows that answer the current query, or a finished search with none | The launcher |
+| actionable | The shown results can run: Home rows searched while the launcher was closed wait for the open's own search | The launcher |
 | first frame | The first frame of the open | The launcher |
 | keyboard | Hyprland gives the launcher layer exclusive keyboard focus | Hyprland, polled |
 | close | After the second toggle, Hyprland no longer gives the launcher the keyboard | Hyprland, polled |
@@ -490,18 +491,20 @@ because latency depends on them.
 #### Recorded result
 
 2026-11-05, on the maintainer's desktop (Ryzen 9 7950X): Hyprland 0.56.2,
-Quickshell 0.3.2, Qt 6.12, and two 3840×2160 monitors at 166% scale. The session
-sets `QT_QUICK_BACKEND=software`, so Qt Quick draws on the CPU. Reduce motion
-was on, so the card did not fade in. Each monitor had 50 samples with
-`--samples 50 --monitor NAME`:
+Quickshell 0.3.2, Qt 6.12, and one 3840×2160 monitor at 166% scale and 60 Hz
+(DP-1). The session sets `QT_QUICK_BACKEND=software`, so Qt Quick draws on the
+CPU. Reduce motion was on. Each build had 50 samples with
+`--samples 50 --monitor DP-1`, one after the other on an idle machine:
 
-| Monitor | Card p50 / p95 | First frame p50 | Keyboard p50 | Close p50 |
+| Build | Card p50 / p95 | Actionable p50 | First frame p50 | Keyboard p50 |
 |---|---|---|---|---|
-| DP-3, 240 Hz | 133.5 / 219.9 ms | 49.9 ms | 55.0 ms | 3.2 ms |
-| DP-1, 60 Hz | 172.9 / 357.9 ms | 60.5 ms | 69.5 ms | 21.9 ms |
+| A new surface for each open (`ca66854`) | 81.0 / 97.2 ms | as card | 34.8 ms | 39.0 ms |
+| Kept surface, Home searched while closed | 5.9 / 8.5 ms | 50.6 ms | 5.9 ms | 9.1 ms |
 
-Each open mapped a new surface. The card needed two to four more frames after
-the first frame, because the first frame came before the Home results.
+The first build's probe had no actionable time; its card waited for the
+search, so the card time is also when its results could run. With the kept
+surface, the first frame shows the Home rows searched while closed, and those
+rows can run once the open's own search commits.
 
 Before 2026-11-05, this check timed only the new surface
 (`openlayer>>commanddeck`): a median of 25.0 ms on 2026-10-22, on the same

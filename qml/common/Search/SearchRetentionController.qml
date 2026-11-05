@@ -9,10 +9,14 @@ QtObject {
   property var retainedSearch: null
   property var pending: []
   property int keepMilliseconds: 0
+  signal expired()
   // QML timers use elapsed time, so wall-clock changes cannot alter retention.
   property Timer expiry: Timer {
     interval: Math.max(1, retention.keepMilliseconds)
-    onTriggered: retention.retainedSearch = null
+    onTriggered: {
+      retention.retainedSearch = null
+      retention.expired()
+    }
   }
 
   onRetainedSearchChanged: {

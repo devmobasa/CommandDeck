@@ -481,6 +481,8 @@ CommandDeckState {
     aiFeaturesStore.load()
     root.requestBootstrap()
     root.requestRuntimeStatus()
+    // The first open after the shell starts shows Home at once, too.
+    lifecycle.prewarm()
   }
 
   ListModel {

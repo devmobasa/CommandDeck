@@ -128,7 +128,8 @@ DeadlineTestCase {
     verify(session.search(true), "reconciliation searches even while closed")
     compare(cancels().length, 0, "the interrupted search is never cancelled after reconnecting")
     compare(published.length, 0)
-    reply(session.activeRequestId, [{ id: "reconciled" }])
+    // A closed search keeps rows only from a completion marked as not private.
+    replyPublic(session.activeRequestId, [{ id: "reconciled" }])
     compare(published[0].results[0].id, "reconciled")
     verify(published[0].reset, "the first search after reconnecting replaces the list")
   }
@@ -246,5 +247,64 @@ DeadlineTestCase {
     verify(!session.canKeepSearch, "a reply without classification cannot permit retention")
     session.clear()
     verify(!session.canKeepSearch)
+  }
+
+  function replyPublic(requestId, results) {
+    for (const result of results) session.handleMessage({ type: Protocol.Messages.Result, requestId: requestId, result: result })
+    session.handleMessage({ type: Protocol.Messages.Done, requestId: requestId, searchCompletion: { containsPrivateQuery: false } })
+  }
+
+  function test_prewarmed_rows_show_but_cannot_run_until_a_search_made_open_commits() {
+    session.opened = false
+    verify(session.prewarm())
+    const prewarm = session.activeRequestId
+    compare(searches().length, 1)
+    replyPublic(prewarm, [{ id: "app:files" }])
+    compare(published[published.length - 1].results.length, 1)
+    verify(session.prewarmed && session.showsCurrentResults)
+    verify(!session.canActivate(), "rows searched while closed may hold stale actions")
+
+    session.opened = true
+    verify(session.search())
+    verify(session.showsCurrentResults, "the prewarmed rows still answer the query while the refresh runs")
+    verify(!session.canActivate(), "the refresh has not committed yet")
+    replyPublic(session.activeRequestId, [{ id: "app:files" }])
+    verify(!session.prewarmed && session.canActivate())
+  }
+
+  function test_a_prewarm_that_may_be_private_keeps_no_rows() {
+    session.opened = false
+    verify(session.prewarm())
+    reply(session.activeRequestId, [{ id: "clipboard:secret" }])
+    compare(published[published.length - 1].results.length, 0)
+  }
+
+  function test_an_open_launcher_does_not_prewarm() {
+    verify(!session.prewarm())
+    compare(searches().length, 0)
+  }
+
+  function test_any_search_made_while_closed_is_held_back_like_a_prewarm() {
+    session.opened = false
+    verify(session.refresh(true) === false, "a closed refresh with no rows searched ahead does nothing")
+    verify(session.search(true))
+    const closed = session.activeRequestId
+    compare(session.prewarmRequestId, closed)
+    session.handleMessage({ type: Protocol.Messages.Result, requestId: closed, result: { id: "app:files" } })
+    compare(published.length, 0, "a search made while closed publishes nothing before Done")
+    session.handleMessage({ type: Protocol.Messages.Done, requestId: closed, searchCompletion: { containsPrivateQuery: false } })
+    verify(session.prewarmed && !session.canActivate())
+  }
+
+  function test_a_closed_refresh_searches_ahead_again() {
+    session.opened = false
+    verify(session.prewarm())
+    replyPublic(session.activeRequestId, [{ id: "app:files" }])
+    const before = searches().length
+
+    verify(session.refresh())
+    verify(session.refreshHome())
+    compare(searches().length, before + 2)
+    compare(session.prewarmRequestId, session.activeRequestId)
   }
 }

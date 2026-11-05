@@ -53,7 +53,13 @@ QtObject {
     if (!host.opened) return
 
     release()
-    return DeckSearchActions.close(lifecycle.host)
+    DeckSearchActions.close(lifecycle.host)
+    prewarm()
+  }
+  // While closed, the kept window shows Home at the next open unless a kept
+  // search or a suspended draft comes back, so Home is searched ahead of time.
+  function prewarm() {
+    if (!host.opened && !host.suspendedForScreen && host.lastSearch === null && host.daemonAvailable) host.part_searchSession.prewarm()
   }
   // A dismissal ends a session even if an output loss suspended it; only the
   // shell's repeated close() keeps a suspended draft.
