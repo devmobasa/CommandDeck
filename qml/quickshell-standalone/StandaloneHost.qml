@@ -28,5 +28,9 @@ Item {
       launcher.toggle(payloadJson)
       return "ok"
     }
+
+    function presentationState(): string {
+      return launcher.presentationState()
+    }
   }
 }

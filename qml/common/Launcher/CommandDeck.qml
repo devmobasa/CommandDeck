@@ -371,6 +371,8 @@ CommandDeckState {
   function open(payloadJson) { return lifecycle.open(payloadJson) }
   function close() { return lifecycle.close() }
   function dismiss() { return lifecycle.dismiss() }
+  // Open timing for scripts/measure-toggle-latency.cs, reached through the shell's plugin call.
+  function presentationState() { return lifecycle.presentationState() }
   function requestSearch(force) { return root.part_searchSession.search(force) }
   function savedSearchText(expression) { return DeckSearchActions.savedSearchText(root, expression) }
   function applySavedSearch(search) { return DeckSearchActions.applySavedSearch(root, search) }

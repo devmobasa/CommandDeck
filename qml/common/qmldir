@@ -107,6 +107,8 @@ Picker 1.0 Picker.qml
 PickerView 1.0 PickerView.qml
 PointerMoveGate 1.0 Controls/PointerMoveGate.qml
 PreferenceUpdateQueue 1.0 Personalization/PreferenceUpdateQueue.qml
+PresentationFrameProbe 1.0 Launcher/PresentationFrameProbe.qml
+PresentationTiming 1.0 Launcher/PresentationTiming.qml
 ProtocolClient 1.0 Protocol/ProtocolClient.qml
 ProtocolRequestTracker 1.0 Protocol/ProtocolRequestTracker.qml
 QueryHistoryController 1.0 Search/QueryHistoryController.qml
