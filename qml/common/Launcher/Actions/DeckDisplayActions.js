@@ -7,10 +7,17 @@ function reconcileScreens(root) {
   if (!root.opened || root.openedScreenName.length === 0
       || root.compositor.screens.some(screen => screen.name === root.openedScreenName)) return
 
-  // Retain the draft and navigation state for a reopen; no invisible layer may
-  // keep exclusive keyboard focus after its output disappears.
+  // Retain the draft and navigation state for a reopen, but not the results:
+  // the reopen searches again. No invisible layer may keep exclusive keyboard
+  // focus after its output disappears.
   root.suspendedForScreen = true
   root.opened = false
+  root.part_lifecycle.release()
+  root.cancelPreview()
+  root.part_navigation.restoreSelectionId = root.currentResult && root.currentResult.id ? root.currentResult.id : ""
+  root.part_searchSession.clear()
+  root.part_rows.clear()
+  root.currentResult = null
   if (root.shell && typeof root.shell.hide === "function") root.shell.hide(root.integrationIds.Plugin)
 }
 

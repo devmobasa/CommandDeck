@@ -36,10 +36,9 @@ QtObject {
     host.part_clipboardController.close(false)
     return DeckSearchActions.open(lifecycle.host, payload)
   }
-  function close() {
-    // Omarchy's deferred shell.hide can close the same session again.
-    if (!host.opened && !host.suspendedForScreen) return
-
+  // Ends what this open holds, such as its clipboard sessions in the daemon,
+  // without clearing the search. A close and an output suspension both do it.
+  function release() {
     timing.end()
     if (openGeneration > 0 && host.daemonAvailable) {
       host.part_protocol.send({version: Protocol.Version, requestId: ++host.requestSequence,
@@ -47,8 +46,20 @@ QtObject {
         clipboard: {frontendInstance: frontendInstance, openGeneration: openGeneration}})
     }
     host.part_clipboardController.close(false)
+  }
+  function close() {
+    // Omarchy's deferred shell.hide can close the same session again. After an
+    // output loss it closes the suspended session, which keeps its draft.
+    if (!host.opened) return
+
+    release()
     return DeckSearchActions.close(lifecycle.host)
   }
-  function dismiss() { return DeckSearchActions.dismiss(lifecycle.host) }
+  // A dismissal ends a session even if an output loss suspended it; only the
+  // shell's repeated close() keeps a suspended draft.
+  function dismiss() {
+    if (host.suspendedForScreen) DeckSearchActions.close(lifecycle.host)
+    return DeckSearchActions.dismiss(lifecycle.host)
+  }
   function presentationState() { return timing.describe(host.opened) }
 }
