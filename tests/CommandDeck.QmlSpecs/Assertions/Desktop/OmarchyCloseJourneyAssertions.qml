@@ -9,6 +9,7 @@ Item {
   id: journey
   required property var host
   property int hideCount: 0
+  property int suspendedSearchId: 0
 
   Common.DesktopIntegration {
     id: injectedDesktop
@@ -61,6 +62,19 @@ Item {
       id: "file:kept", kind: Protocol.ResultKinds.File, sourceId: Protocol.SourceIds.Files,
       title: "kept.txt", invocationReference: "kept",
       actions: [{ id: "open", title: "Open", kind: Protocol.ActionKinds.OpenPath }] } })
+    deck.handleMessage({ type: Protocol.Messages.Done, requestId: request.requestId,
+      searchCompletion: { containsPrivateQuery: false } })
+  }
+
+  // Two results, so a restored selection is visible.
+  function deliverTwo(query) {
+    const request = latestSearch(query)
+    for (const name of ["first", "second"]) {
+      deck.handleMessage({ type: Protocol.Messages.Result, requestId: request.requestId, result: {
+        id: "file:" + name, kind: Protocol.ResultKinds.File, sourceId: Protocol.SourceIds.Files,
+        title: name + ".txt", invocationReference: name,
+        actions: [{ id: "open", title: "Open", kind: Protocol.ActionKinds.OpenPath }] } })
+    }
     deck.handleMessage({ type: Protocol.Messages.Done, requestId: request.requestId,
       searchCompletion: { containsPrivateQuery: false } })
   }
@@ -146,6 +160,68 @@ Item {
         }
       })
     }
-    return steps
+    return steps.concat(outputLossSteps())
+  }
+
+  // Omarchy's hide calls close(). After an output loss that close must keep the
+  // suspended draft, and the suspension must not hold the results.
+  function outputLossSteps() {
+    return [{
+      ready: () => focused() && latestSearch("gamma") !== null,
+      message: "deliver the reopened Omarchy search before the output loss",
+      action: () => deliver("gamma")
+    }, {
+      ready: () => focused() && deck.currentResult !== null,
+      message: "type a draft over delivered results in the Omarchy plugin",
+      action: () => type("draft")
+    }, {
+      ready: () => latestSearch("draft") !== null,
+      message: "select the second draft result before the output loss",
+      action: () => {
+        deliverTwo("draft")
+        events.keyClick(Qt.Key_Down)
+      }
+    }, {
+      ready: () => deck.currentResult !== null && deck.currentResult.id === "file:second",
+      message: "the Omarchy output disappears with a draft result selected",
+      action: () => {
+        suspendedSearchId = latestSearch("draft").requestId
+        const hides = hideCount
+        injectedDesktop.screens = []
+        host.expect(hideCount === hides + 1, "an output loss hides the Omarchy plugin through the shell")
+        host.expect(deck.suspendedForScreen && deck.queryText === "draft",
+          "Omarchy's close after an output loss keeps the suspended draft; got " + JSON.stringify(deck.queryText))
+        host.expect(deck.part_rows.count === 0 && deck.currentResult === null, "a suspended session holds no results")
+      }
+    }, {
+      ready: () => deck.testSurfaceWindow === null,
+      message: "the lost output's launcher window is gone",
+      action: () => {
+        injectedDesktop.screens = Qt.binding(() => journey.host.part_integratedDeck.desktopIntegration.screens)
+        deck.open("{}")
+      }
+    }, {
+      ready: () => focused() && deck.testSearchInput.text === "draft" && latestSearch("draft") !== null
+        && latestSearch("draft").requestId > suspendedSearchId,
+      message: "reopening after the output returns restores the draft and searches again",
+      action: () => {
+        host.expect(!deck.suspendedForScreen && deck.opened, "the reopened session is no longer suspended")
+        deliverTwo("draft")
+      }
+    }, {
+      ready: () => deck.currentResult !== null,
+      message: "the fresh results restore the selection from before the output loss",
+      action: () => {
+        host.expect(deck.currentResult.id === "file:second",
+          "the resumed draft keeps its selected result; got " + deck.currentResult.id)
+        injectedDesktop.screens = []
+        host.expect(deck.suspendedForScreen, "a second output loss suspends the session again")
+        // A completed extension handoff dismisses the launcher this way.
+        deck.dismiss()
+        host.expect(!deck.suspendedForScreen && deck.queryText === "",
+          "a dismissal ends a suspended session; got " + JSON.stringify(deck.queryText))
+        injectedDesktop.screens = Qt.binding(() => journey.host.part_integratedDeck.desktopIntegration.screens)
+      }
+    }]
   }
 }

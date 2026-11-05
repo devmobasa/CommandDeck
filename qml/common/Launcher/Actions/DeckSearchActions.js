@@ -211,7 +211,8 @@ function open(root, payloadJson) {
     root.requestSearch()
     return
   }
-  root.suspendedForScreen = false
+  // An open with its own query or filter replaces a suspended session.
+  if (root.suspendedForScreen) close(root)
   root.openWorkspaceMruIds = root.workspaceMruIds.slice()
   root.part_navigation.clearHerdrBrowse()
   root.part_navigation.clearOmarchyBrowse()

@@ -52,6 +52,9 @@ PanelWindow {
   readonly property bool presenting: launcherWindow.host.opened
     && (launcherWindow.host.openedScreenName.length === 0
       || launcherWindow.host.openedScreenName === launcherWindow.modelData.name)
+  // This window shows the open launcher now. It owns the session (presenting)
+  // but hides while an extension hands a link to another app.
+  readonly property bool shown: launcherWindow.presenting && !launcherWindow.host.part_extensionController.externalActionPending
   onPresentingChanged: {
     if (presenting) host.presentingWindow = launcherWindow
     else if (host.presentingWindow === launcherWindow) host.presentingWindow = null
@@ -133,7 +136,7 @@ PanelWindow {
     actionPanel.openFor(target)
   }
 
-  visible: launcherWindow.presenting && !launcherWindow.host.part_extensionController.externalActionPending
+  visible: launcherWindow.shown
   color: "transparent"
   SavedSearchShortcuts {
     searches: launcherWindow.host.savedSearches
@@ -158,16 +161,15 @@ PanelWindow {
   // focus, or Hyprland keeps the pointer on this surface and the drop is lost.
   mask: launcherWindow.host.draggingOut ? dragPassThrough : null
   Region { id: dragPassThrough }
-  WlrLayershell.keyboardFocus: launcherWindow.host.opened && !launcherWindow.host.draggingOut
-      && !launcherWindow.host.part_extensionController.externalActionPending
+  WlrLayershell.keyboardFocus: launcherWindow.shown && !launcherWindow.host.draggingOut
     ? WlrKeyboardFocus.Exclusive
     : WlrKeyboardFocus.None
 
-  onVisibleChanged: {
-    if (visible) {
+  onShownChanged: {
+    if (shown) {
       launcherWindow.part_searchBar.inputControl.text = launcherWindow.host.queryText
       Qt.callLater(function() {
-        if (launcherWindow && launcherWindow.visible && !launcherWindow.host.part_extensionController.opened
+        if (launcherWindow && launcherWindow.shown && !launcherWindow.host.part_extensionController.opened
             && !launcherWindow.host.part_clipboardController.opened && launcherWindow.part_searchBar)
           launcherWindow.part_searchBar.inputControl.forceActiveFocus()
       })
@@ -182,7 +184,7 @@ PanelWindow {
     }
 
     function onSelectedIndexChanged() {
-      if (launcherWindow.visible && !launcherContent.pointerSelection) {
+      if (launcherWindow.shown && !launcherContent.pointerSelection) {
         launcherWindow.part_resultList.positionViewAtIndex(launcherWindow.host.selectedIndex, ListView.Contain)
       }
     }
@@ -244,7 +246,7 @@ PanelWindow {
 
     PresentationFrameProbe {
       timing: launcherWindow.host.part_lifecycle.timing
-      presenting: launcherWindow.presenting && launcherWindow.visible
+      presenting: launcherWindow.shown
       complete: palettePanel.opacity === 1
         && launcherWindow.host.daemonAvailable && !launcherWindow.host.part_searchSession.searching
         && (launcherWindow.host.hasResults || launcherWindow.host.showEmptyState || launcherWindow.host.showNoResults)
@@ -258,7 +260,7 @@ PanelWindow {
       anchors.fill: parent
       z: 10
       theme: launcherWindow.part_appTheme
-      opened: (launcherWindow.visible || launcherWindow.host.part_extensionController.externalActionPending) && launcherWindow.host.part_extensionController.opened
+      opened: (launcherWindow.shown || launcherWindow.host.part_extensionController.externalActionPending) && launcherWindow.host.part_extensionController.opened
       snapshot: launcherWindow.host.part_extensionController.snapshot
       busy: launcherWindow.host.part_extensionController.busy || launcherWindow.host.part_extensionController.failed
       completed: launcherWindow.host.part_extensionController.completed
@@ -355,7 +357,7 @@ PanelWindow {
       opened: launcherWindow.host.helpOpen
       returnFocusTarget: launcherWindow.host.helpFocusTarget === Ui.FocusReturnControl.FooterHelp
         ? launcherWindow.part_footerActions.helpControl : null
-      focusReturnAllowed: launcherWindow.visible && !launcherWindow.host.anyBlockingSurface
+      focusReturnAllowed: launcherWindow.shown && !launcherWindow.host.anyBlockingSurface
       opacity: opened ? 1 : 0
       Behavior on opacity {
         NumberAnimation { duration: launcherWindow.part_appTheme.durationNormal }
@@ -374,7 +376,7 @@ PanelWindow {
       opened: launcherWindow.host.filterPaletteOpen
       returnFocusTarget: launcherWindow.host.filterFocusTarget === Ui.FocusReturnControl.FooterPrefixes
         ? launcherWindow.part_footerActions.prefixesControl : null
-      focusReturnAllowed: launcherWindow.visible && !launcherWindow.host.anyBlockingSurface
+      focusReturnAllowed: launcherWindow.shown && !launcherWindow.host.anyBlockingSurface
       opacity: opened ? 1 : 0
       Behavior on opacity {
         NumberAnimation { duration: launcherWindow.part_appTheme.durationNormal }

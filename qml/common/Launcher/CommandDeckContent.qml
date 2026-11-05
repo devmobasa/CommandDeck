@@ -67,7 +67,7 @@ ColumnLayout {
   PointerMoveGate { id: resultPointerGate }
   Connections {
     target: launcherContent.host
-    function onVisibleChanged() { resultPointerGate.reset() }
+    function onShownChanged() { resultPointerGate.reset() }
   }
   visible: !launcherContent.host.host.part_extensionController.opened && !launcherContent.host.host.part_clipboardController.opened
   anchors.fill: parent
@@ -81,7 +81,7 @@ ColumnLayout {
     controller: launcherContent.host.host.part_navigation
     focusRequestsEnabled: !launcherContent.host.host.part_extensionController.opened && !launcherContent.host.host.anyBlockingSurface
     filterDescriptors: launcherContent.host.host.filterDescriptors
-    surfaceVisible: launcherContent.host.visible
+    surfaceVisible: launcherContent.host.shown
     loading: launcherContent.host.host.part_searchSession.pending
     additionalTabStop: launcherContent.scopeBar ? launcherContent.scopeBar.firstControl : fileSelectionBar.visible ? fileSelectionBar.firstControl : runtimeStatusSurface.visible ? runtimeStatusSurface : footerActions.firstControl
     precedingTabStop: detailPane.lastPreviewControl || footerActions.lastControl
@@ -258,9 +258,9 @@ ColumnLayout {
       Layout.preferredWidth: 0.42 * launcherContent.host.part_palette.width
       onCopyRequested: launcherContent.host.host.part_navigation.invokePrimary()
       result: launcherContent.host.host.currentResult
-      opened: launcherContent.host.visible
+      opened: launcherContent.host.shown
       selected: true
-      workspacePreviewEligible: launcherContent.visible && launcherContent.host.visible
+      workspacePreviewEligible: launcherContent.visible && launcherContent.host.shown
         && launcherContent.host.host.desktopCapabilities.workspaceLayouts
         && launcherContent.host.host.daemonAvailable && !launcherContent.host.host.reconciliationPending
         && !launcherContent.host.host.anyBlockingSurface && !launcherContent.host.host.answerOpen
