@@ -387,7 +387,7 @@ sealed class FakeLauncher( string directory, bool opens )
     {
         return $$"""
             {"generation":1,"opened":true,"openedAt":{{now + 1}},"firstFrameAt":{{now + 20}},"completeFrameAt":{{now + 30}},
-             "keyboardReadyAt":{{now + 25}},"framesBeforeComplete":1,"firstFrameRatio":1,"completeFrameRatio":1,
+             "keyboardReadyAt":{{now + 25}},"actionableAt":{{now + 40}},"framesBeforeComplete":1,"firstFrameRatio":1,"completeFrameRatio":1,
              "screen":"TEST-1","renderer":"software"}
             """;
     }
@@ -406,7 +406,7 @@ static class SelfTest
         garbage
         """;
     private const string RecordedReport = """
-        {"generation":4,"opened":true,"openedAt":1000,"firstFrameAt":1031,"completeFrameAt":1148,"keyboardReadyAt":1030,
+        {"generation":4,"opened":true,"openedAt":1000,"firstFrameAt":1031,"completeFrameAt":1148,"keyboardReadyAt":1030,"actionableAt":1150,
          "closedAt":0,"framesBeforeComplete":9,"firstFrameRatio":2,"completeFrameRatio":1.6666666,"screen":"DP-3","renderer":"software"}
         """;
 
@@ -512,6 +512,9 @@ static class SelfTest
         check( PresentationState.Parse( """{"generation":4,"completeFrameAt":1148}""" ) is { } partial && !partial.IsCompleteFor( 4 ),
              "an open without keyboard focus is not complete" );
 
+        check( PresentationState.Parse( """{"generation":4,"completeFrameAt":1148,"keyboardReadyAt":1030}""" ) is { } shownOnly &&
+             !shownOnly.IsCompleteFor( 4 ), "an open whose results cannot run yet is not complete" );
+
         check( PresentationState.Parse( "unknown" ) is null && PresentationState.Parse( "{}" ) is null && PresentationState.Parse( "[]" ) is null,
              "an old plugin's reply is no report" );
 
@@ -529,7 +532,8 @@ static class SelfTest
         var clock = new SampleClock( );
         var sample = OpenSample.From( report, clock, 29.8, 25.1, 3.1 );
 
-        check( clock.Until( 0 ) is null && sample is not null && sample.Card - sample.FirstFrame == 117, "launcher times are relative to the sample" );
+        check( clock.Until( 0 ) is null && sample is not null && sample.Card - sample.FirstFrame == 117 && sample.Actionable - sample.Card == 2,
+             "launcher times are relative to the sample" );
         check( OpenSample.From( report with { CompleteFrameAt = 0 }, clock, 29.8, null, 3.1 ) is null, "an open without a complete frame is no sample" );
 
         check( sample is not null && sample

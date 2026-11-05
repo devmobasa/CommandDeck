@@ -10,11 +10,14 @@ Item {
   // The card shows its final state: opaque, in place, with settled results.
   required property bool complete
   required property bool inputFocused
+  // The shown results can run; rows searched while closed wait for a refresh.
+  required property bool actionable
   required property string screenName
   required property real ratio
 
   readonly property bool listening: probe.presenting && probe.timing.waiting
   readonly property bool keyboardReady: probe.listening && probe.Window.active && probe.inputFocused
+  readonly property bool resultsActionable: probe.listening && probe.actionable
   // The state each synchronized frame rendered, oldest first, tagged with its
   // open. A threaded renderer reports a swap after the next frame may have
   // synchronized, so a swap takes the oldest entry rather than the current state.
@@ -31,6 +34,10 @@ Item {
   onListeningChanged: probe.renderedStates = []
   onKeyboardReadyChanged: {
     if (probe.keyboardReady) probe.timing.keyboardReady()
+  }
+  // A state, not a frame: a refresh with the same rows draws nothing new.
+  onResultsActionableChanged: {
+    if (probe.resultsActionable) probe.timing.resultsActionable()
   }
 
   function rendererName() {

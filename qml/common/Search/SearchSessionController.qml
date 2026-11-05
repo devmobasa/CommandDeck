@@ -49,6 +49,13 @@ QtObject {
   // An edit waits for its search or a search is running, so the visible list
   // does not answer the current query yet.
   readonly property bool searching: inFlight || debounce.running
+  // The shown rows answer the current query, even while a refresh streams.
+  readonly property bool showsCurrentResults: committedRequestId !== 0 && committedIdentity === currentIdentity()
+  // The search made while the launcher was closed, and whether its rows are
+  // the ones shown. The next open shows them at once and searches again;
+  // until a search made while open commits, their actions may be stale.
+  property int prewarmRequestId: 0
+  property bool prewarmed: false
 
   signal request(var message)
   // Sent before the request, with the identity of the search it starts.
@@ -92,7 +99,12 @@ QtObject {
   // A row shown for an older query must not run once the query has changed:
   // Enter right after typing would otherwise open what the previous search found.
   function canActivate() {
-    return committedRequestId === 0 || committedIdentity === currentIdentity()
+    return !prewarmed && (committedRequestId === 0 || committedIdentity === currentIdentity())
+  }
+
+  // Searches the closed launcher's query ahead of the next open.
+  function prewarm() {
+    return !opened && search(true)
   }
 
   // Typing searches once the edits pause.
@@ -114,6 +126,8 @@ QtObject {
     const identity = currentIdentity()
     starting(identity)
     begin(nextRequestId(), identity)
+    // Every search made while closed answers ahead of the next open.
+    if (!opened) prewarmRequestId = activeRequestId
     request({
       version: Protocol.Version,
       requestId: activeRequestId,
@@ -137,6 +151,9 @@ QtObject {
   // marked stale; a forced search (reconciliation after a reconnect) still
   // runs at once.
   function refresh(force) {
+    // Closed, a refresh only replaces rows searched ahead of the next open.
+    if (!opened) return prewarmRequestId !== 0 && search(true)
+
     if (paused && force !== true) {
       stale = true
       return false
@@ -149,7 +166,7 @@ QtObject {
   // so those changes search it again; any other query keeps its rows.
   function refreshHome() {
     if (query.length > 0 || filters.length > 0) return false
-    return search()
+    return opened ? search() : refresh()
   }
 
   // A replacement cancels only a search that is still streaming. The finished
@@ -184,7 +201,8 @@ QtObject {
     if (message.type === Protocol.Messages.Result) {
       if (inFlight) {
         pendingResults.push(message.result)
-        commitDelay.restart()
+        // A search made while closed shows nothing until it finished and proved public.
+        if (activeRequestId !== prewarmRequestId) commitDelay.restart()
       }
       return true
     }
@@ -194,6 +212,8 @@ QtObject {
       retainableIdentity = message.searchCompletion && message.searchCompletion.containsPrivateQuery === false
         ? activeIdentity : ""
       commitDelay.stop()
+      // A closed launcher keeps no rows that hold something private.
+      if (activeRequestId === prewarmRequestId && retainableIdentity.length === 0) pendingResults = []
       commit(true)
       finished(message.searchCompletion)
       return true
@@ -223,6 +243,7 @@ QtObject {
 
     committedRequestId = activeRequestId
     committedIdentity = activeIdentity
+    prewarmed = activeRequestId === prewarmRequestId
     pending = false
     pendingDelay.stop()
     committed(pendingResults)
@@ -251,6 +272,8 @@ QtObject {
     activeIdentity = ""
     committedIdentity = ""
     retainableIdentity = ""
+    prewarmRequestId = 0
+    prewarmed = false
     pending = false
     inFlight = false
     stale = false

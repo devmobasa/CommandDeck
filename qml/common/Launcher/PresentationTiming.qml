@@ -1,9 +1,9 @@
 import QtQuick
 
 // Times the latest open for scripts/measure-toggle-latency.cs: when the open
-// request arrived, the first frame, the first complete frame, and keyboard
-// focus. Times are Date.now() milliseconds, 0 until seen. It keeps no query
-// text and no results.
+// request arrived, the first frame, the first complete frame, keyboard focus,
+// and when the results became actionable. Times are Date.now() milliseconds,
+// 0 until seen. It keeps no query text and no results.
 QtObject {
   id: timing
 
@@ -13,6 +13,8 @@ QtObject {
   property double firstFrameAt: 0
   property double completeFrameAt: 0
   property double keyboardReadyAt: 0
+  // Results that a selection can run: not rows searched while closed.
+  property double actionableAt: 0
   property double closedAt: 0
   // Frames swapped before the complete one.
   property int framesBeforeComplete: 0
@@ -22,7 +24,7 @@ QtObject {
   property string renderer: ""
   // Frame probes listen only while the open still waits for something.
   readonly property bool waiting: timing.openedAt > 0 && timing.closedAt === 0
-    && (timing.completeFrameAt === 0 || timing.keyboardReadyAt === 0)
+    && (timing.completeFrameAt === 0 || timing.keyboardReadyAt === 0 || timing.actionableAt === 0)
 
   function begin() {
     // Stop waiting first, so probes re-arm: their frame queues reset, and focus
@@ -32,6 +34,7 @@ QtObject {
     timing.firstFrameAt = 0
     timing.completeFrameAt = 0
     timing.keyboardReadyAt = 0
+    timing.actionableAt = 0
     timing.closedAt = 0
     timing.framesBeforeComplete = 0
     timing.firstFrameRatio = 0
@@ -70,6 +73,10 @@ QtObject {
     if (timing.waiting && timing.keyboardReadyAt === 0) timing.keyboardReadyAt = Date.now()
   }
 
+  function resultsActionable() {
+    if (timing.waiting && timing.actionableAt === 0) timing.actionableAt = Date.now()
+  }
+
   function describe(opened) {
     return JSON.stringify({
       generation: timing.generation,
@@ -78,6 +85,7 @@ QtObject {
       firstFrameAt: timing.firstFrameAt,
       completeFrameAt: timing.completeFrameAt,
       keyboardReadyAt: timing.keyboardReadyAt,
+      actionableAt: timing.actionableAt,
       closedAt: timing.closedAt,
       framesBeforeComplete: timing.framesBeforeComplete,
       firstFrameRatio: timing.firstFrameRatio,

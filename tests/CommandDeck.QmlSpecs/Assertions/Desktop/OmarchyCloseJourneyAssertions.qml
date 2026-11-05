@@ -11,6 +11,7 @@ Item {
   property int hideCount: 0
   property int suspendedSearchId: 0
   property var keptSurface: null
+  property int prewarmSearchId: 0
 
   Common.DesktopIntegration {
     id: injectedDesktop
@@ -165,7 +166,66 @@ Item {
         }
       })
     }
-    return steps.concat(outputLossSteps())
+    return steps.concat(outputLossSteps(), prewarmSteps())
+  }
+
+  function invokeRequests() { return deck.sentRequests.filter(request => request.operation === Protocol.Operations.Invoke) }
+
+  // A close that keeps no search searches Home while closed; the next open
+  // shows those rows at once but runs none until its own search commits.
+  function prewarmSteps() {
+    return [{
+      ready: () => !deck.opened,
+      message: "open Home in the Omarchy plugin with no kept search",
+      action: () => {
+        deck.applyLauncherBehavior(false, 0)
+        deck.open("{}")
+      }
+    }, {
+      ready: () => focused() && latestSearch("") !== null,
+      message: "deliver Home before closing",
+      action: () => deliverTwo("")
+    }, {
+      ready: () => focused() && deck.currentResult !== null,
+      message: "Escape closes the Omarchy plugin with nothing to keep",
+      action: () => {
+        const before = latestSearch("").requestId
+        // Any status written while closed, at the start or the end of the
+        // search ahead, would replace this one.
+        const status = "status before the close"
+        deck.statusText = status
+        events.keyClick(Qt.Key_Escape)
+        const prewarm = latestSearch("")
+        host.expect(!deck.opened && prewarm !== null && prewarm.requestId > before,
+          "a close that keeps no search searches Home ahead of the next open")
+        prewarmSearchId = prewarm ? prewarm.requestId : 0
+        deliverTwo("")
+        host.expect(deck.part_rows.count > 0, "the closed launcher holds the Home rows it searched")
+        host.expect(deck.statusText === status, "a search made while closed announces nothing; got " + JSON.stringify(deck.statusText))
+        deck.open("{}")
+        host.expect(deck.hasResults && deck.part_searchSession.prewarmed,
+          "the open shows the Home rows searched while closed at once")
+      }
+    }, {
+      ready: () => focused(),
+      message: "Enter waits for the open's own search",
+      action: () => {
+        const invokes = invokeRequests().length
+        events.keyClick(Qt.Key_Return)
+        host.expect(invokeRequests().length === invokes && deck.statusText === "Wait for results matching the current search",
+          "rows searched while closed run nothing before the open's search commits")
+        host.expect(latestSearch("") !== null && latestSearch("").requestId > prewarmSearchId, "the open searches Home again")
+        deliverTwo("")
+      }
+    }, {
+      ready: () => focused() && !deck.part_searchSession.prewarmed,
+      message: "Enter runs once the open's search commits",
+      action: () => {
+        const invokes = invokeRequests().length
+        events.keyClick(Qt.Key_Return)
+        host.expect(invokeRequests().length === invokes + 1, "the refreshed row runs")
+      }
+    }]
   }
 
   // Omarchy's hide calls close(). After an output loss that close must keep the
@@ -196,6 +256,10 @@ Item {
         host.expect(hideCount === hides + 1, "an output loss hides the Omarchy plugin through the shell")
         host.expect(deck.suspendedForScreen && deck.queryText === "draft",
           "Omarchy's close after an output loss keeps the suspended draft; got " + JSON.stringify(deck.queryText))
+        const searchesBefore = deck.sentRequests.filter(request => request.operation === Protocol.Operations.Search).length
+        deck.part_lifecycle.prewarm()
+        host.expect(deck.sentRequests.filter(request => request.operation === Protocol.Operations.Search).length === searchesBefore,
+          "a suspended draft is not searched ahead as Home")
         host.expect(deck.part_rows.count === 0 && deck.currentResult === null, "a suspended session holds no results")
       }
     }, {

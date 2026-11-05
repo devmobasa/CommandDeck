@@ -9,7 +9,7 @@ function completeReconciliationIfReady(root) {
   root.reconciliationPreferencesComplete = false
   root.reconciliationSearchComplete = false
   root.reconciliationWarning = ""
-  root.statusText = root.resultStatus(root.part_searchSession.pendingResults)
+  if (root.opened) root.statusText = root.resultStatus(root.part_searchSession.pendingResults)
 }
 
 function handleProtocolReconnected(root) {
@@ -28,6 +28,7 @@ function handleProtocolReconnected(root) {
     root.requestAgentSettings()
   }
   root.requestRuntimeStatus()
+  root.part_lifecycle.prewarm()
 }
 
 function handleProtocolDisconnected(root) {

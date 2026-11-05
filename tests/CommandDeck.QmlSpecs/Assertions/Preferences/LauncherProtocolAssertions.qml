@@ -31,10 +31,11 @@ QtObject {
         && host.part_indexInspector.Accessible.description.indexOf("at least 1 failed") >= 0,
       "index inspector labels capped pages and lower-bound counts")
     host.part_indexInspector.inspection = exactInspection
-    host.expect(host.part_integratedDeck.sentRequests.length === 2
+    host.expect(host.part_integratedDeck.sentRequests.length === 3
         && host.part_integratedDeck.sentRequests.some(request => request.operation === Protocol.Operations.Bootstrap)
-        && host.part_integratedDeck.sentRequests.some(request => request.operation === Protocol.Operations.Status),
-      "integrated CommandDeck starts with bootstrap and runtime health requests")
+        && host.part_integratedDeck.sentRequests.some(request => request.operation === Protocol.Operations.Status)
+        && host.part_integratedDeck.sentRequests.some(request => request.operation === Protocol.Operations.Search && request.query === ""),
+      "integrated CommandDeck starts with bootstrap, runtime health, and Home searched ahead of the first open")
     const bootstrapRequest = host.part_integratedDeck.sentRequests.find(
       request => request.operation === Protocol.Operations.Bootstrap)
     const statusRequest = host.part_integratedDeck.sentRequests.find(

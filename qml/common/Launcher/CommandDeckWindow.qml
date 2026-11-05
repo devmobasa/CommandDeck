@@ -266,10 +266,14 @@ PanelWindow {
     PresentationFrameProbe {
       timing: launcherWindow.host.part_lifecycle.timing
       presenting: launcherWindow.shown
-      complete: palettePanel.opacity === 1
-        && launcherWindow.host.daemonAvailable && !launcherWindow.host.part_searchSession.searching
-        && (launcherWindow.host.hasResults || launcherWindow.host.showEmptyState || launcherWindow.host.showNoResults)
+      // Rows that answer the current query, or a finished search with none.
+      complete: palettePanel.opacity === 1 && launcherWindow.host.daemonAvailable
+        && launcherWindow.host.part_searchSession.showsCurrentResults
+        && (launcherWindow.host.hasResults || !launcherWindow.host.part_searchSession.searching)
       inputFocused: launcherWindow.part_searchBar.inputControl.activeFocus
+      actionable: launcherWindow.host.daemonAvailable && launcherWindow.host.part_searchSession.showsCurrentResults
+        && !launcherWindow.host.part_searchSession.prewarmed
+        && (launcherWindow.host.hasResults || !launcherWindow.host.part_searchSession.searching)
       screenName: launcherWindow.modelData.name
       ratio: launcherWindow.devicePixelRatio
     }

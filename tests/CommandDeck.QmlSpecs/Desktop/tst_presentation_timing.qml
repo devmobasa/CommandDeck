@@ -19,6 +19,7 @@ DeadlineTestCase {
       presenting: true
       complete: false
       inputFocused: false
+      actionable: false
       screenName: "DP-1"
       ratio: 1.5
     }
@@ -64,6 +65,10 @@ DeadlineTestCase {
 
     timing.keyboardReady()
     verify(timing.keyboardReadyAt >= timing.openedAt)
+    verify(timing.waiting, "the shown results cannot run yet")
+
+    timing.resultsActionable()
+    verify(timing.actionableAt >= timing.openedAt)
     verify(!timing.waiting)
   }
 
@@ -84,6 +89,7 @@ DeadlineTestCase {
     const timing = opened()
     timing.frame("DP-1", 1, true, "software")
     timing.keyboardReady()
+    timing.resultsActionable()
     timing.end()
 
     timing.begin()
@@ -102,8 +108,8 @@ DeadlineTestCase {
 
     const report = JSON.parse(timing.describe(true))
 
-    compare(Object.keys(report).sort(), ["closedAt", "completeFrameAt", "completeFrameRatio", "firstFrameAt", "firstFrameRatio",
-      "framesBeforeComplete", "generation", "keyboardReadyAt", "opened", "openedAt", "renderer", "screen"])
+    compare(Object.keys(report).sort(), ["actionableAt", "closedAt", "completeFrameAt", "completeFrameRatio", "firstFrameAt",
+      "firstFrameRatio", "framesBeforeComplete", "generation", "keyboardReadyAt", "opened", "openedAt", "renderer", "screen"])
     compare(report.generation, 1)
     compare(report.opened, true)
     compare(report.screen, "DP-3")
@@ -207,5 +213,15 @@ DeadlineTestCase {
 
     verify(timing.completeFrameAt > 0)
     compare(timing.framesBeforeComplete, 0)
+  }
+
+  function test_results_become_actionable_when_the_probe_says_so() {
+    const timing = opened()
+    const probe = probeFor(timing)
+
+    compare(timing.actionableAt, 0)
+    probe.actionable = true
+
+    verify(timing.actionableAt >= timing.openedAt)
   }
 }

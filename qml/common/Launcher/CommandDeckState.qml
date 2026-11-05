@@ -34,7 +34,9 @@ Item {
       ? sessionState.compositor.activeWorkspace.name : ""
     currentDirectory: sessionState.currentDirectoryContext
     selectedProject: sessionState.selectedProjectContext
-    recentWorkspaceIds: sessionState.openWorkspaceMruIds
+    // Open, the order is fixed at the open; closed, a search ahead of the next
+    // open uses the order that the open will take.
+    recentWorkspaceIds: sessionState.opened ? sessionState.openWorkspaceMruIds : sessionState.workspaceMruIds
     onRequest: message => sessionState.owner.part_protocol.send(message)
     onStarting: identity => DeckSearchActions.searchStarting(sessionState.owner, identity)
     onCommitted: results => DeckSearchActions.searchCommitted(sessionState.owner, results)
@@ -112,6 +114,8 @@ Item {
   SearchRetentionController {
     id: searchRetention
     keepMilliseconds: sessionState.keepSearchSeconds * 1000
+    // The next open shows Home now, so the closed launcher searches it ahead.
+    onExpired: sessionState.owner.part_lifecycle.prewarm()
   }
   // A short message left on screen after an action closes the launcher.
   property string hudText: ""

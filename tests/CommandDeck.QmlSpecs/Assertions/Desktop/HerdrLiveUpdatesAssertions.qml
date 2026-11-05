@@ -69,7 +69,11 @@ QtObject {
         count = searches()
       },
       () => {
-        host.expect(searches() === count && !host.part_integratedDeck.part_searchSession.inFlight, "closing stops Herdr live updates")
+        const session = host.part_integratedDeck.part_searchSession
+        const last = host.part_integratedDeck.sentRequests.filter(value => value.operation === Protocol.Operations.Search).slice(-1)[0]
+        host.expect(searches() === count && (!session.inFlight || session.activeRequestId === session.prewarmRequestId)
+            && last.query === "" && last.herdrWorkspaceId === null,
+          "closing stops Herdr live updates; only the Home search ahead of the next open runs")
         host.part_integratedDeck.open("{}")
         host.part_integratedDeck.daemonAvailable = true
         host.part_integratedDeck.reconciliationPending = false

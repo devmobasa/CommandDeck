@@ -53,9 +53,11 @@ Press **Ctrl+Space**, type, and act.
 - **Extensions.** Experimental C# extensions run as separate, sandboxed processes.
 - **Keyboard first.** You can do everything from the keyboard. Every control
   also works with the mouse.
-- **Fast.** A Native AOT C# daemon keeps an SQLite FTS5 index, and the hotkey
-  starts no process. A [latency check](docs/testing.md#hotkey-to-visible-latency)
-  times each open from the shortcut to the complete card.
+- **Fast.** A Native AOT C# daemon keeps an SQLite FTS5 index, the hotkey
+  starts no process, and the launcher's surface stays ready while it is
+  closed. In our measurements, the card with its Home results shows about
+  6 ms after the shortcut
+  ([median, with the timing details](docs/testing.md#hotkey-to-visible-latency)).
 - **Private by default.** There is no telemetry. AI, clipboard history, search
   history, and extensions stay off until you turn them on. Usage learning is on,
   stays on your computer, and you can turn it off. See
