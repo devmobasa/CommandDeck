@@ -55,6 +55,18 @@ PanelWindow {
   // This window shows the open launcher now. It owns the session (presenting)
   // but hides while an extension hands a link to another app.
   readonly property bool shown: launcherWindow.presenting && !launcherWindow.host.part_extensionController.externalActionPending
+  // The window that keeps its surface mapped: the presenting one while the
+  // launcher is open, and the focused monitor's while it is closed. Opening
+  // then shows content on a surface that is already mapped, sized and scaled,
+  // instead of creating one. Focus moving to another monitor while closed
+  // moves the kept surface in the background.
+  readonly property bool kept: launcherWindow.host.opened
+    ? launcherWindow.presenting
+    : launcherWindow.isFocusedScreen
+  readonly property bool isFocusedScreen: launcherWindow.host.compositor.focusedMonitor !== null
+    && launcherWindow.host.compositor.focusedMonitor.name === launcherWindow.modelData.name
+  // Takes pointer and keyboard input; a file dragged out needs neither.
+  readonly property bool interactive: launcherWindow.shown && !launcherWindow.host.draggingOut
   onPresentingChanged: {
     if (presenting) host.presentingWindow = launcherWindow
     else if (host.presentingWindow === launcherWindow) host.presentingWindow = null
@@ -136,7 +148,7 @@ PanelWindow {
     actionPanel.openFor(target)
   }
 
-  visible: launcherWindow.shown
+  visible: launcherWindow.kept
   color: "transparent"
   SavedSearchShortcuts {
     searches: launcherWindow.host.savedSearches
@@ -152,18 +164,25 @@ PanelWindow {
   }
   // Cover bars with the scrim; the panel's safe insets leave room inside it.
   exclusionMode: ExclusionMode.Ignore
-  WlrLayershell.layer: WlrLayer.Overlay
+  // Hidden, the kept surface waits on the bottom layer: an Overlay surface on a
+  // monitor stops Hyprland from scanning a fullscreen window out directly.
+  // Changing the layer of a mapped surface needs no new surface.
+  WlrLayershell.layer: launcherWindow.shown ? WlrLayer.Overlay : WlrLayer.Bottom
   // scripts/measure-toggle-latency.cs polls this layer's keyboard mode and
   // reports openlayer>>commanddeck; the picker and HUD use their own.
   WlrLayershell.namespace: "commanddeck"
-  // While a file is dragged out, the pointer must reach the window underneath:
-  // the launcher hides, takes no input, and gives up its exclusive keyboard
-  // focus, or Hyprland keeps the pointer on this surface and the drop is lost.
-  mask: launcherWindow.host.draggingOut ? dragPassThrough : null
-  Region { id: dragPassThrough }
-  WlrLayershell.keyboardFocus: launcherWindow.shown && !launcherWindow.host.draggingOut
-    ? WlrKeyboardFocus.Exclusive
-    : WlrKeyboardFocus.None
+  // Hidden, and while a file is dragged out, the pointer must reach the window
+  // underneath: the surface takes no input and gives up its exclusive keyboard
+  // focus, or Hyprland keeps the pointer on this surface and a drop is lost.
+  mask: launcherWindow.interactive ? null : noInput
+  Region { id: noInput }
+  WlrLayershell.keyboardFocus: launcherWindow.interactive ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+  // Hidden, the kept surface draws nothing.
+  Binding {
+    target: launcherWindow.contentItem
+    property: "opacity"
+    value: launcherWindow.shown ? 1 : 0
+  }
 
   onShownChanged: {
     if (shown) {

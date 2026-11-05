@@ -40,7 +40,7 @@ QtObject {
         }
       },
       {
-        ready: () => deck.testSurfaceWindow.visible && deck.testSearchInput.activeFocus
+        ready: () => deck.testSurfaceWindow.shown && deck.testSearchInput.activeFocus
           && latestSearch("") !== null,
         message: "the reopened launcher searches Home before rows arrive",
         action: () => deliver(latestSearch(""), ["alpha.txt", "beta.txt", "gamma.txt"])

@@ -205,11 +205,11 @@ QtObject {
               host.expect(!deck.opened, "Escape closes pending action journey: " + scenario)
             }
           }, {
-            ready: () => !deck.testSurfaceWindow.visible,
+            ready: () => !deck.testSurfaceWindow.shown,
             message: "reply while closed and reopen cycle " + cycle + ": " + scenario,
             action: () => {
               reply(1 + cycle * 2)
-              host.expect(!deck.opened && !deck.testSurfaceWindow.visible,
+              host.expect(!deck.opened && !deck.testSurfaceWindow.shown,
                 "a closed reply leaves the launcher hidden: " + scenario)
               deck.open("{}")
             }
@@ -326,7 +326,7 @@ QtObject {
           }
         }, {
           ready: () => pendingInvoke !== undefined && deck.part_invocationController.busy,
-          message: "complete the batch and reopen for " + scenario,
+          message: "complete the batch for " + scenario,
           action: () => {
             deck.handleMessage({ type: Protocol.Messages.ActionResult, requestId: pendingInvoke.requestId,
               actionResult: { succeeded: true, message: "Done" } })
@@ -339,6 +339,13 @@ QtObject {
               host.part_hostEvents.keyClick(Qt.Key_Escape)
               host.expect(!deck.opened, "Escape closes after the batch stays open")
             }
+          }
+        }, {
+          // Reopen in a later turn, as a second hotkey press does. Whether the
+          // window loses keyboard activation meanwhile depends on the compositor.
+          ready: () => !deck.opened,
+          message: "reopen after the batch for " + scenario,
+          action: () => {
             deck.open("{}")
             host.expect(deck.queryText === "" && deck.activeFilters.length === 0,
               "reopening forgets the search used by " + scenario + "; restored query " + JSON.stringify(deck.queryText))

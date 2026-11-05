@@ -162,14 +162,19 @@ Item {
     steps = [
       {
         ready: () => workArea.backingWindowVisible && workArea.width === reservedBar.screen.width
-          && workArea.height > 48,
+          && workArea.height > 48 && deck.testSurfaceWindow.backingWindowVisible,
         message: "the work-area witness is configured before adding an exclusive zone",
         action: () => {
           baselineWorkAreaHeight = workArea.height
           host.expect(baselineWorkAreaHeight <= reservedBar.screen.height,
             "the baseline work area respects existing desktop reservations")
           reservedBar.visible = true
+          const surface = deck.testSurfaceWindow._backingWindow
+          host.expect(!deck.testSurfaceWindow.shown && deck.testSurfaceWindow.contentItem.opacity === 0,
+            "a closed launcher keeps a mapped surface that draws nothing")
           deck.open("{}")
+          host.expect(deck.testSurfaceWindow._backingWindow === surface && deck.testSurfaceWindow.contentItem.opacity === 1,
+            "opening shows the kept surface instead of creating one")
           const palette = deck.testSurfaceWindow.part_palette
           host.expect(palette.opacity === 1 && palette.transform.length === 0,
             "the card opens fully opaque and in place, with no fade or slide")
@@ -242,7 +247,7 @@ Item {
         }
       },
       {
-        ready: () => deck.testSurfaceWindow !== null && deck.testSurfaceWindow.visible
+        ready: () => deck.testSurfaceWindow !== null && deck.testSurfaceWindow.shown
           && deck.testSearchInput !== null && deck.testSearchInput.activeFocus,
         message: "HEY undo starts with production search focused",
         action: () => host.openHeyUndoKeys()
@@ -263,7 +268,7 @@ Item {
         action: () => host.part_staleActivationJourney.start()
       },
       {
-        ready: () => deck.testSurfaceWindow.visible && deck.testSearchInput.activeFocus
+        ready: () => deck.testSurfaceWindow.shown && deck.testSearchInput.activeFocus
           && latestSearch("") !== null,
         message: "Home search owns a request before delivering the saved search",
         action: () => host.part_staleActivationJourney.typeOverSavedSearch()
@@ -289,7 +294,7 @@ Item {
         }
       },
       {
-        ready: () => deck.testSurfaceWindow !== null && deck.testSurfaceWindow.visible
+        ready: () => deck.testSurfaceWindow !== null && deck.testSurfaceWindow.shown
           && deck.testSearchInput !== null && deck.testSearchInput.activeFocus,
         message: "production root open focuses the real search input",
         action: () => {
