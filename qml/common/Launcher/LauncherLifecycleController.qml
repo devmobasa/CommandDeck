@@ -9,6 +9,7 @@ QtObject {
   required property var host
   property string frontendInstance: newInstance()
   property double openGeneration: 0
+  readonly property PresentationTiming timing: PresentationTiming {}
 
   function newInstance() {
     return "xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx".replace(/[xy]/g, function(value) {
@@ -31,6 +32,7 @@ QtObject {
     }
     // Publish before any surface becomes visible, on every launcher-open path.
     openGeneration++
+    timing.begin()
     host.part_clipboardController.close(false)
     return DeckSearchActions.open(lifecycle.host, payload)
   }
@@ -38,6 +40,7 @@ QtObject {
     // Omarchy's deferred shell.hide can close the same session again.
     if (!host.opened && !host.suspendedForScreen) return
 
+    timing.end()
     if (openGeneration > 0 && host.daemonAvailable) {
       host.part_protocol.send({version: Protocol.Version, requestId: ++host.requestSequence,
         operation: Protocol.Operations.LauncherOpenCancel,
@@ -47,4 +50,5 @@ QtObject {
     return DeckSearchActions.close(lifecycle.host)
   }
   function dismiss() { return DeckSearchActions.dismiss(lifecycle.host) }
+  function presentationState() { return timing.describe(host.opened) }
 }

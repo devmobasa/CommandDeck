@@ -150,8 +150,8 @@ PanelWindow {
   // Cover bars with the scrim; the panel's safe insets leave room inside it.
   exclusionMode: ExclusionMode.Ignore
   WlrLayershell.layer: WlrLayer.Overlay
-  // Hyprland reports openlayer>>commanddeck when the launcher maps, which
-  // scripts/measure-toggle-latency.cs times; the picker and HUD use their own.
+  // scripts/measure-toggle-latency.cs polls this layer's keyboard mode and
+  // reports openlayer>>commanddeck; the picker and HUD use their own.
   WlrLayershell.namespace: "commanddeck"
   // While a file is dragged out, the pointer must reach the window underneath:
   // the launcher hides, takes no input, and gives up its exclusive keyboard
@@ -236,6 +236,7 @@ PanelWindow {
     border.color: launcherWindow.part_appTheme.border
     opacity: launcherWindow.host.opened && !launcherWindow.host.draggingOut ? 1 : 0
     transform: Translate {
+      id: paletteOffset
       y: launcherWindow.host.opened ? 0 : -6
       Behavior on y {
         NumberAnimation { duration: launcherWindow.part_appTheme.durationNormal }
@@ -248,6 +249,17 @@ PanelWindow {
     MouseArea {
       anchors.fill: parent
       acceptedButtons: Qt.NoButton
+    }
+
+    PresentationFrameProbe {
+      timing: launcherWindow.host.part_lifecycle.timing
+      presenting: launcherWindow.presenting && launcherWindow.visible
+      complete: palettePanel.opacity === 1 && paletteOffset.y === 0
+        && launcherWindow.host.daemonAvailable && !launcherWindow.host.part_searchSession.searching
+        && (launcherWindow.host.hasResults || launcherWindow.host.showEmptyState || launcherWindow.host.showNoResults)
+      inputFocused: launcherWindow.part_searchBar.inputControl.activeFocus
+      screenName: launcherWindow.modelData.name
+      ratio: launcherWindow.devicePixelRatio
     }
 
     ExtensionViewHost {

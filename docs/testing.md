@@ -417,58 +417,108 @@ not run it.
 
 ```bash
 dotnet scripts/measure-toggle-latency.cs --self-test
-dotnet scripts/measure-toggle-latency.cs --live --samples 20
+dotnet scripts/measure-toggle-latency.cs --live --samples 50 --monitor DP-1
 dotnet scripts/measure-toggle-latency.cs --live --samples 20 --path shell
 ```
 
+The script reads the launcher's own report of each open, so the installed
+plugin must come from the same checkout. After
+`./scripts/install-omarchy-plugin.sh`, restart the shell with
+`omarchy-restart-shell`. A plugin rescan can keep the earlier QML types.
+
 Each sample sends `hl.dsp.global("commanddeck:toggle")` through Hyprland's
-request socket. This is the dispatcher that the hotkey binding calls. The script
-then measures the time until the event socket reports `openlayer>>commanddeck`.
-It toggles again and measures the time until `closelayer>>commanddeck`. It
-prints each sample, then the nearest-rank p50 and p95, the minimum, and the
-maximum, with one 250 ms settle after each open/close cycle. Cleanup always
-sends `omarchy-shell shell hide local.commanddeck`, including after a layer
-event timeout or cancellation with Ctrl+C or SIGTERM, so a late open cannot
-leave the launcher visible. Hide runs in a separate session, away from the
-terminal's process group, with a two-second timeout and one retry. Cancellation
-waits for cleanup before exiting.
-The script never types keys, so the result does not include the time for a key press to
-reach Hyprland's binding. `--path shell` starts
+request socket. This is the dispatcher that the hotkey binding calls. A sample
+reports four times from that request:
+
+| Time | Meaning | Source |
+|---|---|---|
+| card | The first frame that shows the final card: fully opaque, in its final position, with settled results, the empty state, or no results | The launcher |
+| first frame | The first frame of the open | The launcher |
+| keyboard | Hyprland gives the launcher layer exclusive keyboard focus | Hyprland, polled |
+| close | After the second toggle, Hyprland no longer gives the launcher the keyboard | Hyprland, polled |
+
+The launcher records a frame when its window reports the frame as swapped
+(`QQuickWindow::frameSwapped`). This is the time that the frame went to the
+compositor, not the time that the monitor showed it. With the software
+renderer, the launcher handles that signal at once. With Qt's threaded
+renderer, the signal reaches the launcher through its event loop, so a busy
+launcher can record a frame late. The launcher answers
+`omarchy-shell shell call local.commanddeck presentationState` with these times
+and counts. The report holds no query text and no results. The launcher uses
+`Date.now()`, so its times have 1 ms resolution. The script compares them with
+its own wall-clock start. It rejects a sample when the wall clock and the
+monotonic clock differ by more than 2 ms during the sample.
+
+A layer that stays mapped sends no Hyprland event when it takes or returns the
+keyboard. Thus the script asks Hyprland for the keyboard mode of the launcher
+layer with a Lua query (`/repl`) on the request socket, once each millisecond.
+The keyboard and close times are the first poll that saw the change. A sample
+also needs the launcher's report that its window became active with focus in
+the search field.
+
+Each line also shows the time until the launcher received the toggle, the time
+until `openlayer>>commanddeck` when the open mapped a new surface, the frames
+before the complete one, the device pixel ratio of the first and the complete
+frame, and the monitor. The summary gives the renderer, and the nearest-rank
+p50 and p95, the minimum, and the maximum of each time.
+
+`--monitor` focuses that monitor before each open, and rejects a sample that
+opens on another monitor. Without it, the launcher opens on the focused
+monitor. A close returns the keyboard to the last window, and that can move
+the focus to another monitor. Run the check once for each monitor. Each open
+waits 250 ms after the previous sample. Cleanup always sends
+`omarchy-shell shell hide local.commanddeck`, including after a timeout or
+cancellation with Ctrl+C or SIGTERM, so a late open cannot leave the launcher
+visible. Hide runs in a separate session, away from the terminal's process
+group, with a two-second timeout and one retry. Cancellation waits for cleanup
+before exiting.
+The script never types keys, so the result does not include the time for a key
+press to reach Hyprland's binding. `--path shell` starts
 `omarchy-shell shell toggle` for each toggle. This is the process-per-press path
-of the earlier binding, for comparison.
-The timeout covers the toggle command and its matching layer event. Cancellation
-or timeout terminates and awaits a pending shell toggle before protected hide.
+of the earlier binding, for comparison. The timeout applies to each open, to the
+complete frame, and to each close. Cancellation or timeout terminates and awaits
+a pending shell toggle before protected hide.
 
 The script refuses to run without `--live` or without a Hyprland session. It
-also refuses while `commanddeck:toggle` is not registered or CommandDeck is
-open. Close other overlays first: the launcher opens and closes on the focused
-monitor during the run. Record the machine, the monitor setup, and the build with
-the result, because latency depends on the machine.
+also refuses when `commanddeck:toggle` is not registered, when Hyprland does not
+answer the Lua layer query, when the running plugin has no report, or when
+CommandDeck is open. Close other overlays first, and do not use the desktop
+during a run: each open takes the keyboard. Record the machine, the monitors,
+the renderer, the build, and the Reduce motion preference with the result,
+because latency depends on them.
 
 #### Recorded result
 
-The README's "about 25 ms" comes from this run:
+2026-11-05, on the maintainer's desktop (Ryzen 9 7950X): Hyprland 0.56.2,
+Quickshell 0.3.2, Qt 6.12, and two 3840×2160 monitors at 166% scale. The session
+sets `QT_QUICK_BACKEND=software`, so Qt Quick draws on the CPU. Reduce motion
+was on, so the card did not fade in. Each monitor had 50 samples with
+`--samples 50 --monitor NAME`:
 
-| Item | Value |
-|---|---|
-| Date | 2026-10-22 |
-| Machine | The maintainer's desktop: Hyprland 0.56.2, a 4K monitor at 166% scale |
-| Command | `dotnet scripts/measure-toggle-latency.cs --live --samples 50` |
-| Open | Median 25.0 ms, fastest 23.2 ms, p95 26.4 ms |
-| Close | Median 3.1 ms |
+| Monitor | Card p50 / p95 | First frame p50 | Keyboard p50 | Close p50 |
+|---|---|---|---|---|
+| DP-3, 240 Hz | 133.5 / 219.9 ms | 49.9 ms | 55.0 ms | 3.2 ms |
+| DP-1, 60 Hz | 172.9 / 357.9 ms | 60.5 ms | 69.5 ms | 21.9 ms |
 
-On the same machine, the daemon cold start took a median of 117 ms over 5 runs
-(fastest 113 ms). This is the time from a restart of the user service to the
-first answered search.
+Each open mapped a new surface. The card needed two to four more frames after
+the first frame, because the first frame came before the Home results.
+
+Before 2026-11-05, this check timed only the new surface
+(`openlayer>>commanddeck`): a median of 25.0 ms on 2026-10-22, on the same
+desktop. That time does not include the results or the fade. On that date, the
+daemon cold start took a median of 117 ms over 5 runs (fastest 113 ms). This is
+the time from a restart of the user service to the first answered search.
 
 `--self-test` needs no session. Run it from the repository root. It checks event
-matching, layer and shortcut parsing, options, session refusal, and percentiles
-on recorded lines. It also checks that `CommandDeckWindow.qml` declares the
-`commanddeck` layer namespace that the script measures. Isolated child processes
-use private Hyprland sockets and a fake shell to check cleanup when a pending
-open times out or receives SIGINT or SIGTERM. They also signal the entire
-measurement process group during a deliberately delayed hide and verify retry
-after failure or timeout; they do not use the desktop.
+matching, report and layer-reply parsing, options, session refusal, and
+percentiles on recorded data. It also checks that `CommandDeckWindow.qml`
+declares the `commanddeck` layer namespace and that the launcher answers
+`presentationState`. Isolated child processes use private Hyprland sockets and
+a fake shell. One runs a whole sample against a fake launcher that takes the
+keyboard, reports a complete frame, and gives the keyboard back. The others
+check cleanup when a pending open times out or receives SIGINT or SIGTERM. They also signal the entire measurement process group during a
+deliberately delayed hide and verify retry after failure or timeout; they do
+not use the desktop.
 Hung `--path shell` toggles also receive an open event before SIGINT, SIGTERM,
 or the toggle deadline. These checks require the toggle process to exit before
 the protected hide starts, and require the measurement to finish cleanup.

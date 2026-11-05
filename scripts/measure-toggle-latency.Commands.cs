@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 
 sealed partial class HyprlandSession
@@ -34,10 +35,11 @@ sealed partial class HyprlandSession
         return new( Path.Combine( directory, ".socket.sock" ), events );
     }
 
-    public async Task<string> RequestAsync( string request )
+    public async Task<string> RequestAsync( string request, CancellationToken cancellationToken = default )
     {
         using Socket socket = new( AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified );
-        using CancellationTokenSource timeout = new( TimeSpan.FromSeconds( 2 ) );
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource( cancellationToken );
+        timeout.CancelAfter( TimeSpan.FromSeconds( 2 ) );
         await socket.ConnectAsync( new UnixDomainSocketEndPoint( _requestSocket ), timeout.Token );
         await socket.SendAsync( Encoding.UTF8.GetBytes( request ), SocketFlags.None, timeout.Token );
         using MemoryStream reply = new( );
@@ -60,12 +62,33 @@ sealed partial class HyprlandSession
             return;
         }
 
-        var reply = (await RequestAsync( ToggleLatency.DispatchRequest )).Trim( );
+        var reply = (await RequestAsync( ToggleLatency.DispatchRequest, cancellationToken )).Trim( );
         if ( reply != "ok" )
         {
             throw new InvalidOperationException( $"Hyprland rejected `{ToggleLatency.DispatchRequest}`: {reply}" );
         }
     }
+
+    // The launcher's report on its latest open, or null when the plugin has none.
+    public static async Task<PresentationState?> ReadPresentationAsync( CancellationToken cancellationToken )
+    {
+        var reply = await RunShellAsync( ["shell", "call", CommandDeck.CommandDeckIdentity.PluginId, PresentationState.Method, ""],
+             cancellationToken: cancellationToken );
+
+        return PresentationState.Parse( reply );
+    }
+
+    public async Task FocusMonitorAsync( string monitor, CancellationToken cancellationToken )
+    {
+        var request = FocusRequest( monitor );
+        var reply = (await RequestAsync( request, cancellationToken )).Trim( );
+        if ( reply != "ok" )
+        {
+            throw new InvalidOperationException( $"Hyprland rejected `{request}`: {reply}" );
+        }
+    }
+
+    public static string FocusRequest( string monitor ) => $"dispatch hl.dsp.focus({{ monitor = \"{monitor}\" }})";
 
     public static async Task HideAsync( )
     {
@@ -85,7 +108,7 @@ sealed partial class HyprlandSession
         }
     }
 
-    private static async Task RunShellAsync( string[] arguments, bool isolated = false, CancellationToken cancellationToken = default )
+    private static async Task<string> RunShellAsync( string[] arguments, bool isolated = false, CancellationToken cancellationToken = default )
     {
         ProcessStartInfo start = CreateToggleStartInfo( isolated );
 
@@ -149,6 +172,8 @@ sealed partial class HyprlandSession
         {
             throw new InvalidOperationException( $"omarchy-shell exited with {process.ExitCode}: {await error}{await output}" );
         }
+
+        return await output;
     }
 
     private static ProcessStartInfo CreateToggleStartInfo( bool isolated )
@@ -164,5 +189,37 @@ sealed partial class HyprlandSession
          [System.Diagnostics.CodeAnalysis.NotNullWhen( false )] string? runtime )
     {
         return string.IsNullOrEmpty( instance ) || string.IsNullOrEmpty( runtime );
+    }
+}
+
+sealed class RunCancellation : IDisposable
+{
+    private readonly CancellationTokenSource _stop = new( );
+    private readonly PosixSignalRegistration _terminate;
+
+    public RunCancellation( )
+    {
+        Console.CancelKeyPress += Cancel;
+
+        _terminate = PosixSignalRegistration.Create( PosixSignal.SIGTERM, context =>
+        {
+            context.Cancel = true;
+            _stop.Cancel( );
+        } );
+    }
+
+    public CancellationToken Token => _stop.Token;
+
+    private void Cancel( object? sender, ConsoleCancelEventArgs args )
+    {
+        args.Cancel = true;
+        _stop.Cancel( );
+    }
+
+    public void Dispose( )
+    {
+        Console.CancelKeyPress -= Cancel;
+        _terminate.Dispose( );
+        _stop.Dispose( );
     }
 }
