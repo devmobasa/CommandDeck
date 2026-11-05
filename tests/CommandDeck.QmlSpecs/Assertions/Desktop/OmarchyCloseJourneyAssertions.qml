@@ -10,6 +10,7 @@ Item {
   required property var host
   property int hideCount: 0
   property int suspendedSearchId: 0
+  property var keptSurface: null
 
   Common.DesktopIntegration {
     id: injectedDesktop
@@ -140,14 +141,18 @@ Item {
         ready: () => focused() && deck.currentResult !== null,
         message: "Escape closes the Omarchy session for " + query,
         action: () => {
+          keptSurface = deck.testSurfaceWindow._backingWindow
           events.keyClick(Qt.Key_Escape)
           host.expect(!deck.opened, "Escape closes the plugin before deferred shell.hide")
         }
       }, {
-        ready: () => hideCount === callbackCount && !deck.testSurfaceWindow.visible,
+        ready: () => hideCount === callbackCount && !deck.testSurfaceWindow.shown,
         message: "reopen after deferred shell.hide calls close again for " + query,
         action: () => {
+          host.expect(deck.testSurfaceWindow.backingWindowVisible && deck.testSurfaceWindow._backingWindow === keptSurface,
+            "a closed launcher keeps its surface mapped for " + query)
           deck.open("{}")
+          host.expect(deck.testSurfaceWindow._backingWindow === keptSurface, "reopening reuses the kept surface for " + query)
           host.expect(deck.queryText === query,
             "the Omarchy callback preserves " + query + "; got " + JSON.stringify(deck.queryText))
         }

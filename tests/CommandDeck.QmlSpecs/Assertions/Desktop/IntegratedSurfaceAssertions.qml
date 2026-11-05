@@ -254,10 +254,10 @@ QtObject {
             extension.busy = false
             extension.snapshot = { revision: 1, content: { actions: [{ kind: Protocol.ExtensionActionKinds.OpenUrl, handle: "url" }] } }
             extension.activate(1, "", "url")
-            host.expect(!host.part_integratedDeck.testSurfaceWindow.visible && host.part_integratedDeck.opened,
+            host.expect(!host.part_integratedDeck.testSurfaceWindow.shown && host.part_integratedDeck.opened,
               "URL handoff hides the overlay while keeping the session alive")
             extension.handleMessage({ requestId: extension.activeActionRequestId, type: Protocol.Messages.Error, error: "Denied" })
-            host.expect(host.part_integratedDeck.testSurfaceWindow.visible && host.part_integratedDeck.opened,
+            host.expect(host.part_integratedDeck.testSurfaceWindow.shown && host.part_integratedDeck.opened,
               "a rejected URL restores the visible extension")
             extension.handleMessage({ requestId: extension.activeActionRequestId, type: Protocol.Messages.Done })
             extension.activate(1, "", "url")

@@ -8,8 +8,10 @@ import "../../common/Protocol.js" as Protocol
 QtObject {
   id: journeys
   required property var host
-  // With every closed surface built up front one window held 2,768 items.
-  readonly property int closedWindowItemCap: 1000
+  // With every closed surface built up front one window held 2,768 items. The
+  // kept window is laid out at its screen's size while closed, so its views
+  // hold their visible delegates: about 1,030 items.
+  readonly property int closedWindowItemCap: 1100
   property var settings: null
   property var management: null
   property var inspector: null
