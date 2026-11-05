@@ -40,7 +40,7 @@ try
         File.Copy( file, target );
     }
 
-    await File.WriteAllTextAsync( Path.Combine( root, "global.json" ), "{\"sdk\":{\"version\":\"10.0.400\",\"rollForward\":\"disable\"}}" );
+    await File.WriteAllTextAsync( Path.Combine( root, "global.json" ), "{\"sdk\":{\"version\":\"10.0.403\",\"rollForward\":\"disable\"}}" );
 
     new XDocument( CreatePackageConfiguration( feed, root ) ).Save( Path.Combine( root, "NuGet.Config" ) );
 

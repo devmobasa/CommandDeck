@@ -15,7 +15,7 @@ try
     var feed = Path.Combine( temporary, "feed" );
     await RunAsync( ["scripts/build-extension-sdk.cs", "--output", feed], repository );
 
-    File.WriteAllText( Path.Combine( temporary, "global.json" ), """{"sdk":{"version":"10.0.400","rollForward":"disable"}}""" );
+    File.WriteAllText( Path.Combine( temporary, "global.json" ), """{"sdk":{"version":"10.0.403","rollForward":"disable"}}""" );
 
     File.Copy( Path.Combine( repository, "Directory.Build.props" ), Path.Combine( temporary, "Directory.Build.props" ) );
     File.Copy( Path.Combine( repository, "CodeMetricsConfig.txt" ), Path.Combine( temporary, "CodeMetricsConfig.txt" ) );

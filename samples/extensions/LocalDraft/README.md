@@ -5,7 +5,7 @@ owns the draft and non-secret default setting; the child has no filesystem or
 network access. Storage is scoped to this installation.
 
 Follow the [external author build](../../../docs/extensions/authoring.md#build-an-existing-example-outside-the-checkout)
-with `LocalDraft` in place of `UuidTools`, a freshly built SDK feed, SDK 10.0.400,
+with `LocalDraft` in place of `UuidTools`, a freshly built SDK feed, SDK 10.0.403,
 and a fresh private NuGet cache. Then package it from the repository:
 
 ```bash

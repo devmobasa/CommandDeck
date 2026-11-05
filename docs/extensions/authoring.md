@@ -14,7 +14,7 @@ a local preview feed, not a public compatibility release.
 
 ## Prerequisites
 
-- The repository's .NET SDK and .NET SDK **10.0.400** installed side by side.
+- The repository's .NET SDK and .NET SDK **10.0.403** installed side by side.
 - Linux x64 with Native AOT build prerequisites (Clang and the native development
   libraries used by the .NET SDK).
 - To run: a matching published CommandDeck daemon and repository renderer,
@@ -213,7 +213,7 @@ cd /tmp/commanddeck-uuid-author
 Create `global.json` in that author directory:
 
 ```json
-{"sdk":{"version":"10.0.400","rollForward":"disable"}}
+{"sdk":{"version":"10.0.403","rollForward":"disable"}}
 ```
 
 Create `NuGet.Config`, replacing `ABSOLUTE_REPOSITORY_PATH` with the checkout

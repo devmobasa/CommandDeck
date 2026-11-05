@@ -41,7 +41,7 @@ static class SdkJourney
         {
             await File.WriteAllTextAsync( Path.Combine( temporary, "global.json" ), new JsonObject
             {
-                ["sdk"] = new JsonObject { ["version"] = "10.0.400", ["rollForward"] = "disable" }
+                ["sdk"] = new JsonObject { ["version"] = "10.0.403", ["rollForward"] = "disable" }
             }.ToJsonString( ) );
 
             File.Copy( Path.Combine( repository, "Directory.Build.props" ), Path.Combine( temporary, "Directory.Build.props" ) );
@@ -92,7 +92,7 @@ static class SdkJourney
 
             await File.WriteAllTextAsync( Path.Combine( artifacts, "evidence.json" ), new JsonObject
             {
-                ["sdk"] = "10.0.400",
+                ["sdk"] = "10.0.403",
                 ["profiles"] = new JsonArray( "managed", "aot" ),
                 ["authorProject"] = "standalone public NuGet references",
                 ["sandbox"] = false
