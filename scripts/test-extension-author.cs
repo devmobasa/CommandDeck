@@ -32,7 +32,7 @@ Task<string>? daemonOutput = null, daemonError = null;
 try
 {
     // Isolate both the SDK choice and the package cache from the checkout/user.
-    await File.WriteAllTextAsync( Path.Combine( root, "global.json" ), "{\"sdk\":{\"version\":\"10.0.400\",\"rollForward\":\"disable\"}}" );
+    await File.WriteAllTextAsync( Path.Combine( root, "global.json" ), "{\"sdk\":{\"version\":\"10.0.403\",\"rollForward\":\"disable\"}}" );
 
     await Exec( ScriptExecutables.Dotnet, "tool", "install", "CommandDeck.ExtensionTools", "--version", "0.1.0-preview.6", "--tool-path",
          toolDirectory, "--add-source", feed );

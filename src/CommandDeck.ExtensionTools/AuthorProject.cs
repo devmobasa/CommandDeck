@@ -41,7 +41,7 @@ public static class AuthorProject
             File.WriteAllText( Path.Combine( directory, file ), Resource( file ) );
         }
 
-        File.WriteAllText( Path.Combine( directory, "global.json" ), "{\"sdk\":{\"version\":\"10.0.400\",\"rollForward\":\"disable\"}}\n" );
+        File.WriteAllText( Path.Combine( directory, "global.json" ), "{\"sdk\":{\"version\":\"10.0.403\",\"rollForward\":\"disable\"}}\n" );
         File.WriteAllText( Path.Combine( directory, ".gitignore" ), "bin/\nobj/\n.commanddeck/\n*.cdext\n" );
 
         new XDocument( new XElement( "configuration",
