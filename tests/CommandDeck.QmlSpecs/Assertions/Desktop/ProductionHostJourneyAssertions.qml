@@ -170,6 +170,9 @@ Item {
             "the baseline work area respects existing desktop reservations")
           reservedBar.visible = true
           deck.open("{}")
+          const palette = deck.testSurfaceWindow.part_palette
+          host.expect(palette.opacity === 1 && palette.transform.length === 0,
+            "the card opens fully opaque and in place, with no fade or slide")
         }
       },
       {
