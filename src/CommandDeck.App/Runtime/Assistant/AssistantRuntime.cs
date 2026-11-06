@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Reflection;
 
 namespace CommandDeck;
 
@@ -68,7 +69,7 @@ internal sealed partial class AssistantRuntime : IAsyncDisposable
         CodexCredentialStore credentials = new( _agentOptions.StateDirectory );
 
         var backend = _constructionOptions.AgentBackendFactory?.Invoke( _agentOptions, credentials ) ??
-                      new CodexAgentBackend( _agentOptions, credentials, clientVersion: "0.1.0-preview.1" );
+                      new CodexAgentBackend( _agentOptions, credentials, clientVersion: ClientVersion( ) );
 
         _codex = backend as CodexAgentBackend;
         _agentResources.Own( backend );
@@ -314,4 +315,8 @@ internal sealed partial class AssistantRuntime : IAsyncDisposable
 
         return null;
     }
+
+    // The app's own version, without its build metadata, as the Codex client version.
+    private static string ClientVersion( ) => typeof( AssistantRuntime ).Assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>( )?.InformationalVersion.Split( '+' )[0] ?? "unknown";
 }

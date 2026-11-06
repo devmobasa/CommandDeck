@@ -84,7 +84,7 @@ To build the same archive locally:
 
 ```bash
 ./scripts/publish-aot.sh linux-x64
-dotnet scripts/package-release.cs linux-x64 v0.1.0-preview.1
+dotnet scripts/package-release.cs linux-x64 v0.1.0-preview.2
 ```
 
 The archive and its `.sha256` file are written to `artifacts/release/`. The

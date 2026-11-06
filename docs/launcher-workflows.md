@@ -501,7 +501,7 @@ file-selection controls, picker keyboard behavior, and launcher protocol wiring.
 ## Calculator
 
 Type `100 * 5` to show `500` above normal results, then press Enter to copy it.
-Numbers can use thousands separators, as in `1,000 * 1.2` or `(1,000+2)*3`.
+After `=`, numbers can use thousands separators, as in `= 1,000 * 1.2` or `= (1,000+2)*3`.
 Type `days until 11 sep` for an offline date count, or `weeks until 11 sep` for
 weeks and remaining days. The subtitle shows the resolved dates. Complete
 conversions such as `5 km in miles` and `105F in C` also work inline. Currency

@@ -33,7 +33,7 @@ x86-64 and `linux-arm64` for ARM64. Set `version` to the release that you
 downloaded, then check, extract, and install it:
 
 ```bash
-version=v0.1.0-preview.1
+version=v0.1.0-preview.2
 sha256sum -c commanddeck-$version-linux-x64.tar.gz.sha256
 tar -xzf commanddeck-$version-linux-x64.tar.gz
 cd commanddeck-$version-linux-x64

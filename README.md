@@ -31,8 +31,9 @@ Press **Ctrl+Space**, type, and act.
   [Omarchy submenus](docs/search-and-ranking.md#omarchy-submenus) in place and
   shows a config key at its file and line. It follows Hyprland's rounding, so
   `rounding = 0` gives square corners throughout.
-- **Calculator.** Type `100 * 5`, `1,000 * 1.2`, `100 km to miles`,
-  `100 usd to eur`, or `days until 11 sep`. You do not need `=`.
+- **Calculator.** Type `100 * 5`, `100 km to miles`, `100 usd to eur`, or
+  `days until 11 sep`. You do not need `=`, except for thousands separators:
+  `= 1,000 * 1.2`.
 - **Large Type.** **Ctrl+L** shows your search, or a calculator answer, across
   the whole screen.
 - **Drag files out.** Drag a file row into a terminal, browser, or chat.
@@ -72,14 +73,14 @@ chord or bind it yourself.
 
 This is the recommended way. Do these steps in your Omarchy desktop session.
 
-1. Open the [latest release](https://github.com/devmobasa/CommandDeck/releases/latest).
+1. Open the [releases page](https://github.com/devmobasa/CommandDeck/releases) and choose the newest release.
    Download `commanddeck-VERSION-linux-x64.tar.gz` and its `.sha256` file.
    On an ARM computer, use the `linux-arm64` files.
 2. Check the download, extract it, and run the installer. Set `version` to the
    release that you downloaded:
 
    ```bash
-   version=v0.1.0-preview.1
+   version=v0.1.0-preview.2
    sha256sum -c commanddeck-$version-linux-x64.tar.gz.sha256
    tar -xzf commanddeck-$version-linux-x64.tar.gz
    cd commanddeck-$version-linux-x64

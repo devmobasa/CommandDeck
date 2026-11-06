@@ -266,7 +266,7 @@ Assistant tools cannot invoke it.
 Clear arithmetic such as `100 * 5`, `100*5`, `2^10`, `(3+4)*2`, `10 / 4`,
 `1.5 * 3`, and `-2 + 7` shows a calculator row first. Normal results follow it.
 Press Enter to copy the answer. At least one operator must connect operands.
-Numbers can use thousands separators, such as `1,000 * 1.2`: one to three digits,
+After `=`, numbers can use thousands separators, such as `= 1,000 * 1.2`: one to three digits,
 then groups of exactly three. Inside a function call a comma separates
 arguments, so `max(100,200)` is `200`.
 Plain numbers, decimals, percentages, and version strings remain searches.
