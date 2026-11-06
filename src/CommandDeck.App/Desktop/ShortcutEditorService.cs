@@ -7,6 +7,7 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
     private readonly HyprlandHotkeyPaths _paths;
     private readonly string _stateFile;
     private readonly ShortcutSourceResolver _sources;
+    private readonly string _omarchyDirectory;
     private readonly ExternalProcessRunner _run;
     private readonly Func<bool> _inHyprland;
     private readonly SemaphoreSlim _gate = new( 1, 1 );
@@ -20,14 +21,19 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
         _paths = paths;
         _stateFile = Path.Combine( Path.GetDirectoryName( paths.BackupDirectory )!, "shortcut-overrides.json" );
         _sources = new( paths.HyprDirectory, omarchyDirectory );
+        _omarchyDirectory = Path.TrimEndingDirectorySeparator( omarchyDirectory ) + Path.DirectorySeparatorChar;
         _run = runner ?? RunAsync;
         _inHyprland = inHyprland ?? (static ( ) =>
              !string.IsNullOrEmpty( Environment.GetEnvironmentVariable( EnvironmentVariableNames.HyprlandInstanceSignature ) ));
         Recording = new( _run, ( ) => _inHyprland( ) && ModuleInstalled( ), clock, _inHyprland );
     }
 
-    public static ShortcutEditorService FromEnvironment( ) => new( HyprlandHotkeyPaths.FromEnvironment( Environment.GetEnvironmentVariable ),
-        Environment.GetEnvironmentVariable( "OMARCHY_PATH" ) ?? "/usr/share/omarchy" );
+    public static ShortcutEditorService FromEnvironment( )
+    {
+        var paths = HyprlandHotkeyPaths.FromEnvironment( Environment.GetEnvironmentVariable );
+
+        return new( paths, paths.OmarchyDirectory );
+    }
 
     private static ValueTask<ProcessResult> RunAsync( string executable, IReadOnlyList<string> arguments, TimeSpan timeout, CancellationToken token ) =>
         ProcessRunner.RunAsync( executable, arguments, null, null, timeout, token );
@@ -75,7 +81,8 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
             var matches = sources.Where( source => source.Call.Description == binding.Description &&
                 ShortcutLua.CanonicalChord( source.Call.Chord ) == ShortcutLua.CanonicalChord( binding.Chord ) ).ToList( );
             var source = matches.LastOrDefault( ) ?? sources.FirstOrDefault( source => source.Call.Description == binding.Description );
-            var changeable = UniqueBinding( bindings, binding ) && matches.Count == 1 && source is { BeforeModule: true, Call.Literal: true } &&
+            var changeable = UniqueBinding( bindings, binding ) && matches.Count == 1 &&
+                 source is { BeforeModule: true, Conditional: false, Call.Literal: true } &&
                  binding.Submap.Length == 0;
             var file = source?.File ?? _paths.MainConfig;
             var id = matches.Count == 1 && binding.Submap.Length == 0 ? source!.Id
@@ -259,7 +266,9 @@ public sealed partial class ShortcutEditorService : IAsyncDisposable
             (source.Call.Chord.Length == 0 || ShortcutLua.CanonicalChord( source.Call.Chord ) == ShortcutLua.CanonicalChord( conflict.Chord )) ).ToList( );
         var ownedHotkey = conflict.LauncherHotkey && ModuleInstalled( ) &&
             !File.ReadAllText( _paths.HotkeyFile ).Contains( ShortcutLua.SupportOnlyMarker, StringComparison.Ordinal );
-        if ( sources.Any( static source => !source.BeforeModule ) || sources.Count == 0 && !ownedHotkey )
+        // A binding that may not be loaded is removed only from Omarchy's own defaults.
+        if ( sources.Any( source => !source.BeforeModule || source.Conditional && !IsConditionalOmarchyDefault( source ) ) ||
+             sources.Count == 0 && !ownedHotkey )
         {
             throw new InvalidOperationException( "This key loads after CommandDeck, or its load order is unknown. Change it in your Hyprland configuration." );
         }

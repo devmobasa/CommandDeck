@@ -33,6 +33,7 @@ public static partial class Program
         Run( "shortcut editor Lua reader accepts literals and rejects executable expressions", ShortcutLuaReaderKeepsLiteralCallsAndRejectsCode );
         await RunAsync( "shortcut editor source policy follows load order submaps and changed files", ShortcutSourcePolicyAndCacheAsync );
         await RunAsync( "shortcut editor moves removes adds replaces and restores without editing source files", ShortcutMoveRemoveAddReplaceAndResetAsync );
+        await RunAsync( "shortcut editor keeps Omarchy's conditional default on a moved chord", ShortcutMoveKeepsOmarchysConditionalDefaultAsync );
         await RunAsync( "shortcut editor reload failure restores JSON and Lua with one backup", ShortcutReloadFailureRestoresFilesAsync );
         await RunAsync( "shortcut editor atomic write failure keeps previous module", ShortcutWriteFailureKeepsModuleAsync );
         Run( "inline calculator parser preserves search and rejects ordinary input", InlineCalculatorParserPreservesSearchAsync );

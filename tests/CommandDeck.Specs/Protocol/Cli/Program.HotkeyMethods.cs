@@ -214,6 +214,191 @@ public static partial class Program
         True( HyprlandHotkeyConfig.HasUserBinding( "o.bind(\"CTRL + SUPER + K\", nil, \"local.commanddeck\")", "SUPER + CTRL + K" ) );
     }
 
+    // Omarchy 4.5 loads its default bindings inside a condition, from a module
+    // whose name has a hyphen, and binds Ctrl+Space to a Lua function.
+    private const string OmarchyDirectInputBinding = """
+                                                     o.bind("CTRL + SPACE", "Direct input for the terminal prefix", function()
+                                                       o.shell_succeeds("true")
+                                                     end, { non_consuming = true })
+
+                                                     """;
+
+    // Omarchy 4.5's layout: a conditional require of a hyphenated module that binds Ctrl+Space.
+    private static string WriteOmarchyConditionalDefaults( HotkeyFixture fixture )
+    {
+        var defaults = Path.Combine( fixture.Paths.OmarchyDirectory, "default", "hypr" );
+        Directory.CreateDirectory( Path.Combine( defaults, "bindings" ) );
+        File.WriteAllText( Path.Combine( defaults, "omarchy.lua" ), """
+                                                                    if _G.omarchy_default_bindings ~= false then
+                                                                      require("default.hypr.bindings.input-method")
+                                                                    end
+
+                                                                    """ );
+        var binding = Path.Combine( defaults, "bindings", "input-method.lua" );
+        File.WriteAllText( binding, OmarchyDirectInputBinding );
+
+        return binding;
+    }
+
+    private static void HotkeyInstallReplacesOmarchysConditionalDefaultBinding( )
+    {
+        using HotkeyFixture fixture = new( );
+        WriteOmarchyConditionalDefaults( fixture );
+        File.WriteAllText( fixture.Paths.MainConfig, StockHyprlandLua );
+        File.WriteAllText( fixture.Paths.Bindings, StockBindingsLua );
+
+        // The installer script runs it without a chord, for the default Ctrl+Space.
+        var messages = fixture.Installer.Install( );
+
+        True( File.Exists( fixture.Paths.HotkeyFile ) );
+        var generated = File.ReadAllText( fixture.Paths.HotkeyFile );
+        True( generated.Contains( "hl.bind(\"CTRL + SPACE\", hl.dsp.global(\"commanddeck:toggle\")", StringComparison.Ordinal ) );
+        True( !generated.Contains( "Direct input", StringComparison.Ordinal ), "a binding that may not be loaded is never recreated" );
+        True( messages.Any( static message => message.StartsWith( "Note:", StringComparison.Ordinal ) &&
+            message.Contains( "input-method.lua", StringComparison.Ordinal ) ) );
+
+        var reinstall = fixture.Installer.Install( );
+        True( reinstall.Single( ).Contains( "already installed", StringComparison.Ordinal ), "a reinstall changes nothing" );
+
+        File.Delete( fixture.Paths.HotkeyFile );
+        File.WriteAllText( fixture.Paths.MainConfig, StockHyprlandLua );
+        True( fixture.Installer.Install( "CTRL + SPACE" ).Any( static message => message.Contains( "input-method.lua", StringComparison.Ordinal ) ),
+            "an explicit chord replaces it too" );
+    }
+
+    private static void HotkeyInstallKeepsAUserBindingThatSharesOmarchysDefault( )
+    {
+        using HotkeyFixture fixture = new( );
+        WriteOmarchyConditionalDefaults( fixture );
+        // The user's copy of Omarchy's binding loads first, so Omarchy's is the last match.
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "direct-input.lua" ),
+            "o.bind(\"CTRL + SPACE\", \"Direct input for the terminal prefix\", \"own-tool\")\n" );
+        File.WriteAllText( fixture.Paths.MainConfig, StockHyprlandLua.Replace( "require(\"default.hypr.omarchy\")",
+            "require(\"hypr.direct-input\")\nrequire(\"default.hypr.omarchy\")", StringComparison.Ordinal ) );
+        File.WriteAllText( fixture.Paths.Bindings, StockBindingsLua );
+
+        Throws<InvalidOperationException>( ( ) => fixture.Installer.Install( ) );
+        True( !File.Exists( fixture.Paths.HotkeyFile ), "a user binding sharing Omarchy's description is not dropped" );
+    }
+
+    private static void HotkeyInstallKeepsAConditionalUserBindingOnTheChord( )
+    {
+        using HotkeyFixture fixture = new( );
+        // The user's own binding may not load, so it can be neither recreated nor removed.
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "extra.lua" ), "o.bind(\"CTRL + SPACE\", \"Extra\", \"extra\")\n" );
+        File.WriteAllText( fixture.Paths.MainConfig, StockHyprlandLua.Replace( "require(\"hypr.bindings\")",
+            "if extra then require(\"hypr.extra\") end\nrequire(\"hypr.bindings\")", StringComparison.Ordinal ) );
+        File.WriteAllText( fixture.Paths.Bindings, StockBindingsLua );
+
+        Throws<InvalidOperationException>( ( ) => fixture.Installer.Install( ) );
+        Throws<InvalidOperationException>( ( ) => fixture.Installer.Install( "CTRL + SPACE" ) );
+        True( !File.Exists( fixture.Paths.HotkeyFile ) );
+    }
+
+    private static void HotkeyInstallTreatsALinkedOmarchyDefaultAsTheUsers( )
+    {
+        using HotkeyFixture fixture = new( );
+        // A default file that links to the user's dotfiles is the user's file.
+        var binding = WriteOmarchyConditionalDefaults( fixture );
+        var own = Path.Combine( fixture.Root, "dotfiles", "input-method.lua" );
+        Directory.CreateDirectory( Path.GetDirectoryName( own )! );
+        File.WriteAllText( own, OmarchyDirectInputBinding );
+        File.Delete( binding );
+        File.CreateSymbolicLink( binding, own );
+        File.WriteAllText( fixture.Paths.MainConfig, StockHyprlandLua );
+        File.WriteAllText( fixture.Paths.Bindings, StockBindingsLua );
+
+        Throws<InvalidOperationException>( ( ) => fixture.Installer.Install( ) );
+        True( !File.Exists( fixture.Paths.HotkeyFile ) );
+
+        // A ".." after a link leaves the link's target, not the link.
+        var subdirectory = Path.Combine( fixture.Root, "dotfiles", "subdirectory" );
+        Directory.CreateDirectory( subdirectory );
+        Directory.CreateSymbolicLink( Path.Combine( fixture.Paths.OmarchyDirectory, "jump" ), subdirectory );
+        File.Delete( binding );
+        File.CreateSymbolicLink( binding, Path.Combine( fixture.Paths.OmarchyDirectory, "jump", "..", "input-method.lua" ) );
+        Throws<InvalidOperationException>( ( ) => fixture.Installer.Install( ) );
+        True( !File.Exists( fixture.Paths.HotkeyFile ) );
+    }
+
+    private static void HotkeyInstallFollowsALinkedOmarchyDirectory( )
+    {
+        using HotkeyFixture fixture = new( );
+        // Omarchy's directory may itself be a link, as ~/.local/share/omarchy is to /usr/share/omarchy.
+        var installed = Path.Combine( fixture.Root, "usr", "share", "omarchy" );
+        Directory.CreateDirectory( installed );
+        Directory.CreateSymbolicLink( fixture.Paths.OmarchyDirectory, installed );
+        WriteOmarchyConditionalDefaults( fixture );
+        File.WriteAllText( fixture.Paths.MainConfig, StockHyprlandLua );
+        File.WriteAllText( fixture.Paths.Bindings, StockBindingsLua );
+
+        fixture.Installer.Install( );
+
+        True( File.ReadAllText( fixture.Paths.HotkeyFile ).Contains( "hl.bind(\"CTRL + SPACE\"", StringComparison.Ordinal ) );
+    }
+
+    private static void ShortcutResolverPlacesAModuleAtTheFirstRequireThatRuns( )
+    {
+        using HotkeyFixture fixture = new( );
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "extra.lua" ),
+            "o.bind(\"SUPER + E\", \"Extra\", \"extra\")\nrequire(\"hypr.nested\")\n" );
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "nested.lua" ), "o.bind(\"SUPER + N\", \"Nested\", \"nested\")\n" );
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "other.lua" ), "o.bind(\"SUPER + O\", \"Other\", \"other\")\n" );
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "wrapper.lua" ), "require(\"hypr.extra\")\n" );
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "helper.lua" ), "return {}\n" );
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "factory.lua" ), "return function() require(\"hypr.loader\") end\n" );
+        File.WriteAllText( Path.Combine( fixture.Paths.HyprDirectory, "loader.lua" ),
+            "require(\"hypr.commanddeck\")\no.bind(\"SUPER + L\", \"Loader\", \"loader\")\n" );
+        ShortcutSourceResolver resolver = new( fixture.Paths.HyprDirectory, fixture.Paths.OmarchyDirectory );
+        const string Maybe = "if enabled then require(\"hypr.extra\") end\n";
+        const string Again = "require(\"hypr.extra\")\n";
+        const string Module = "require(\"hypr.commanddeck\")\n";
+        ResolvedShortcut Read( string main, string description )
+        {
+            File.WriteAllText( fixture.Paths.MainConfig, main );
+
+            return resolver.Read( ).Single( source => source.Call.Description == description );
+        }
+
+        True( Read( Maybe + Module, "Extra" ) is { BeforeModule: true, Conditional: true } );
+        True( Read( Maybe + Module, "Nested" ) is { BeforeModule: true, Conditional: true } );
+
+        // Lua loads a module once, at the first require that runs. Both run before
+        // the module here, but which one loads it depends on the condition, and so
+        // does its order among the other modules.
+        True( Read( Maybe + Again + Module, "Extra" ) is { BeforeModule: true, Conditional: true } );
+        // Another conditional module stays as it was.
+        True( Read( "if other then require(\"hypr.other\") end\n" + Maybe + Again + Module, "Other" ) is
+        { BeforeModule: true, Conditional: true } );
+
+        // When the condition is false, a later require loads it after the module,
+        // with what it requires.
+        True( Read( Maybe + Module + Again, "Extra" ) is { BeforeModule: false, Conditional: true } );
+        True( Read( Maybe + Module + Again, "Nested" ) is { BeforeModule: false, Conditional: true } );
+        // A function may run at any time, so what it requires, directly or through
+        // another module, has no known place.
+        True( Read( Maybe + "local function later() require(\"hypr.extra\") end\n" + Module + "later()\n", "Nested" ) is
+        { BeforeModule: false, Conditional: true } );
+        True( Read( Maybe + "local function later() require(\"hypr.wrapper\") end\n" + Module + "later()\n", "Extra" ) is
+        { BeforeModule: false, Conditional: true } );
+        True( Read( "local function early() require(\"hypr.extra\") end\n" + Again + Module, "Extra" ) is
+        { BeforeModule: false, Conditional: true } );
+        // Other modules keep their place.
+        True( Read( "local function paths() return require(\"hypr.helper\") end\n" + Again + Module, "Extra" ) is
+        { BeforeModule: true, Conditional: false } );
+        // An expression may skip its require.
+        True( Read( "local extra = enabled and require(\"hypr.extra\")\n" + Module, "Extra" ) is { BeforeModule: true, Conditional: true } );
+        // A function, or a later pass of a loop, may load the module itself out of its place.
+        True( Read( "local function early() require(\"hypr.commanddeck\") end\nearly()\n" + Again + Module, "Extra" ) is
+        { BeforeModule: false, Conditional: false } );
+        True( Read( Again + "for pass = 1, 2 do\n  require(\"hypr.commanddeck\")\nend\n", "Extra" ) is
+        { BeforeModule: false, Conditional: false } );
+        // Also through a function that a module required inside a function returns.
+        const string Factory = "local function early() return require(\"hypr.factory\") end\nearly()()\n";
+        True( Read( Factory + Again + Module, "Extra" ) is { BeforeModule: false, Conditional: false } );
+        True( Read( Factory + Again + Module, "Loader" ) is { BeforeModule: false, Conditional: true } );
+    }
+
     private static void HotkeyInstallRequiresOmarchyLuaConfiguration( )
     {
         using HotkeyFixture fixture = new( );

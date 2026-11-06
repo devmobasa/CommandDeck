@@ -3,7 +3,12 @@ using System.Text.RegularExpressions;
 namespace CommandDeck;
 
 public sealed record LuaBindingCall( string Chord, string Description, string Callee, string Dispatcher, string Options, bool Literal, int Offset );
-public sealed record LuaRequire( string Module, int Offset, bool Ordered = true );
+// Ordered: runs here, every time the file runs. InPlace: runs here if it runs at
+// all, as at file level inside a condition; only a function can run it later.
+// InFunction: inside a function, which may run at any time. InLoop: inside a loop,
+// so it may run after code that follows it.
+public sealed record LuaRequire( string Module, int Offset, bool Ordered = true, bool InPlace = true, bool InFunction = false,
+    bool InLoop = false );
 public sealed record LuaSource( IReadOnlyList<LuaBindingCall> Bindings, IReadOnlyList<LuaRequire> Requires );
 
 public static partial class LuaBindingReader
@@ -27,6 +32,11 @@ public static partial class LuaBindingReader
         Stack<string> scopes = new( );
         var nesting = 0;
         var helpersChanged = HelpersChanged( tokens );
+        // A goto can repeat or skip any statement, and a return inside a block
+        // skips the rest of the file, so what follows runs only maybe.
+        var jumps = tokens.Any( static token => token is { Value: null, Text: "goto" } );
+        var returned = false;
+        UntilCondition until = new( );
         for ( var index = 0; index < tokens.Count; index++ )
         {
             var text = tokens[index].Text;
@@ -35,7 +45,11 @@ public static partial class LuaBindingReader
                 continue;
             }
 
+            until.Before( tokens, index, nesting, scopes.Count );
             UpdateScope( scopes, text );
+            until.After( text, nesting, scopes.Count );
+
+            returned |= text == "return" && scopes.Count > 0 && !scopes.Contains( "function" );
             if ( text is "(" or "{" or "[" )
             {
                 nesting++;
@@ -46,7 +60,7 @@ public static partial class LuaBindingReader
                 nesting--;
             }
 
-            ReadRequire( tokens, index, scopes, nesting, requires );
+            ReadRequire( tokens, index, scopes, nesting, requires, new( returned || jumps, jumps, until.Active ) );
             if ( !IsBind( tokens, index ) )
             {
                 continue;
@@ -63,15 +77,19 @@ public static partial class LuaBindingReader
             {
                 var statementStart = IsStatementStart( tokens, index );
                 var statementEnd = IsStatementEnd( tokens, last );
-                bindings.Add( call with { Literal = call.Literal && !helpersChanged && scopes.Count == 0 && nesting == 0 && statementStart && statementEnd } );
+                bindings.Add( call with
+                {
+                    Literal = call.Literal && !helpersChanged && !returned && !jumps && scopes.Count == 0 && nesting == 0 && statementStart && statementEnd
+                } );
             }
         }
 
         return new( bindings, requires );
     }
 
+    // Symbols are single characters, so == is "=" "=" and >= is ">" "=".
     private static bool ContinuesExpression( string text ) => text is "=" or "." or ":" or "+" or "-" or "*" or "/" or "%" or "^" or
-        "and" or "or" or "not" or "return" or "until" or "(" or "[" or ",";
+        "<" or ">" or "~" or "&" or "|" or "#" or "and" or "or" or "not" or "return" or "until" or "(" or "[" or "{" or ",";
 
     private static void UpdateScope( Stack<string> scopes, string text )
     {
@@ -83,6 +101,9 @@ public static partial class LuaBindingReader
         if ( text == "do" && scopes.TryPeek( out var header ) && header == "loop-header" )
         {
             scopes.Pop( );
+            scopes.Push( "loop" );
+
+            return;
         }
 
         if ( text is "function" or "if" or "do" or "repeat" )
@@ -96,40 +117,18 @@ public static partial class LuaBindingReader
         }
     }
 
-    private static void ReadRequire( IReadOnlyList<LuaToken> tokens, int index, Stack<string> scopes, int nesting, List<LuaRequire> requires )
+    private static bool IsWholeStatement( IReadOnlyList<LuaToken> tokens, int index )
     {
-        if ( TryRequire( tokens, index ) is not { } require )
-        {
-            return;
-        }
-
-        var ordered = IsOrderedRequire( tokens, index, scopes, nesting, require.Module );
-        requires.Add( require with { Ordered = ordered } );
-    }
-
-    private static bool IsOrderedRequire( IReadOnlyList<LuaToken> tokens, int index, Stack<string> scopes, int nesting, string module )
-    {
-        if ( nesting != 0 || InUntilCondition( tokens, index ) )
-        {
-            return false;
-        }
-
-        if ( scopes.Count == 1 && scopes.Peek( ) == "if" && IsPresenceGuard( tokens, index, module ) )
-        {
-            return true;
-        }
-
-        var start = IsStatementStart( tokens, index );
         var open = tokens[index].Text == "require" ? index + 1 : index + 3;
         var last = open + (tokens[open].Text == "(" ? 2 : 0);
-        var end = IsStatementEnd( tokens, last );
 
-        return scopes.Count == 0 && start && end;
+        return IsStatementStart( tokens, index ) && IsStatementEnd( tokens, last );
     }
 
     private static bool IsStatementStart( IReadOnlyList<LuaToken> tokens, int index )
     {
-        if ( index == 0 || tokens[index - 1].Text == ";" )
+        // A block keyword ends the statement before it, as a semicolon does.
+        if ( index == 0 || tokens[index - 1] is { Text: ";" } or { Value: null, Text: "then" or "do" or "else" } )
         {
             return true;
         }
@@ -139,58 +138,12 @@ public static partial class LuaBindingReader
 
     private static bool IsStatementEnd( IReadOnlyList<LuaToken> tokens, int last )
     {
-        if ( last + 1 == tokens.Count || tokens[last + 1].Text == ";" )
+        if ( last + 1 == tokens.Count || tokens[last + 1] is { Text: ";" } or { Value: null, Text: "end" or "else" or "elseif" } )
         {
             return true;
         }
 
         return tokens[last + 1].Line > tokens[last].Line && !ContinuesExpression( tokens[last + 1].Text );
-    }
-
-    private static bool InUntilCondition( IReadOnlyList<LuaToken> tokens, int index )
-    {
-        for ( var cursor = index - 1; cursor >= 0; cursor-- )
-        {
-            var previous = tokens[cursor];
-            var next = tokens[cursor + 1];
-            if ( previous.Value is null && previous.Text == "until" )
-            {
-                return true;
-            }
-
-            if ( previous.Text is ";" or "end" or "do" )
-            {
-                return false;
-            }
-
-            if ( previous.Line < next.Line && !ContinuesExpression( previous.Text ) && !ContinuesExpression( next.Text ) )
-            {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsPresenceGuard( IReadOnlyList<LuaToken> tokens, int requireIndex, string module )
-    {
-        var start = requireIndex - 12;
-        string[] shape = ["if", "package", ".", "searchpath", "(", "", ",", "package", ".", "path", ")", "then", "require", "(", "", ")", "end"];
-        if ( start < 0 || start + shape.Length > tokens.Count )
-        {
-            return false;
-        }
-
-        for ( var offset = 0; offset < shape.Length; offset++ )
-        {
-            var token = tokens[start + offset];
-            if ( shape[offset].Length == 0 ? token.Value != module : token.Value is not null || token.Text != shape[offset] )
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static bool HelpersChanged( IReadOnlyList<LuaToken> tokens )
@@ -295,45 +248,6 @@ public static partial class LuaBindingReader
 
     private static bool IsBind( IReadOnlyList<LuaToken> tokens, int index ) => index + 3 < tokens.Count &&
         tokens[index].Text is "o" or "hl" && tokens[index + 1].Text == "." && tokens[index + 2].Text == "bind" && tokens[index + 3].Text == "(";
-
-    private static LuaRequire? TryRequire( IReadOnlyList<LuaToken> tokens, int index )
-    {
-        var name = tokens[index].Text;
-        // Omarchy uses require_optional.module for optional default applications.
-        var open = -1;
-        if ( name == "require" )
-        {
-            open = index + 1;
-        }
-        else if ( name == "require_optional" && index + 3 < tokens.Count &&
-                  tokens[index + 1].Text == "." && tokens[index + 2].Text == "module" )
-        {
-            open = index + 3;
-        }
-
-        if ( open < 0 || open >= tokens.Count )
-        {
-            return null;
-        }
-
-        var parenthesized = tokens[open].Text == "(";
-        if ( parenthesized )
-        {
-            open++;
-        }
-
-        if ( open >= tokens.Count || tokens[open].Value is not { } module )
-        {
-            return null;
-        }
-
-        if ( parenthesized && (open + 1 >= tokens.Count || tokens[open + 1].Text != ")") )
-        {
-            return null;
-        }
-
-        return new( module, tokens[index].Start );
-    }
 
     private static LuaBindingCall? ReadBinding( string source, IReadOnlyList<LuaToken> tokens, int start, List<List<LuaToken>> arguments )
     {

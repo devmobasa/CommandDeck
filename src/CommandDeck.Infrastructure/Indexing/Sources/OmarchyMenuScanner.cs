@@ -51,7 +51,7 @@ public static class OmarchyMenuScanner
     {
         var home = Environment.GetFolderPath( Environment.SpecialFolder.UserProfile );
         var configHome = PathExpansion.GetConfigHome( home );
-        var omarchyPath = Environment.GetEnvironmentVariable( "OMARCHY_PATH" );
+        var omarchyPath = Environment.GetEnvironmentVariable( EnvironmentVariableNames.OmarchyPath );
         if ( !string.IsNullOrWhiteSpace( omarchyPath ) )
         {
             yield return Path.Combine( omarchyPath, "default", "omarchy", MenuFileName );

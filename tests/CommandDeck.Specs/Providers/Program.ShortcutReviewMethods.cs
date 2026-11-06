@@ -27,6 +27,18 @@ public static partial class Program
         True( LuaBindingReader.Read( "if package.searchpath(\"hypr.bindings\", package.path) then require(\"hypr.bindings\") end" ).Requires
             .Single( ).Ordered );
         True( LuaBindingReader.Read( "repeat work() until ready\nrequire('hypr.bindings')" ).Requires.Single( ).Ordered );
+
+        foreach ( var source in new[] { "if enabled then require('hypr.bindings') end", "for x = 1, 2 do require('hypr.bindings') end",
+                     "do require('hypr.bindings') end" } )
+        {
+            True( LuaBindingReader.Read( source ).Requires[^1] is { Ordered: false, InPlace: true }, "in place: " + source );
+        }
+
+        foreach ( var source in new[] { "function later() require('hypr.bindings') end",
+                     "if enabled then local f = function() require('hypr.bindings') end end" } )
+        {
+            True( !LuaBindingReader.Read( source ).Requires[^1].InPlace, "deferred: " + source );
+        }
         True( LuaBindingReader.Read( "-- local o = {}\n" + call ).Bindings.Single( ).Literal );
     }
 

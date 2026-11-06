@@ -245,6 +245,7 @@ public static partial class Program
                 ["XDG_CONFIG_HOME"] = Path.Combine( Root, "config" ),
                 ["XDG_STATE_HOME"] = Path.Combine( Root, "state" ),
                 ["XDG_RUNTIME_DIR"] = RuntimeDirectory,
+                ["OMARCHY_PATH"] = Path.Combine( Root, "omarchy" ),
                 [EnvironmentVariableNames.HyprlandInstanceSignature] = "spec-instance",
                 ["PATH"] = "/usr/bin:/bin",
                 ["SPEC_SECRET"] = "not for hyprctl"

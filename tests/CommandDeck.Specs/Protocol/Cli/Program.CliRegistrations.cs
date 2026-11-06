@@ -34,6 +34,12 @@ public static partial class Program
         Run( "hotkey install binds a custom chord and rejects invalid chords", HotkeyInstallBindsACustomChord );
         Run( "hotkey remove deletes the generated module and its require line", HotkeyRemoveDeletesTheModuleAndRequire );
         Run( "hotkey install keeps a user CommandDeck binding and notes other chord users", HotkeyInstallKeepsTheExistingConflictChecks );
+        Run( "hotkey install replaces Omarchy's conditional default binding on the chord", HotkeyInstallReplacesOmarchysConditionalDefaultBinding );
+        Run( "hotkey install keeps a user binding that shares Omarchy's default", HotkeyInstallKeepsAUserBindingThatSharesOmarchysDefault );
+        Run( "hotkey install keeps a conditional user binding on the chord", HotkeyInstallKeepsAConditionalUserBindingOnTheChord );
+        Run( "hotkey install treats a linked Omarchy default as the user's", HotkeyInstallTreatsALinkedOmarchyDefaultAsTheUsers );
+        Run( "hotkey install follows a linked Omarchy directory", HotkeyInstallFollowsALinkedOmarchyDirectory );
+        Run( "shortcut resolver places a module at the first require that runs", ShortcutResolverPlacesAModuleAtTheFirstRequireThatRuns );
         Run( "hotkey install requires Omarchy's Lua Hyprland configuration", HotkeyInstallRequiresOmarchyLuaConfiguration );
 
         await RunAsync( "hotkey CLI installs and removes through XDG paths", HotkeyCliInstallsAndRemovesThroughXdgPathsAsync );

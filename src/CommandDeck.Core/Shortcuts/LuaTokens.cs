@@ -73,7 +73,12 @@ public static class LuaTokens
         var character = source[offset];
         if ( char.IsAsciiDigit( character ) || character == '.' && offset + 1 < source.Length && char.IsAsciiDigit( source[offset + 1] ) )
         {
-            while ( offset < source.Length && (char.IsAsciiLetterOrDigit( source[offset] ) || source[offset] is '.' or '+' or '-' or '_') )
+            // A sign belongs to a number only after its exponent marker: e in
+            // decimal, p in hexadecimal, where e is a digit. Otherwise, as in
+            // 0+1, it is an operator.
+            var hexadecimal = character == '0' && offset + 1 < source.Length && source[offset + 1] is 'x' or 'X';
+            while ( offset < source.Length && (char.IsAsciiLetterOrDigit( source[offset] ) || source[offset] is '.' or '_' ||
+                    source[offset] is '+' or '-' && (hexadecimal ? source[offset - 1] is 'p' or 'P' : source[offset - 1] is 'e' or 'E')) )
             {
                 offset++;
             }

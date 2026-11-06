@@ -45,7 +45,28 @@ public static partial class Program
         Equal( 0, LuaBindingReader.Read( "o.bind('unfinished" ).Bindings.Count );
         Equal( "A\nB", LuaTokens.Read( "\"\\x41\\010B\"" ).Single( ).Value );
         Equal( "A🙂", LuaTokens.Read( "\"A\\u{1f642}\"" ).Single( ).Value );
-        True( !LuaBindingReader.Read( "function deferred() require(\"hypr.bindings\") end" ).Requires.Single( ).Ordered );
+        True( LuaBindingReader.Read( "function deferred() require(\"hypr.bindings\") end" ).Requires.Single( ) is
+        { Ordered: false, InFunction: true } );
+        True( LuaBindingReader.Read( "for pass = 1, 2 do\n  require(\"hypr.bindings\")\nend" ).Requires.Single( ) is
+        { Ordered: false, InPlace: true, InLoop: true } );
+        // What follows a return inside a block, or any statement in a file with a goto, runs only maybe.
+        var returned = LuaBindingReader.Read( "if skip then return end\nrequire(\"hypr.bindings\")\no.bind(\"SUPER + B\", \"B\", \"b\")" );
+        True( returned.Requires.Single( ) is { Ordered: false, InPlace: true } && !returned.Bindings.Single( ).Literal );
+        var jumps = LuaBindingReader.Read( "::again::\nrequire(\"hypr.bindings\")\nif more then goto again end" );
+        True( jumps.Requires.Single( ) is { Ordered: false, InLoop: true } );
+        var repeats = LuaBindingReader.Read( "repeat\n  pass = pass + 1\nuntil (function() return true end)() and require(\"hypr.bindings\")" );
+        True( repeats.Requires.Single( ) is { Ordered: false, InLoop: true } );
+        var multiline = LuaBindingReader.Read( "repeat\n  pass = pass + 1\nuntil ready(\n  true\n) and require(\"hypr.bindings\")\nrequire(\"hypr.after\")" );
+        True( multiline.Requires[0] is { Ordered: false, InLoop: true } && multiline.Requires[1] is { Ordered: true, InLoop: false } );
+        var compared = LuaBindingReader.Read( "repeat\n  pass = pass + 1\nuntil pass\n  > require(\"hypr.wrapper\").limit\nrequire(\"hypr.after\")" );
+        True( compared.Requires[0] is { Ordered: false, InLoop: true } && compared.Requires[1] is { Ordered: true, InLoop: false } );
+        var nested = LuaBindingReader.Read( "repeat\n  pass = pass + 1\nuntil (function()\n  repeat local ok = true until ok\n  return true\nend)() " +
+            "and require(\"hypr.wrapper\") and pass == 2\nrequire(\"hypr.after\")" );
+        True( nested.Requires[0] is { Ordered: false, InLoop: true } && nested.Requires[1] is { Ordered: true, InLoop: false } );
+        // A sign is part of a number only after its exponent marker.
+        Equal( "0|+|x|1e+5|0x1p-2|0xe|+|1", string.Join( '|', LuaTokens.Read( "0+x 1e+5 0x1p-2 0xe+1" ).Select( static token => token.Text ) ) );
+        var signed = LuaBindingReader.Read( "repeat\n  pass = pass + 1\nuntil pass > 0+\n  require(\"hypr.wrapper\").limit\nrequire(\"hypr.after\")" );
+        True( signed.Requires[0] is { Ordered: false, InLoop: true } && signed.Requires[1] is { Ordered: true, InLoop: false } );
         Equal( 0, LuaBindingReader.Read( "require(\"hypr.bindings\" .. suffix)" ).Requires.Count );
     }
 
@@ -186,6 +207,32 @@ public static partial class Program
         Equal( 0, snapshot.ChangeCount );
         Equal( originalBindings, File.ReadAllText( fixture.Paths.Bindings ) );
         Equal( originalMain, File.ReadAllText( fixture.Paths.MainConfig ) );
+    }
+
+    private static async Task ShortcutMoveKeepsOmarchysConditionalDefaultAsync( )
+    {
+        using HotkeyFixture fixture = new( );
+        WriteOmarchyConditionalDefaults( fixture );
+        File.WriteAllText( fixture.Paths.MainConfig, """
+                                                   require("default.hypr.omarchy")
+                                                   require("hypr.bindings")
+                                                   if package.searchpath("hypr.commanddeck", package.path) then require("hypr.commanddeck") end
+                                                   """ );
+        File.WriteAllText( fixture.Paths.Bindings, "o.bind(\"CTRL + SPACE\", \"Own tool\", \"own-tool\")\n" );
+        File.WriteAllText( fixture.Paths.HotkeyFile, HyprlandHotkeyConfig.GenerateFile( "F12" ) );
+        Keybinding[] inventory =
+        [
+            new( ) { Chord = "Ctrl+Space", Description = "Own tool" },
+            new( ) { Chord = "Ctrl+Space", Description = "Direct input for the terminal prefix" }
+        ];
+        await using var service = ShortcutService( fixture );
+        var own = (await service.SnapshotAsync( inventory, default )).Bindings.Single( static row => row.Description == "Own tool" );
+        True( own.Changeable );
+
+        // Moving it unbinds Ctrl+Space, and Omarchy's binding there can't be recreated.
+        await ThrowsAsync<InvalidOperationException>( async ( ) => await service.ChangeAsync( ProtocolOperations.ShortcutSet,
+             new( ) { Id = own.Id, Chord = "Super+J" }, false, inventory, default ) );
+        True( !File.Exists( service.ModuleFile ) );
     }
 
     private static async Task ShortcutReloadFailureRestoresFilesAsync( )
