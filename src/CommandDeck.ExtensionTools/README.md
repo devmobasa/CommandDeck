@@ -10,8 +10,9 @@ storage in a new directory. `check` validates its manifest and project layout.
 `update` sends a reviewed archive digest and explicit grants to the selected
 CommandDeck host; it does not enable or run the installed extension.
 
-Requires .NET SDK 10.0.403, Linux x64 Native AOT prerequisites, and a matching
-experimental CommandDeck daemon to inspect/install/run packages. The daemon
+Requires .NET SDK 10.0.403 or a later 10.0.4xx patch, Linux x64 Native AOT
+prerequisites, and a matching experimental CommandDeck daemon to
+inspect/install/run packages. The daemon
 continues to enforce the restricted release sandbox by default. `dev` creates a
 separate immutable development identity; reviewed attach/reload preserve its data.
 The matching host offers explicit five-minute native GDB leases and bounded logs.

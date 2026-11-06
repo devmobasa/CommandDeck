@@ -34,7 +34,7 @@ try
     // Isolate both the SDK choice and the package cache from the checkout/user.
     await File.WriteAllTextAsync( Path.Combine( root, "global.json" ), "{\"sdk\":{\"version\":\"10.0.403\",\"rollForward\":\"disable\"}}" );
 
-    await Exec( ScriptExecutables.Dotnet, "tool", "install", "CommandDeck.ExtensionTools", "--version", "0.1.0-preview.6", "--tool-path",
+    await Exec( ScriptExecutables.Dotnet, "tool", "install", "CommandDeck.ExtensionTools", "--version", "0.1.0-preview.7", "--tool-path",
          toolDirectory, "--add-source", feed );
     await Exec( tool, "new", "--directory", project, "--id", "org.example.author-draft", "--name", "Author draft", "--feed", feed );
 

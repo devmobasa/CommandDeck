@@ -41,7 +41,8 @@ public static class AuthorProject
             File.WriteAllText( Path.Combine( directory, file ), Resource( file ) );
         }
 
-        File.WriteAllText( Path.Combine( directory, "global.json" ), "{\"sdk\":{\"version\":\"10.0.403\",\"rollForward\":\"disable\"}}\n" );
+        // A later patch of the same feature band builds too, so security fixes need no edit.
+        File.WriteAllText( Path.Combine( directory, "global.json" ), "{\"sdk\":{\"version\":\"10.0.403\",\"rollForward\":\"latestPatch\"}}\n" );
         File.WriteAllText( Path.Combine( directory, ".gitignore" ), "bin/\nobj/\n.commanddeck/\n*.cdext\n" );
 
         new XDocument( new XElement( "configuration",
