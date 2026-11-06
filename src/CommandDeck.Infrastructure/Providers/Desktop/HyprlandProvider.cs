@@ -18,6 +18,7 @@ public sealed class HyprlandProvider : ICommandProvider
     private const double OccupiedWorkspaceScore = 0.19;
     private const double EmptyWorkspaceScore = 0.18;
     private const int MaximumResults = 100;
+    private static readonly TimeSpan QueryTimeout = TimeSpan.FromMilliseconds( 250 );
     private const double WindowBrowseScore = 0.2;
 
     // Hyprland reports an empty title for windows that never set one.
@@ -39,8 +40,8 @@ public sealed class HyprlandProvider : ICommandProvider
             return [];
         }
 
-        var clientsTask = StartClientsQuery( cancellationToken );
-        var workspacesTask = StartWorkspacesQuery( cancellationToken );
+        var clientsTask = QueryAsync( "clients", cancellationToken );
+        var workspacesTask = QueryAsync( "workspaces", cancellationToken );
 
         await Task
             .WhenAll( clientsTask, workspacesTask )
@@ -48,10 +49,10 @@ public sealed class HyprlandProvider : ICommandProvider
 
         List<SearchResult> results = [];
 
-        await ParseClientsAsync( clientsTask.Result.StandardOutput, query.Text, request.ActiveWorkspace, results, cancellationToken )
+        await ParseClientsAsync( clientsTask.Result, query.Text, request.ActiveWorkspace, results, cancellationToken )
             .ConfigureAwait( false );
 
-        ParseWorkspaces( workspacesTask.Result.StandardOutput, query.Text, request.ActiveWorkspace, results );
+        ParseWorkspaces( workspacesTask.Result, query.Text, request.ActiveWorkspace, results );
 
         return OrderResults( request, results );
     }
@@ -192,21 +193,17 @@ public sealed class HyprlandProvider : ICommandProvider
         }
     }
 
-    private static Task<ProcessResult> StartClientsQuery( CancellationToken cancellationToken )
-    {
-        return ProcessRunner
-            .RunAsync( ToolExecutables.Hyprctl, ["-j", "clients"], standardInput: null, workingDirectory: null, TimeSpan.FromMilliseconds( 250 ),
-                cancellationToken )
-            .AsTask( );
-    }
+    // `hyprctl -j REQUEST`: through the session's socket when it answers, so a
+    // Home search starts no process; otherwise through hyprctl itself.
+    private static Task<string> QueryAsync( string request, CancellationToken cancellationToken ) =>
+        HyprlandSocket.QueryAsync( request, Environment.GetEnvironmentVariable, static async ( request, remaining, cancellationToken ) =>
+        {
+            var result = await ProcessRunner
+                .RunAsync( ToolExecutables.Hyprctl, ["-j", request], standardInput: null, workingDirectory: null, remaining, cancellationToken )
+                .ConfigureAwait( false );
 
-    private static Task<ProcessResult> StartWorkspacesQuery( CancellationToken cancellationToken )
-    {
-        return ProcessRunner
-            .RunAsync( ToolExecutables.Hyprctl, ["-j", "workspaces"], standardInput: null, workingDirectory: null, TimeSpan.FromMilliseconds( 250 ),
-                cancellationToken )
-            .AsTask( );
-    }
+            return result.StandardOutput;
+        }, QueryTimeout, cancellationToken );
 
     private static SearchResult[] OrderResults( SearchRequest request, List<SearchResult> results )
     {
