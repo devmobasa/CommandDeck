@@ -12,6 +12,29 @@ QtObject {
   property int searchBeforeEdit: 0
   property var pendingInvoke: null
 
+  // These journeys check what a reopen keeps, so they reopen once the close
+  // has drawn its hidden frame. A reopen within that frame is another case:
+  // it races the compositor's keyboard handoff.
+  function reopenAfterClose() {
+    const window = deck.testSurfaceWindow.contentItem.Window.window
+    // An older frame may still be drawing, so a swap alone does not show the
+    // hidden frame. A frame has been drawn once the next frame has begun and
+    // synchronized: wait for two frames to begin, and ask for each.
+    let begun = 0
+    const begin = () => {
+      begun++
+      window.update()
+    }
+    window.afterAnimating.connect(begin)
+    try {
+      window.update()
+      host.part_hostEvents.waitForCondition(() => begun >= 2, 0, "the closed launcher draws a frame before it reopens")
+    } finally {
+      window.afterAnimating.disconnect(begin)
+    }
+    deck.open("{}")
+  }
+
   function searchFocused() {
     const input = deck.testSearchInput
     const window = input ? input.Window.window : null
@@ -211,7 +234,7 @@ QtObject {
               reply(1 + cycle * 2)
               host.expect(!deck.opened && !deck.testSurfaceWindow.shown,
                 "a closed reply leaves the launcher hidden: " + scenario)
-              deck.open("{}")
+              reopenAfterClose()
             }
           }, {
             ready: () => searchFocused() && latestSearch(deck.queryText) !== null,
@@ -346,7 +369,7 @@ QtObject {
           ready: () => !deck.opened,
           message: "reopen after the batch for " + scenario,
           action: () => {
-            deck.open("{}")
+            reopenAfterClose()
             host.expect(deck.queryText === "" && deck.activeFilters.length === 0,
               "reopening forgets the search used by " + scenario + "; restored query " + JSON.stringify(deck.queryText))
           }
