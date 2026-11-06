@@ -14,7 +14,9 @@ a local preview feed, not a public compatibility release.
 
 ## Prerequisites
 
-- The repository's .NET SDK and .NET SDK **10.0.403** installed side by side.
+- The repository's .NET SDK and .NET SDK **10.0.403**, installed side by side.
+  Building the SDK feed needs exactly 10.0.403. A project that `new` creates
+  also builds with a later 10.0.4xx patch.
 - Linux x64 with Native AOT build prerequisites (Clang and the native development
   libraries used by the .NET SDK).
 - To run: a matching published CommandDeck daemon and repository renderer,
@@ -37,7 +39,7 @@ does not require copying source from the checkout. From the repository root:
 repo_dir="$PWD"
 feed="$repo_dir/artifacts/extensions/author-tools/feed"
 dotnet scripts/build-extension-sdk.cs --output "$feed"
-dotnet tool install CommandDeck.ExtensionTools --version 0.1.0-preview.6 \
+dotnet tool install CommandDeck.ExtensionTools --version 0.1.0-preview.7 \
   --tool-path /tmp/commanddeck-author-tools --add-source "$feed"
 /tmp/commanddeck-author-tools/commanddeck-ext new \
   --directory /tmp/my-commanddeck-draft --id org.example.my-draft \
@@ -48,7 +50,7 @@ dotnet tool install CommandDeck.ExtensionTools --version 0.1.0-preview.6 \
   --output /tmp/my-draft-0.1.0.cdext
 ```
 
-`new` refuses existing directories and writes the pinned SDK, mapped preview feed,
+`new` refuses existing directories and writes the SDK band, mapped preview feed,
 project, manifest, and source. The template requests SDK `0.1.0-preview.6`, which
 includes the data APIs it uses; cached `0.1.0-preview.1` packages cannot satisfy
 that reference. SDK and tooling changes must get new package versions instead
@@ -213,7 +215,7 @@ cd /tmp/commanddeck-uuid-author
 Create `global.json` in that author directory:
 
 ```json
-{"sdk":{"version":"10.0.403","rollForward":"disable"}}
+{"sdk":{"version":"10.0.403","rollForward":"latestPatch"}}
 ```
 
 Create `NuGet.Config`, replacing `ABSOLUTE_REPOSITORY_PATH` with the checkout

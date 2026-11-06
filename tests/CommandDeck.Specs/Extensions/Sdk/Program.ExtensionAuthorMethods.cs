@@ -23,7 +23,7 @@ public static partial class Program
                 .GetProperty( "version" )
                 .GetString( ) );
 
-            Equal( "disable", global
+            Equal( "latestPatch", global
                 .RootElement.GetProperty( "sdk" )
                 .GetProperty( "rollForward" )
                 .GetString( ) );
