@@ -5,9 +5,12 @@ namespace CommandDeck;
 public sealed class HyprlandHotkeyPaths
 {
     private const string StateKey = "state";
+    public const string DefaultOmarchyDirectory = "/usr/share/omarchy";
 
     public required string HyprDirectory { get; init; }
     public required string BackupDirectory { get; init; }
+    // Omarchy's own configuration, whose default bindings load before CommandDeck's.
+    public string OmarchyDirectory { get; init; } = DefaultOmarchyDirectory;
     public string HotkeyFile => Path.Combine( HyprDirectory, HyprlandHotkeyConfig.FileName );
     public string MainConfig => Path.Combine( HyprDirectory, "hyprland.lua" );
     public string Bindings => Path.Combine( HyprDirectory, "bindings.lua" );
@@ -26,7 +29,14 @@ public sealed class HyprlandHotkeyPaths
 
         var stateHome = NonEmpty( environment( XdgEnvironmentNames.StateHome ) ) ?? Path.Combine( home, ".local", StateKey );
 
-        return new( ) { HyprDirectory = Path.Combine( configHome, "hypr" ), BackupDirectory = Path.Combine( stateHome, "commanddeck", "binding-backups" ) };
+        var omarchy = NonEmpty( environment( EnvironmentVariableNames.OmarchyPath ) ) ?? DefaultOmarchyDirectory;
+
+        return new( )
+        {
+            HyprDirectory = Path.Combine( configHome, "hypr" ),
+            BackupDirectory = Path.Combine( stateHome, "commanddeck", "binding-backups" ),
+            OmarchyDirectory = omarchy
+        };
     }
 
     private static string? NonEmpty( string? value ) => string.IsNullOrEmpty( value ) ? null : value;
@@ -77,6 +87,11 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
         var current = File.Exists( paths.HotkeyFile ) ? File.ReadAllText( paths.HotkeyFile ) : null;
         if ( current != generated )
         {
+            if ( OmarchyDefaultBinding( normalized ) is { } defaults )
+            {
+                messages.Add( $"Note: Omarchy's {defaults} also binds {normalized}." );
+            }
+
             if ( current is not null && !HyprlandHotkeyConfig.IsGenerated( current ) )
             {
                 messages.Add( $"Backed up an unrelated {paths.HotkeyFile} to {Backup( paths.HotkeyFile )}" );
@@ -109,8 +124,7 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
 
     private IReadOnlyDictionary<string, string?> PlanInstallation( string? chord )
     {
-        var omarchy = Environment.GetEnvironmentVariable( "OMARCHY_PATH" ) ?? "/usr/share/omarchy";
-        var editor = new ShortcutEditorService( paths, omarchy, inHyprland: static ( ) => false );
+        var editor = new ShortcutEditorService( paths, paths.OmarchyDirectory, inHyprland: static ( ) => false );
         try
         {
             return editor.PlanInstallation( chord );
@@ -119,6 +133,21 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
         {
             editor.DisposeAsync( ).AsTask( ).GetAwaiter( ).GetResult( );
         }
+    }
+
+    // The first of Omarchy's default configuration files that binds the chord.
+    private string? OmarchyDefaultBinding( string chord )
+    {
+        var defaults = Path.Combine( paths.OmarchyDirectory, "default", "hypr" );
+        if ( !Directory.Exists( defaults ) )
+        {
+            return null;
+        }
+
+        return Directory
+            .EnumerateFiles( defaults, "*.lua", SearchOption.AllDirectories )
+            .Order( StringComparer.Ordinal )
+            .FirstOrDefault( file => HyprlandHotkeyConfig.MentionsChord( File.ReadAllText( file ), chord ) );
     }
 
     private static bool HasContent( string path, string? content ) =>

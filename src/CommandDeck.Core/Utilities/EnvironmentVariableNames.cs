@@ -14,6 +14,7 @@ public static class EnvironmentVariableNames
     public const string WaylandDisplay = "WAYLAND_DISPLAY";
     public const string DbusSessionBusAddress = "DBUS_SESSION_BUS_ADDRESS";
     public const string HyprlandInstanceSignature = "HYPRLAND_INSTANCE_SIGNATURE";
+    public const string OmarchyPath = "OMARCHY_PATH";
     public const string GcServer = "DOTNET_gcServer";
     public const string GcHeapHardLimit = "DOTNET_GCHeapHardLimit";
     public const string GcRegionRange = "DOTNET_GCRegionRange";

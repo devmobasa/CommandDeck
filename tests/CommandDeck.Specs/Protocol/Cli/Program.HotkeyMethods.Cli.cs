@@ -143,7 +143,9 @@ public static partial class Program
             Paths = new HyprlandHotkeyPaths
             {
                 HyprDirectory = Path.Combine( Root, "config", "hypr" ),
-                BackupDirectory = Path.Combine( Root, "state", "commanddeck", "binding-backups" )
+                BackupDirectory = Path.Combine( Root, "state", "commanddeck", "binding-backups" ),
+                // The machine's own Omarchy must not decide these specs.
+                OmarchyDirectory = Path.Combine( Root, "omarchy" )
             };
 
             Directory.CreateDirectory( Paths.HyprDirectory );

@@ -30,7 +30,7 @@ public sealed partial class ShortcutEditorService
             touched.Add( ShortcutLua.CanonicalChord( chord ) );
         }
 
-        var preserved = PreserveOriginals( OriginalInventory( inventory, previous ), changes, touched, managed );
+        var preserved = PreserveOriginals( OriginalInventory( inventory, previous ), changes, touched, managed, chord );
         var companions = changes.Where( change => !change.LauncherHotkey && change.Chord.Length > 0 && SameChord( change.Chord, chord ) )
             .Concat( preserved.Where( change => SameChord( change.Chord, chord ) ) ).ToArray( );
         var keys = ShortcutLua.Generate( changes, preservedBindings: preserved.Where( change =>
@@ -60,7 +60,7 @@ public sealed partial class ShortcutEditorService
         previous.FirstOrDefault( static change => change.LauncherHotkey && !change.HotkeyEdit )?.OriginalChord ?? "";
 
     private List<ShortcutOverride> PreserveOriginals( IReadOnlyList<Keybinding> inventory, List<ShortcutOverride> changes,
-        HashSet<string> touched, bool managed )
+        HashSet<string> touched, bool managed, string launcherChord )
     {
         var sources = ReadSources( );
         List<ShortcutOverride> preserved = [];
@@ -81,7 +81,12 @@ public sealed partial class ShortcutEditorService
                 continue;
             }
 
-            if ( duplicate || binding.Submap.Length > 0 || matches.Length != 1 || source is not { BeforeModule: true, Call.Literal: true } )
+            if ( GivesWayToLauncher( binding, matches, launcherChord ) )
+            {
+                continue;
+            }
+
+            if ( duplicate || binding.Submap.Length > 0 || matches.Length != 1 || source is not { BeforeModule: true, Conditional: false, Call.Literal: true } )
             {
                 throw new InvalidOperationException( ($"{DisplayChord( binding.Chord )} also runs {binding.Description}, " +
                     "which can't be recreated here. Change it in " +
@@ -101,6 +106,84 @@ public sealed partial class ShortcutEditorService
         }
 
         return preserved;
+    }
+
+    // An Omarchy default that may not even be loaded, in a file nobody edits,
+    // gives way to the launcher, as the module's unbind would at run time.
+    // A chord that only moves keeps every other binding on it.
+    private bool GivesWayToLauncher( Keybinding binding, ResolvedShortcut[] matches, string launcherChord ) =>
+        launcherChord.Length > 0 && SameChord( binding.Chord, launcherChord ) && matches.Length > 0 &&
+        matches.All( IsConditionalOmarchyDefault );
+
+    private bool IsConditionalOmarchyDefault( ResolvedShortcut source )
+    {
+        return source is { BeforeModule: true, Conditional: true } && IsOmarchyOwned( source.File );
+    }
+
+    // Inside Omarchy's directory once every link is followed: a file that links
+    // out of it is someone else's. The directory itself may be a link.
+    private bool IsOmarchyOwned( string file )
+    {
+        if ( !file.StartsWith( _omarchyDirectory, StringComparison.Ordinal ) )
+        {
+            return false;
+        }
+
+        try
+        {
+            var root = Path.TrimEndingDirectorySeparator( RealPath( _omarchyDirectory ) ) + Path.DirectorySeparatorChar;
+
+            return RealPath( file ).StartsWith( root, StringComparison.Ordinal );
+        }
+        catch ( Exception exception ) when ( exception is IOException or UnauthorizedAccessException )
+        {
+            return false;
+        }
+    }
+
+    // The path with every symbolic link followed, as realpath(3) gives it: one
+    // name at a time, so a ".." after a link leaves the link's target.
+    private static string RealPath( string path )
+    {
+        var full = Path.Combine( Environment.CurrentDirectory, path );
+        var root = Path.GetPathRoot( full ) ?? "/";
+        List<string> remaining = [.. full[root.Length..].Split( Path.DirectorySeparatorChar )];
+        var current = root;
+        for ( var links = 0; remaining.Count > 0; )
+        {
+            var name = remaining[0];
+            remaining.RemoveAt( 0 );
+            if ( name is "" or "." )
+            {
+                continue;
+            }
+
+            if ( name == ".." )
+            {
+                current = Path.GetDirectoryName( current ) ?? root;
+                continue;
+            }
+
+            var next = Path.Combine( current, name );
+            if ( new FileInfo( next ).LinkTarget is not { } target )
+            {
+                current = next;
+                continue;
+            }
+
+            if ( ++links > 40 )
+            {
+                throw new IOException( "Too many levels of symbolic links." );
+            }
+
+            remaining.InsertRange( 0, target.Split( Path.DirectorySeparatorChar ) );
+            if ( Path.IsPathRooted( target ) )
+            {
+                current = root;
+            }
+        }
+
+        return current;
     }
 
     private static List<Keybinding> OriginalInventory( IReadOnlyList<Keybinding> inventory, List<ShortcutOverride> previous )

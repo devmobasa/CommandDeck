@@ -19,6 +19,7 @@ var EnvironmentVariableNames = Object.freeze({
   MallocArenaMaximum: "MALLOC_ARENA_MAX",
   MiseDataDirectory: "MISE_DATA_DIR",
   NoColor: "NO_COLOR",
+  OmarchyPath: "OMARCHY_PATH",
   TemporaryDirectory: "TMPDIR",
   Terminal: "TERM",
   TieredPgo: "DOTNET_TieredPGO",
