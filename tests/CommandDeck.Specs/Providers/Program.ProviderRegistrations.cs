@@ -5,6 +5,8 @@ public static partial class Program
     private static async Task RunProviderRegistrationsAsync( )
     {
         await RunAsync( "process runner enforces finite RSS when the kernel wrapper is unavailable", ProcessRunnerRetainsResidentMemoryFallbackAsync );
+        await RunAsync( "Hyprland's request socket answers like hyprctl without a process", HyprlandSocketAnswersLikeHyprctlAsync );
+        await RunAsync( "Hyprland queries share one budget between the socket and hyprctl", HyprlandQueriesShareOneBudgetAsync );
         await RunAsync( "clipboard capture sleeps while disabled paused or capturing", ClipboardCaptureSleepsWhileIdleAsync );
         await RunAsync( "process runner applies both kernel address space limits", ProcessRunnerUsesKernelMemoryLimitsAsync );
         await RunAsync( "process runner sleeps with kernel or unlimited memory limits", ProcessRunnerSleepsWithKernelOrUnlimitedMemoryAsync );
