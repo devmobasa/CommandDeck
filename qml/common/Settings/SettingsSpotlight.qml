@@ -18,12 +18,32 @@ Item {
   visible: root.active
   enabled: false
 
+  // The page that holds the card may still lay out after it opens, so the
+  // card is found once the next frame has laid it out, not at the next event turn.
+  property bool revealPending: false
   function reveal(card) {
     if (!card || !card.visible) return false
     root.target = card
-    root.scrollIntoView(card)
-    Qt.callLater(root.show)
+    root.revealPending = true
+    if (root.Window.window) root.Window.window.update()
+    else root.finishReveal()
     return true
+  }
+
+  function finishReveal() {
+    if (!root.revealPending) return
+    root.revealPending = false
+    if (!root.target) return
+    root.scrollIntoView(root.target)
+    root.show()
+  }
+
+  // An older frame may still be drawing when the reveal starts. A window lays
+  // its items out as it begins a frame, before the frame synchronizes, so the
+  // reveal finishes on the event turn after the next frame begins.
+  Connections {
+    target: root.revealPending ? root.Window.window : null
+    function onAfterAnimating() { Qt.callLater(root.finishReveal) }
   }
 
   // The nearest scrolling ancestor brings the card's top into view.
@@ -39,6 +59,7 @@ Item {
 
   // Lifts the dim at once, as when the search changes under it.
   function dismiss() {
+    root.revealPending = false
     fade.stop()
     still.stop()
     root.opacity = 0
