@@ -85,10 +85,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      # Only the release notes are read from the repository.
+      # Release notes and the standalone download script come from this tag.
       - uses: actions/checkout@v7
         with:
-          sparse-checkout: docs/releases
+          sparse-checkout: |
+            docs/releases
+            scripts
       - uses: actions/download-artifact@v8
         with:
           pattern: release-*
@@ -97,6 +99,8 @@ jobs:
       - name: Verify the checksums
         working-directory: release
         run: sha256sum -c ./*.sha256
+      - name: Include the download installer
+        run: cp scripts/install-release.sh release/install-release.sh
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -113,25 +117,21 @@ jobs:
           cat >>notes.md <<'EOF'
           ## Install (no .NET needed)
 
-          Run these commands in your Omarchy session. On an ARM computer, use
-          `linux-arm64` instead of `linux-x64`.
+          Run this command in your Omarchy session. The script detects x64 or
+          ARM64, downloads this release, verifies SHA-256, and runs its installer.
+          It also updates an earlier install and keeps your configuration.
 
           ```bash
-          curl -fLO https://github.com/@REPO@/releases/download/@TAG@/commanddeck-@TAG@-linux-x64.tar.gz
-          curl -fLO https://github.com/@REPO@/releases/download/@TAG@/commanddeck-@TAG@-linux-x64.tar.gz.sha256
-          sha256sum -c commanddeck-@TAG@-linux-x64.tar.gz.sha256
-          tar -xzf commanddeck-@TAG@-linux-x64.tar.gz
-          cd commanddeck-@TAG@-linux-x64
-          ./install.sh
+          curl -fsSL https://github.com/@REPO@/releases/download/@TAG@/install-release.sh | bash -s -- @TAG@
           ```
 
           The installer needs Omarchy with shell plugins on Hyprland, a systemd
-          user session, `jq`, `icu`, and glibc 2.39 or later. Run
-          `./install.sh --dry-run` first to check them. It changes nothing.
+          user session, `jq`, `icu`, and glibc 2.39 or later. Add `--dry-run`
+          after `@TAG@` to check them first without changes.
 
-          To update, install the new release in the same way. Your configuration
-          is kept. The [installation guide](https://github.com/@REPO@/blob/main/docs/install.md)
-          tells how to uninstall.
+          To get later releases, use the command in the
+          [README](https://github.com/@REPO@#install). It installs the newest
+          release, and `--uninstall` removes CommandDeck.
           EOF
           sed -i "s|@REPO@|$GH_REPO|g; s|@TAG@|$TAG|g" notes.md
 

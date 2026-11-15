@@ -137,7 +137,7 @@ public static partial class HyprlandHotkeyConfig
     }
 
     public static int CountRequires( string hyprlandLua ) => SplitLines( hyprlandLua )
-        .Count( IsRequireLine );
+        .Count( IsModuleReference );
 
     // Exactly one canonical require line. An existing canonical line keeps its
     // place; otherwise the line follows require("hypr.bindings"), so the
@@ -186,17 +186,25 @@ public static partial class HyprlandHotkeyConfig
         return JoinLines( remaining, hyprlandLua, forceTrailingNewline: true );
     }
 
+    // Removes the require statements that CommandDeck can remove whole. Any
+    // other line that names the module would fail once the module is gone, or
+    // would break when edited, so it stops the removal before any change.
     public static string RemoveRequire( string hyprlandLua )
     {
         var lines = SplitLines( hyprlandLua );
-        if ( lines.Any( IsRequireLine ) )
+        var others = lines
+            .Select( static ( line, index ) => (Line: line, Number: index + 1) )
+            .Where( static entry => IsModuleReference( entry.Line ) && !IsRequireStatement( entry.Line ) )
+            .Select( static entry => entry.Number )
+            .ToList( );
+        if ( others.Count > 0 )
         {
-            return JoinLines( RemoveRequireLines( lines ), hyprlandLua );
+            throw new InvalidOperationException(
+                $"hyprland.lua loads {ModuleName} in a way that CommandDeck cannot remove safely, on line {string.Join( ", ", others )}. " +
+                "Remove those lines, then run 'commanddeck hotkey remove' again. Nothing was changed." );
         }
-        else
-        {
-            return hyprlandLua;
-        }
+
+        return lines.Any( IsRequireStatement ) ? JoinLines( RemoveRequireLines( lines ), hyprlandLua ) : hyprlandLua;
     }
 
     public static bool HasLegacyBlock( string bindingsLua ) => SplitLines( bindingsLua )
@@ -314,9 +322,18 @@ public static partial class HyprlandHotkeyConfig
         }
     }
 
-    private static bool IsRequireLine( string line ) => !IsComment( line ) &&
-                                                        (line.Contains( "\"" + ModuleName + "\"", StringComparison.Ordinal ) ||
-                                                         line.Contains( "'" + ModuleName + "'", StringComparison.Ordinal ));
+    // Any code line that names the module. The doctor counts these.
+    private static bool IsModuleReference( string line ) => !IsComment( line ) &&
+                                                            (line.Contains( "\"" + ModuleName + "\"", StringComparison.Ordinal ) ||
+                                                             line.Contains( "'" + ModuleName + "'", StringComparison.Ordinal ));
+
+    // A require of the module that is a whole top-level statement on its own
+    // line: the generated guarded line, or a plain require. Removing such a line
+    // leaves valid Lua. An indented line may sit in a block, an unclosed call
+    // continues on the next line, and "--[[" opens a comment that continues, so
+    // CommandDeck edits none of those.
+    private static bool IsRequireStatement( string line ) => !IsComment( line ) && RequireStatementPattern( )
+        .IsMatch( line.TrimEnd( '\r' ) );
 
     private static bool IsComment( string line ) => line
         .TrimStart( )
@@ -349,6 +366,20 @@ public static partial class HyprlandHotkeyConfig
     [GeneratedRegex( """^\s*require\s*\(?\s*["']hypr\.bindings["']""" )]
     private static partial Regex BindingsRequirePattern( );
 
+    // The generated guarded line and a plain require, each a whole statement
+    // with its parentheses closed on the same line.
+    // \x27 is a single quote. The repository's source style scanner reads a
+    // literal one here as the start of a character literal.
+    private const string QuotedModulePattern = """(?:"hypr\.commanddeck"|\x27hypr\.commanddeck\x27)""";
+
+    private const string RequireCallPattern = """require\s*(?:\(\s*""" + QuotedModulePattern + """\s*\)|""" + QuotedModulePattern + ")";
+
+    private const string GuardedRequirePattern = """if\s+package\.searchpath\(\s*""" + QuotedModulePattern + """\s*,\s*package\.path\s*\)\s+then\s+"""
+        + RequireCallPattern + """\s+end""";
+
+    [GeneratedRegex( "^(?:" + GuardedRequirePattern + "|" + RequireCallPattern + """)\s*;?\s*(?:--(?!\[=*\[).*)?$""" )]
+    private static partial Regex RequireStatementPattern( );
+
     [GeneratedRegex( @"\b(?:hl\.bind|hl\.unbind|o\.bind\w*)\s*\(" )]
     private static partial Regex BindCallPattern( );
 
@@ -365,20 +396,20 @@ public static partial class HyprlandHotkeyConfig
 
     private static bool HasSingleCanonicalRequire( List<string> lines, int canonical )
     {
-        return canonical >= 0 && lines.Count( IsRequireLine ) == 1;
+        return canonical >= 0 && lines.Count( IsRequireStatement ) == 1;
     }
 
     private static List<string> KeepCanonicalRequire( List<string> lines, int canonical )
     {
         return lines
-            .Where( ( line, index ) => index == canonical || !IsRequireLine( line ) )
+            .Where( ( line, index ) => index == canonical || !IsRequireStatement( line ) )
             .ToList( );
     }
 
     private static List<string> RemoveRequireLines( List<string> lines )
     {
         return lines
-            .Where( static line => !IsRequireLine( line ) )
+            .Where( static line => !IsRequireStatement( line ) )
             .ToList( );
     }
 

@@ -158,21 +158,21 @@ public sealed class HyprlandHotkeyInstaller( HyprlandHotkeyPaths paths, TimeProv
     public IReadOnlyList<string> Remove( )
     {
         List<string> messages = [];
+
+        // RemoveRequire refuses a require it cannot remove safely. Ask it first,
+        // so a refusal changes no file.
+        var main = File.Exists( paths.MainConfig ) ? File.ReadAllText( paths.MainConfig ) : null;
+        var removed = main is null ? null : HyprlandHotkeyConfig.RemoveRequire( main );
         if ( File.Exists( paths.Bindings ) )
         {
             RemoveLegacyBlock( File.ReadAllText( paths.Bindings ), messages );
         }
 
-        if ( File.Exists( paths.MainConfig ) )
+        if ( removed is not null && removed != main )
         {
-            var main = File.ReadAllText( paths.MainConfig );
-            var removed = HyprlandHotkeyConfig.RemoveRequire( main );
-            if ( removed != main )
-            {
-                var backup = Backup( paths.MainConfig );
-                WriteAtomically( paths.MainConfig, removed );
-                messages.Add( $"Removed the CommandDeck require line from {paths.MainConfig}; backup: {backup}" );
-            }
+            var backup = Backup( paths.MainConfig );
+            WriteAtomically( paths.MainConfig, removed );
+            messages.Add( $"Removed the CommandDeck require line from {paths.MainConfig}; backup: {backup}" );
         }
 
         if ( File.Exists( paths.HotkeyFile ) )

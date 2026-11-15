@@ -73,7 +73,9 @@ must match the app version, `v` plus `VersionPrefix` and `VersionSuffix` from
 `src/CommandDeck.App/CommandDeck.App.csproj`, for example `v0.1.0-preview.1`.
 It builds `linux-x64` and `linux-arm64` with `./scripts/publish-aot.sh`,
 packages each with `scripts/package-release.cs`, and creates the GitHub release
-with the archives and their `.sha256` files. A tag with a `-` suffix becomes a
+with the archives, their `.sha256` files, and `install-release.sh`. This download
+script detects the CPU, verifies the archive, and runs its installer without .NET.
+A tag with a `-` suffix becomes a
 prerelease. Write the release notes first, in `docs/releases/<tag>.md` (for
 example `docs/releases/v0.1.0-preview.1.md`): they open the release page, above
 the install steps that the workflow adds, and a tag without them fails. Run the

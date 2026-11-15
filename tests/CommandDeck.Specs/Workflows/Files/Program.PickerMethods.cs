@@ -106,7 +106,10 @@ public static partial class Program
                 File.Copy( asset, Path.Combine( publish, "picker", Path.GetFileName( asset ) ) );
             }
 
+            // An earlier install delivered and listed Retired.qml, which this build
+            // no longer has, so the install removes it.
             await File.WriteAllTextAsync( Path.Combine( installed, "Retired.qml" ), "" );
+            await File.WriteAllTextAsync( Path.Combine( installed, "..", ".installed-files" ), "commanddeck\npicker/Retired.qml\n" );
 
             var result = await ProcessRunner.RunAsync( "env", [
                 "HOME=" + Path.Combine( root, "home" ), "XDG_DATA_HOME=" + Path.Combine( root, "data" ),
