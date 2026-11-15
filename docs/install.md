@@ -42,14 +42,19 @@ installer's exit status. It needs Bash, `curl`, `jq`, `tar`, and coreutils.
 Bash runs a piped script one complete command at a time. The script only
 defines functions until its last line, and that line is one braced command that
 starts it. So if the download stops early, Bash runs nothing, and never runs the
-script without the options that you gave. To read the script before you run it,
-download it first:
+script without the options that you gave. A pipe returns the exit status of
+Bash, not of `curl`: when the download fails, `curl` prints the error, nothing
+runs, and the status is still 0. To read the script before you run it, or to
+get a failing status in your own scripts, download it first:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/install-release.sh -o install-release.sh
-less install-release.sh
-bash install-release.sh
+curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/install-release.sh -o install-release.sh &&
+  less install-release.sh &&
+  bash install-release.sh
 ```
+
+In a script, leave out `less`. Then a failed download stops the command with
+the status of `curl`.
 
 Put options after `bash -s --` when you pipe the script, or after
 `install-release.sh` when you downloaded it:
@@ -88,7 +93,9 @@ cd commanddeck-$version-linux-x64
 The installer stops the running daemon, then:
 
 1. Installs the binary, its libraries, and the picker in
-   `~/.local/share/commanddeck`, and links `~/.local/bin/commanddeck`.
+   `~/.local/share/commanddeck`, and links `~/.local/bin/commanddeck`. It
+   lists these files in `.installed-files` there. An update removes the
+   listed files that the new release no longer has.
 2. Installs `commanddeck.service` in `~/.config/systemd/user`.
 3. Creates the default configuration if you do not have one.
 4. Installs the Omarchy plugin in `~/.config/omarchy/plugins/local.commanddeck`.
@@ -148,21 +155,27 @@ Run the quick install command with `--uninstall`:
 curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/install-release.sh | bash -s -- --uninstall
 ```
 
-It removes only what the installer created:
+It removes only what the installer created. Before the first change, it
+checks that `systemctl` reaches your systemd user manager and, when Hyprland
+runs, that `hyprctl` reaches it. If a check fails, nothing changes. Then:
 
 1. It stops and disables the service. If the daemon keeps running, it stops
    there and removes nothing else.
 2. It removes the hotkey with `commanddeck hotkey remove`, then deletes the
    Settings shortcut module and the `.bak` copies that CommandDeck generated.
-   If the binary is missing, it deletes the generated `commanddeck.lua`, and
-   the guarded require line stays in `hyprland.lua`, where it does nothing.
-   Then it reloads Hyprland.
-3. It disables the plugin and moves its folder to
-   `~/.local/state/commanddeck/plugin-backups/`.
+   If the binary is missing or does not run, it deletes the generated
+   `commanddeck.lua`, and the guarded require line stays in `hyprland.lua`,
+   where it does nothing. Then it reloads Hyprland.
+3. It disables the plugin when Omarchy lists it as enabled, and moves its
+   folder to `~/.local/state/commanddeck/plugin-backups/`. If the disable
+   fails, it stops there, and the plugin, the service file, and the program
+   stay.
 4. It removes the service file and reloads the systemd user manager.
-5. It removes `~/.local/bin/commanddeck` when it links to this installation,
-   and the files that the installer put in `~/.local/share/commanddeck`. It
-   keeps that folder when it holds other files.
+5. It removes `~/.local/bin/commanddeck` when it links to this installation.
+   In `~/.local/share/commanddeck`, it removes the files in
+   `.installed-files`, the list that the installer keeps. An installation
+   from before that list loses exactly the files that v0.1.0-preview.1 and
+   v0.1.0-preview.2 installed. It keeps the folder when other files remain.
 6. It restarts the Omarchy shell.
 
 Add `--dry-run` to see what it would remove.

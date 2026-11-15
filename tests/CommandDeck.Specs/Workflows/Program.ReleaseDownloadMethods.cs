@@ -154,6 +154,12 @@ public static partial class Program
             Equal( "--hotkey=SUPER + SPACE\n", await File.ReadAllTextAsync( fixture.Calls ) );
             Equal( 0, Directory.GetFileSystemEntries( fixture.Cache ).Length );
 
+            // An empty XDG variable means the default, so the installer and the
+            // binary it runs must not see it as a relative path.
+            var emptyXdg = await RunDownloaderAsync( fixture, [FakeVersion], "x86_64", "ok", ["XDG_CONFIG_HOME="] );
+            Equal( 0, emptyXdg.ExitCode );
+            Equal( "unset\n", await File.ReadAllTextAsync( fixture.Calls + ".xdg" ) );
+
             var call = script.LastIndexOf( "{ main", StringComparison.Ordinal );
             True( call > 0, "the script ends with one braced call of main" );
             int[] cuts = [script.Length / 2, call, call + "{ main".Length, script.LastIndexOf( '}' )];

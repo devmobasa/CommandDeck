@@ -26,13 +26,15 @@ public static partial class Program
     }
 
     // Every desktop tool the script can call is a stub, and HOME and the XDG
-    // folders point into the fixture, so no run reaches the real desktop.
+    // folders point into the fixture, so no run reaches the real desktop. The
+    // run looks like a Hyprland session, also where no Hyprland runs.
     // Later environment entries replace earlier ones. With standardInput, Bash
-    // reads the script from stdin, as with curl | bash -s --.
+    // reads the script from stdin, as with curl | bash -s --. With command,
+    // that command runs with the script path and the arguments after it.
     private static async Task<ProcessResult> RunDownloaderAsync( DownloadFixture fixture, string[] arguments, string cpu, string mode,
         string[]? extraEnvironment = null, string? standardInput = null, string[]? command = null )
     {
-        foreach ( var suffix in new[] { "", ".pwd", ".urls", ".tools", ".started" } )
+        foreach ( var suffix in new[] { "", ".pwd", ".urls", ".tools", ".started", ".xdg" } )
         {
             File.Delete( fixture.Calls + suffix );
         }
@@ -43,11 +45,11 @@ public static partial class Program
             "XDG_CONFIG_HOME=" + fixture.Config, "XDG_DATA_HOME=" + fixture.Data, "XDG_STATE_HOME=" + fixture.State,
             "XDG_CACHE_HOME=" + fixture.Cache, "COMMANDDECK_SPEC_DOWNLOAD_ROOT=" + fixture.Root,
             "COMMANDDECK_SPEC_INSTALL_CALLS=" + fixture.Calls, "COMMANDDECK_SPEC_DOWNLOAD_CPU=" + cpu,
-            "COMMANDDECK_SPEC_DOWNLOAD_MODE=" + mode, .. extraEnvironment ?? []
+            "COMMANDDECK_SPEC_DOWNLOAD_MODE=" + mode, "HYPRLAND_INSTANCE_SIGNATURE=spec", .. extraEnvironment ?? []
         ];
 
         var script = Path.Combine( FindRepositoryRoot( ), "scripts", "install-release.sh" );
-        string[] invocation = command is not null ? [.. command, script]
+        string[] invocation = command is not null ? [.. command, script, .. arguments]
             : standardInput is not null ? ["bash", "-s", "--", .. arguments]
             : ["bash", script, .. arguments];
 
@@ -66,6 +68,7 @@ public static partial class Program
             if [ "$COMMANDDECK_SPEC_DOWNLOAD_MODE" = slow ]; then : >"$COMMANDDECK_SPEC_INSTALL_CALLS.started"; sleep 1; fi
             printf '%s\n' "$@" >"$COMMANDDECK_SPEC_INSTALL_CALLS"
             pwd >"$COMMANDDECK_SPEC_INSTALL_CALLS.pwd"
+            printf '%s\n' "${XDG_CONFIG_HOME-unset}" >"$COMMANDDECK_SPEC_INSTALL_CALLS.xdg"
             if [ "$COMMANDDECK_SPEC_DOWNLOAD_MODE" = installer-failure ]; then exit 23; fi
             """ );
 
@@ -110,8 +113,8 @@ public static partial class Program
             """ );
 
         // The uninstaller calls these. Each records its call and succeeds. The
-        // service is inactive unless a case keeps it running, and the user
-        // manager is reachable unless a case takes it down.
+        // service is inactive unless a case keeps it running; the user manager,
+        // Hyprland, and the plugin disable work unless a case breaks them.
         await WriteExecutableAsync( Path.Combine( tools, "systemctl" ), """
             #!/bin/sh
             echo "systemctl $*" >>"$COMMANDDECK_SPEC_INSTALL_CALLS.tools"
@@ -120,12 +123,22 @@ public static partial class Program
               *is-active*) if [ "$COMMANDDECK_SPEC_SERVICE_ACTIVE" = 1 ]; then echo active; exit 0; fi; echo inactive; exit 3 ;;
             esac
             """ );
-        foreach ( var tool in new[] { "omarchy", "hyprctl" } )
-        {
-            await WriteExecutableAsync( Path.Combine( tools, tool ), $$"""
-                #!/bin/sh
-                echo "{{tool}} $*" >>"$COMMANDDECK_SPEC_INSTALL_CALLS.tools"
-                """ );
-        }
+        await WriteExecutableAsync( Path.Combine( tools, "omarchy" ), """
+            #!/bin/sh
+            echo "omarchy $*" >>"$COMMANDDECK_SPEC_INSTALL_CALLS.tools"
+            case "$*" in
+              "plugin list --json")
+                if [ "$COMMANDDECK_SPEC_OMARCHY_LIST_FAIL" = 1 ]; then exit 1; fi
+                echo '[{"id":"local.commanddeck","enabled":true}]' ;;
+              "plugin disable local.commanddeck") if [ "$COMMANDDECK_SPEC_OMARCHY_FAIL" = 1 ]; then exit 1; fi ;;
+            esac
+            exit 0
+            """ );
+        await WriteExecutableAsync( Path.Combine( tools, "hyprctl" ), """
+            #!/bin/sh
+            echo "hyprctl $*" >>"$COMMANDDECK_SPEC_INSTALL_CALLS.tools"
+            if [ "$*" = "-j version" ] && [ "$COMMANDDECK_SPEC_HYPRLAND_DOWN" = 1 ]; then exit 1; fi
+            exit 0
+            """ );
     }
 }

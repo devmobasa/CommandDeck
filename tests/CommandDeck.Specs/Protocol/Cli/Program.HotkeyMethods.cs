@@ -179,6 +179,56 @@ public static partial class Program
         Equal( "-- my own module\n", File.ReadAllText( fixture.Paths.HotkeyFile ) );
     }
 
+    // Install and remove edit only whole top-level require statements of the
+    // module. Remove refuses, before any change, when another line names the
+    // module: deleting the module would break it, and editing it could break
+    // the Lua around it. Install leaves such lines alone.
+    private static void HotkeyRequireEditsKeepHandWrittenLuaValid( )
+    {
+        const string Guard = "if package.searchpath(\"hypr.commanddeck\", package.path) then\n  require(\"hypr.commanddeck\")\nend\n";
+        const string Local = "local deck = require(\"hypr.commanddeck\") -- my own\n";
+        string[] statements =
+        [
+            HyprlandHotkeyConfig.RequireLine, "require(\"hypr.commanddeck\")", "require 'hypr.commanddeck';",
+            "if package.searchpath('hypr.commanddeck', package.path) then require('hypr.commanddeck') end -- mine"
+        ];
+        foreach ( var statement in statements )
+        {
+            Equal( "a = 1\n", HyprlandHotkeyConfig.RemoveRequire( "a = 1\n" + statement + "\n" ) );
+        }
+
+        string[] others =
+        [
+            Guard, Local, "  " + HyprlandHotkeyConfig.RequireLine + "\n", "require(\"hypr.commanddeck\"\n)\n",
+            "require(\"hypr.commanddeck\") --[[\nnote ]]\n"
+        ];
+        foreach ( var other in others )
+        {
+            Throws<InvalidOperationException>( ( ) => HyprlandHotkeyConfig.RemoveRequire( "a = 1\n" + other ) );
+        }
+
+        Equal( 3, HyprlandHotkeyConfig.CountRequires( Guard + Local ) );
+        Equal( 0, HyprlandHotkeyConfig.CountRequires( "-- " + HyprlandHotkeyConfig.RequireLine + "\nrequire(\"hypr.commanddeck_keys\")\n" ) );
+
+        var ensured = HyprlandHotkeyConfig.EnsureRequire( Guard );
+        True( ensured.StartsWith( Guard, StringComparison.Ordinal ), ensured );
+        True( ensured.Contains( HyprlandHotkeyConfig.RequireLine, StringComparison.Ordinal ), ensured );
+        Equal( ensured, HyprlandHotkeyConfig.EnsureRequire( ensured ) );
+
+        using HotkeyFixture fixture = new( );
+        File.WriteAllText( fixture.Paths.MainConfig, StockHyprlandLua );
+        File.WriteAllText( fixture.Paths.Bindings, StockBindingsLua + LegacyBindingBlock );
+        fixture.Installer.Install( "CTRL + SPACE" );
+        File.AppendAllText( fixture.Paths.Bindings, LegacyBindingBlock );
+        File.AppendAllText( fixture.Paths.MainConfig, Local );
+        var main = File.ReadAllText( fixture.Paths.MainConfig );
+        var bindings = File.ReadAllText( fixture.Paths.Bindings );
+        Throws<InvalidOperationException>( ( ) => fixture.Installer.Remove( ) );
+        Equal( main, File.ReadAllText( fixture.Paths.MainConfig ) );
+        Equal( bindings, File.ReadAllText( fixture.Paths.Bindings ) );
+        True( File.Exists( fixture.Paths.HotkeyFile ), "a refused remove keeps the module" );
+    }
+
     private static void HotkeyInstallKeepsTheExistingConflictChecks( )
     {
         using HotkeyFixture fixture = new( );

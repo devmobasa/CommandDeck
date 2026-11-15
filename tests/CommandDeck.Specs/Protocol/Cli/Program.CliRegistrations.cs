@@ -20,6 +20,7 @@ public static partial class Program
         await RunAsync( "release downloader runs piped and ignores truncated scripts and bad options", ReleaseDownloaderRunsPipedAndRefusesBadInputAsync );
         await RunAsync( "release downloader reports a signal after its installer finished", ReleaseDownloaderReportsASignalAfterTheInstallerFinishedAsync );
         await RunAsync( "release downloader uninstalls only its own files after the daemon stops", ReleaseDownloaderUninstallsOnlyWhatItInstalledAsync );
+        await RunAsync( "install-local lists its files and an update removes only listed ones", InstallLocalListsItsFilesAndPrunesOnlyThoseAsync );
         await RunAsync( "release install rolls back a failed update and skips an unchanged plugin backup", ReleaseInstallRollsBackAFailedUpdateAsync );
         await RunAsync( "release install rolls back when a signal interrupts it", ReleaseInstallRollsBackWhenInterruptedAsync );
         await RunAsync( "release install removes a failed first install and restores the hotkey files", ReleaseInstallUndoesAFailedFirstInstallAsync );
@@ -38,6 +39,7 @@ public static partial class Program
         Run( "hotkey install migrates the earlier bindings.lua block", HotkeyInstallMigratesTheEarlierBindingsBlock );
         Run( "hotkey install binds a custom chord and rejects invalid chords", HotkeyInstallBindsACustomChord );
         Run( "hotkey remove deletes the generated module and its require line", HotkeyRemoveDeletesTheModuleAndRequire );
+        Run( "hotkey edits change only whole require lines, so hand-written Lua stays valid", HotkeyRequireEditsKeepHandWrittenLuaValid );
         Run( "hotkey install keeps a user CommandDeck binding and notes other chord users", HotkeyInstallKeepsTheExistingConflictChecks );
         Run( "hotkey install replaces Omarchy's conditional default binding on the chord", HotkeyInstallReplacesOmarchysConditionalDefaultBinding );
         Run( "hotkey install keeps a user binding that shares Omarchy's default", HotkeyInstallKeepsAUserBindingThatSharesOmarchysDefault );
