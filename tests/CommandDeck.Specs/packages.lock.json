@@ -56,7 +56,7 @@
         "type": "Project",
         "dependencies": {
           "CommandDeck.Core": "[1.0.0, )",
-          "Tmds.DBus.Protocol": "[0.95.1, )"
+          "Tmds.DBus.Protocol": "[0.95.2, )"
         }
       },
       "commanddeck.core": {
@@ -87,18 +87,18 @@
       "commanddeck.infrastructure": {
         "type": "Project",
         "dependencies": {
-          "AngleSharp": "[1.8.1, )",
+          "AngleSharp": "[1.10.3, )",
           "CommandDeck.Core": "[1.0.0, )",
           "CommandDeck.ExtensionProtocol": "[0.1.0-preview.6, )",
           "Microsoft.Data.Sqlite": "[11.0.0, )",
-          "Tmds.DBus.Protocol": "[0.95.1, )"
+          "Tmds.DBus.Protocol": "[0.95.2, )"
         }
       },
       "AngleSharp": {
         "type": "CentralTransitive",
-        "requested": "[1.8.1, )",
-        "resolved": "1.8.1",
-        "contentHash": "fTLPBxwYK5zmt+ernY3GL1kFBDA/2Cl72hpNnMHeNceZNJ/AT7Km9CXFaMHybuEFhXDy2Dv7Bjkez5G0Z4Io4g=="
+        "requested": "[1.10.3, )",
+        "resolved": "1.10.3",
+        "contentHash": "HF2owdhRhy84PJ7dk6e7Olc8D3S8RhU+BSXgCpTcafODrHzUUqUquCUWrM81/PeKHKlFA86LCdZBAQCQRK2y7w=="
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",
@@ -113,9 +113,9 @@
       },
       "Tmds.DBus.Protocol": {
         "type": "CentralTransitive",
-        "requested": "[0.95.1, )",
-        "resolved": "0.95.1",
-        "contentHash": "IbGhqZAqqgB/DkT70+lAk4MNv95tZtsTMFQ+S3uGy0aTfOkGVeFjeNJsX8dBI/3+CPnO5XW6lRQKGeFEgHElKw=="
+        "requested": "[0.95.2, )",
+        "resolved": "0.95.2",
+        "contentHash": "4zlJSYYZGCKnF5xE1L5VEm5YsfjLTz5jlWBgvBxHA7yk8Lnys/6WWpeD+CWmNm4QmawR+x0xIbGGZNcMxcy8nQ=="
       }
     },
     "net11.0/linux-x64": {
