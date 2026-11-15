@@ -15,6 +15,11 @@ public static partial class Program
         await RunAsync( "picker build and installer deliver every relative QML dependency", PickerDeliveryCarriesEveryRelativeDependencyAsync );
         Run( "picker dependency guard rejects missing imports and unregistered singletons", PickerDependencyGuardRejectsMissingImportsAndSingletons );
         await RunAsync( "release archive carries install.sh and its helpers and dry-runs without changes", ReleasePackageInstallsFromItsOwnFolderAsync );
+        await RunAsync( "release downloader selects CPUs verifies checksums forwards options and cleans up", ReleaseDownloaderVerifiesAndInstallsAsync );
+        await RunAsync( "release downloader updates only when needed and never downgrades unasked", ReleaseDownloaderUpdatesOnlyWhenNeededAsync );
+        await RunAsync( "release downloader runs piped and ignores truncated scripts and bad options", ReleaseDownloaderRunsPipedAndRefusesBadInputAsync );
+        await RunAsync( "release downloader reports a signal after its installer finished", ReleaseDownloaderReportsASignalAfterTheInstallerFinishedAsync );
+        await RunAsync( "release downloader uninstalls only its own files after the daemon stops", ReleaseDownloaderUninstallsOnlyWhatItInstalledAsync );
         await RunAsync( "release install rolls back a failed update and skips an unchanged plugin backup", ReleaseInstallRollsBackAFailedUpdateAsync );
         await RunAsync( "release install rolls back when a signal interrupts it", ReleaseInstallRollsBackWhenInterruptedAsync );
         await RunAsync( "release install removes a failed first install and restores the hotkey files", ReleaseInstallUndoesAFailedFirstInstallAsync );

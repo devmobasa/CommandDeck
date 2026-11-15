@@ -69,34 +69,46 @@ chord or bind it yourself.
 
 ## Install
 
-### Download a release (no .NET needed)
+Run this command in your Omarchy desktop session, then press **Ctrl+Space**.
+You do not need .NET.
 
-This is the recommended way. Do these steps in your Omarchy desktop session.
+```bash
+curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/install-release.sh | bash
+```
 
-1. Open the [releases page](https://github.com/devmobasa/CommandDeck/releases) and choose the newest release.
-   Download `commanddeck-VERSION-linux-x64.tar.gz` and its `.sha256` file.
-   On an ARM computer, use the `linux-arm64` files.
-2. Check the download, extract it, and run the installer. Set `version` to the
-   release that you downloaded:
+The script installs the newest release, previews included. It detects x64 or
+ARM64, verifies the SHA-256 checksum, and runs the release's installer. The
+installer puts the app in `~/.local/share/commanddeck`, then installs the user
+service, the Omarchy plugin, and the hotkey. It restarts the Omarchy shell, so
+the bar reloads for a moment. It keeps your configuration. If a step fails, it
+restores the previous installation.
 
-   ```bash
-   version=v0.1.0-preview.2
-   sha256sum -c commanddeck-$version-linux-x64.tar.gz.sha256
-   tar -xzf commanddeck-$version-linux-x64.tar.gz
-   cd commanddeck-$version-linux-x64
-   ./install.sh
-   ```
+**To update**, run the same command again. When you already have the newest
+version, it changes nothing.
 
-The installer needs `jq` and `icu` (`sudo pacman -S --needed jq icu`). To check
-the requirements first without changes, run `./install.sh --dry-run`.
+The script also takes options. Put them after `bash -s --`:
 
-The installer puts the app in `~/.local/share/commanddeck`, and it installs the
-user service and the Omarchy plugin. It indexes your folders, and then it binds
-**Ctrl+Space**. To use a different chord, add `--hotkey="SUPER + SPACE"`. The
-installer restarts the Omarchy shell. It keeps your existing configuration and
-backs up the plugin and binding files that it changes. If a step fails, it
-restores the previous installation. To update, install the new release in the
-same way.
+```bash
+curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/install-release.sh | bash -s -- --check
+```
+
+| Option | Effect |
+|---|---|
+| `--check` | Show the installed and the newest version. Change nothing. |
+| `--dry-run` | Download the release and check the requirements. Change nothing. |
+| `--hotkey="SUPER + SPACE"` | Bind a different chord. |
+| `--uninstall` | Remove CommandDeck. Keep your configuration and state. |
+| `v0.1.0-preview.2` | Install this version, not the newest one. |
+
+> [!WARNING]
+> The install indexes the file names in your home folder, hidden files
+> included. Privacy exclusions always apply. To index less, open
+> **Settings > Search > Indexed folders** and disable or remove folders. A
+> change removes what it no longer covers from the index. See
+> [indexed folders](docs/configuration.md#indexed-folders-in-settings).
+
+The [installation guide](docs/install.md) covers the requirements, manual
+installation, troubleshooting, rollback, and the standalone host.
 
 ### Build from source
 
@@ -129,28 +141,10 @@ This script validates the repository and publishes the Native AOT binary. Then
 it runs the same installer as a release, `scripts/install.sh`, on the result.
 It accepts the same `--hotkey` and `--reset-config` options.
 
-> [!WARNING]
-> Review your indexed folders before the first index. By default, CommandDeck
-> indexes the file names in your home folder, hidden files included. Privacy
-> exclusions always apply. See [configuration](docs/configuration.md).
-
-To turn CommandDeck off again:
-
-```bash
-commanddeck hotkey remove
-hyprctl reload
-omarchy plugin disable local.commanddeck
-omarchy restart shell
-systemctl --user disable --now commanddeck.service
-```
-
-The [installation guide](docs/install.md) covers updates, uninstalling, manual
-installation, troubleshooting, rollback, and the standalone host.
-
 ## Hotkey
 
 The installer binds **Ctrl+Space** for you. To use a different chord, pass
-`--hotkey="SUPER + SPACE"` to the installer, or run:
+`--hotkey="SUPER + SPACE"` to the install command, or run:
 
 ```bash
 commanddeck hotkey check --chord "SUPER + SPACE"     # validate only; changes nothing

@@ -22,10 +22,52 @@ not need .NET.
   glibc 2.39. It runs only with that glibc or a newer one. Arch and Omarchy
   have a newer glibc.
 
-`./install.sh --dry-run` checks these requirements, the release files, and the
-hotkey. It changes nothing.
+The quick install command with `--dry-run` checks these requirements, the
+release files, and the hotkey. It changes nothing.
 
-### Download, check, and install
+### Quick install
+
+Run this command in your Omarchy desktop session:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/install-release.sh | bash
+```
+
+The script, `scripts/install-release.sh`, selects the newest published release,
+previews included, and detects Linux x64 or ARM64. It downloads the archive and
+its checksum to `~/.cache/commanddeck`, verifies SHA-256, and runs the
+release's installer. It removes the download on exit and returns the
+installer's exit status. It needs Bash, `curl`, `jq`, `tar`, and coreutils.
+
+Bash runs a piped script one complete command at a time. The script only
+defines functions until its last line, and that line is one braced command that
+starts it. So if the download stops early, Bash runs nothing, and never runs the
+script without the options that you gave. To read the script before you run it,
+download it first:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/install-release.sh -o install-release.sh
+less install-release.sh
+bash install-release.sh
+```
+
+Put options after `bash -s --` when you pipe the script, or after
+`install-release.sh` when you downloaded it:
+
+| Option | Effect |
+|---|---|
+| `VERSION` | Install this release, for example `v0.1.0-preview.2`. This can also install an older release. The v0.1.0-preview.1 installer binds `CTRL + SPACE` unless you pass `--hotkey`, so it replaces a different saved chord. |
+| `--check` | Show the installed and the newest version. Change nothing. |
+| `--force` | Install again, also when that version is installed. |
+| `--dry-run` | Download and verify the release, check its requirements, and change nothing. It checks the release also when a real run would change nothing. |
+| `--hotkey="SUPER + SPACE"` | Bind this chord. Passed to the release's installer. |
+| `--reset-config` | Move the configuration to a backup first. Passed to the release's installer. |
+| `--uninstall` | Remove CommandDeck. See [Uninstall](#uninstall). |
+
+The script uses the same installer and rollback behavior as the manual steps
+below.
+
+### Download, check, and install manually
 
 On the [releases page](https://github.com/devmobasa/CommandDeck/releases),
 download the archive for your CPU and its `.sha256` file. Use `linux-x64` for
@@ -81,16 +123,52 @@ Add `~/.local/bin` to PATH if it is absent.
 
 ### Update a release
 
-Download and extract the new release, then run its `./install.sh`. The
-installer replaces the binary, the plugin, and the service file. It keeps your
-configuration and your state, rebuilds the catalog, and restarts the daemon and
-the Omarchy shell. If the plugin changed, it backs up the previous plugin under
-`~/.local/state/commanddeck/plugin-backups/`.
+Run the quick install command again. It compares the installed version with
+the newest release:
+
+- The same version is installed: it changes nothing. Add `--force` to install
+  it again.
+- An older version is installed: it updates. The installer replaces the binary,
+  the plugin, and the service file. It keeps your configuration and your state,
+  rebuilds the catalog, and restarts the daemon and the Omarchy shell. If the
+  plugin changed, it backs up the previous plugin under
+  `~/.local/state/commanddeck/plugin-backups/`.
+- A newer version is installed, for example a build from source: it changes
+  nothing, also with `--force` or `--hotkey`. Pass a version to install that
+  release. To change only the hotkey, run `commanddeck hotkey install --chord CHORD`.
+
+`--check` shows the installed and the newest version without changes. You can
+also download and extract the new release, then run its `./install.sh`.
 
 ### Uninstall
 
-Remove the hotkey, the plugin, the service, and the program files. The first
-command needs `~/.local/bin` on your PATH. If `commanddeck` is not found, run
+Run the quick install command with `--uninstall`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/install-release.sh | bash -s -- --uninstall
+```
+
+It removes only what the installer created:
+
+1. It stops and disables the service. If the daemon keeps running, it stops
+   there and removes nothing else.
+2. It removes the hotkey with `commanddeck hotkey remove`, then deletes the
+   Settings shortcut module and the `.bak` copies that CommandDeck generated.
+   If the binary is missing, it deletes the generated `commanddeck.lua`, and
+   the guarded require line stays in `hyprland.lua`, where it does nothing.
+   Then it reloads Hyprland.
+3. It disables the plugin and moves its folder to
+   `~/.local/state/commanddeck/plugin-backups/`.
+4. It removes the service file and reloads the systemd user manager.
+5. It removes `~/.local/bin/commanddeck` when it links to this installation,
+   and the files that the installer put in `~/.local/share/commanddeck`. It
+   keeps that folder when it holds other files.
+6. It restarts the Omarchy shell.
+
+Add `--dry-run` to see what it would remove.
+
+To uninstall by hand, run these commands. The first command needs
+`~/.local/bin` on your PATH. If `commanddeck` is not found, run
 `~/.local/bin/commanddeck hotkey remove` instead.
 
 ```bash
@@ -106,9 +184,9 @@ rm ~/.local/bin/commanddeck
 rm -r ~/.local/share/commanddeck
 ```
 
-Your configuration and state stay. The state folder holds the catalog, history,
-customizations, and the plugin, binding, and configuration backups. To also
-delete them:
+Both ways keep your configuration and state. The state folder holds the
+catalog, history, customizations, and the plugin, binding, and configuration
+backups. To also delete them:
 
 ```bash
 rm -r ~/.config/commanddeck ~/.local/state/commanddeck
@@ -145,7 +223,7 @@ cd CommandDeck
 ### Install the pinned SDK
 
 Use a .NET SDK installation that satisfies `global.json`. If your package manager
-does not provide that preview version, the
+does not provide that version, the
 [Microsoft installer](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script)
 can read the pin directly:
 
@@ -182,8 +260,8 @@ Run inside your graphical session:
 
 The script validates the repository and publishes the Native AOT build to
 `artifacts/publish/RID`. Then it runs `scripts/install.sh` on that folder, the
-same installer that a release uses, so the install steps are those in
-[Download, check, and install](#download-check-and-install). It finishes when
+same installer that a release uses. It follows the
+[manual installation steps](#download-check-and-install-manually). It finishes when
 the plugin has registered the hotkey's global shortcut. Pass
 `--hotkey="SUPER + SPACE"` (or another chord) to set the launcher chord explicitly.
 Without it, upgrades keep the launcher chord, removed bindings, replacements,
