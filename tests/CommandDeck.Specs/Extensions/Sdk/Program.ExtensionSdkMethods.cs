@@ -36,7 +36,7 @@ public static partial class Program
                 lifetime.Token );
 
             Equal( "uuids", response.Deserialize( ExtensionJsonContext.Default.InitializeResult )!.Commands.Single( ) );
-            Equal( "0.1.0-preview.6", response.Deserialize( ExtensionJsonContext.Default.InitializeResult )!.SdkVersion );
+            Equal( "0.1.0-preview.7", response.Deserialize( ExtensionJsonContext.Default.InitializeResult )!.SdkVersion );
 
             host.Notify( "initialized" );
 

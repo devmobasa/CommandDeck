@@ -2,7 +2,7 @@
 
 An external C# author sample for packaged images, explicit URL actions, and
 commands without a persistent view. It uses the same experimental SDK feed and
-.NET 10 build setup as the [authoring guide](../../../docs/extensions/authoring.md).
+.NET 11 build setup as the [authoring guide](../../../docs/extensions/authoring.md).
 
 Copy `Program.cs` and `QuickTools.csproj` into a fresh external author directory.
 Configure the SDK pin, local NuGet feed, and private package cache as described

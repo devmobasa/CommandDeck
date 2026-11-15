@@ -10,7 +10,7 @@ storage in a new directory. `check` validates its manifest and project layout.
 `update` sends a reviewed archive digest and explicit grants to the selected
 CommandDeck host; it does not enable or run the installed extension.
 
-Requires .NET SDK 10.0.403 or a later 10.0.4xx patch, Linux x64 Native AOT
+Requires .NET SDK 11.0.100 or a later 11.0.1xx patch, Linux x64 Native AOT
 prerequisites, and a matching experimental CommandDeck daemon to
 inspect/install/run packages. The daemon
 continues to enforce the restricted release sandbox by default. `dev` creates a

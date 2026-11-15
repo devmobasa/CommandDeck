@@ -24,7 +24,7 @@ internal static class SdkDiagnostics
                 break;
             }
 
-            bounded.Append( rune.ToString( ) );
+            bounded.Append( rune );
             bytes += rune.Utf8SequenceLength;
         }
 

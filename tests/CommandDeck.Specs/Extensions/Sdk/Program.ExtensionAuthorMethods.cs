@@ -18,7 +18,7 @@ public static partial class Program
             Equal( "org.example.draft", manifest.Id );
             Equal( "An author's draft", manifest.Name );
             using var global = JsonDocument.Parse( File.ReadAllText( Path.Combine( project, "global.json" ) ) );
-            Equal( "10.0.403", global
+            Equal( "11.0.100", global
                 .RootElement.GetProperty( "sdk" )
                 .GetProperty( "version" )
                 .GetString( ) );

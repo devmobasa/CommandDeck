@@ -27,7 +27,7 @@ try
     {
         sdk = new
         {
-            version = "10.0.403",
+            version = "11.0.100",
             rollForward = "disable"
         }
     } ) );

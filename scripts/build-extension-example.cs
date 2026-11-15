@@ -40,7 +40,7 @@ try
         File.Copy( file, target );
     }
 
-    await File.WriteAllTextAsync( Path.Combine( root, "global.json" ), "{\"sdk\":{\"version\":\"10.0.403\",\"rollForward\":\"disable\"}}" );
+    await File.WriteAllTextAsync( Path.Combine( root, "global.json" ), "{\"sdk\":{\"version\":\"11.0.100\",\"rollForward\":\"disable\"}}" );
 
     new XDocument( CreatePackageConfiguration( feed, root ) ).Save( Path.Combine( root, "NuGet.Config" ) );
 
@@ -76,7 +76,7 @@ try
 
     ExtensionPackageBuilder.Pack( Path.Combine( root, CommandDeck.ExtensionProtocol.ExtensionPackageFiles.Manifest ), publish, output );
 
-    Console.WriteLine( "PASS .NET 10 external example build and package: " + output );
+    Console.WriteLine( "PASS .NET 11 external example build and package: " + output );
 }
 finally
 {

@@ -5,7 +5,7 @@ using CommandDeck.Extensions.Views;
 
 namespace CommandDeck.ExtensionProtocol;
 
-// Private mutable input preserves omitted defaults on the net10 source generator; public models remain init-only.
+// Private mutable input preserves omitted defaults on the source generator; public models remain init-only.
 public sealed class ListViewConverter : JsonConverter<ListView>
 {
     public override ListView Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options )

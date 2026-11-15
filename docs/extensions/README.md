@@ -1,7 +1,7 @@
 # Experimental C# extensions
 
 Extensions run as separate Linux x64 processes, publish native typed views, and
-request explicitly granted host effects. The SDK targets .NET 10. Packages and
+request explicitly granted host effects. The SDK targets .NET 11. Packages and
 author tools use a local preview feed built from this repository; there is no
 stable public SDK/feed compatibility promise yet.
 

@@ -3,11 +3,11 @@
     <OutputType>Exe</OutputType>
     <!-- Specs and the legacy pack script call the managed author APIs, not this executable. -->
     <ShouldBeValidatedAsExecutableReference>false</ShouldBeValidatedAsExecutableReference>
-    <TargetFramework>net10.0</TargetFramework>
-    <LangVersion>14.0</LangVersion>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>15.0</LangVersion>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>commanddeck-ext</ToolCommandName>
-    <Version>0.1.0-preview.7</Version>
+    <Version>0.1.0-preview.8</Version>
     <Description>Experimental CommandDeck extension author commands and native form template.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

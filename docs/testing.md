@@ -205,7 +205,7 @@ confinement.
 
 The author test package references only the SDK and protocol. Its conformance
 specs exercise the real SDK; `scripts/test-extension-testing.cs` independently
-packs the local preview feed and runs LocalDraft.Tests under .NET 10 in managed
+packs the local preview feed and runs LocalDraft.Tests under .NET 11 in managed
 and Native AOT modes. Renderer golden fixtures retain normalized pre-refactor
 payloads, including paging, forms, images, deep stacks and Back. The address-policy
 spec compares the prior implementation at CIDR boundaries and across seeded IPv4,

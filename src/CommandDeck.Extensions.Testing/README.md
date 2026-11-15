@@ -1,6 +1,6 @@
 # CommandDeck.Extensions.Testing
 
-Experimental author test helper, targeting .NET 10 with Native AOT support.
+Experimental author test helper, targeting .NET 11 with Native AOT support.
 It runs the real SDK over in-memory pipes and shares view validation, feature
 requirements and error codes with the protocol. It supplies deterministic storage,
 files, HTTP responses and clipboard recording. It does not emulate process isolation,

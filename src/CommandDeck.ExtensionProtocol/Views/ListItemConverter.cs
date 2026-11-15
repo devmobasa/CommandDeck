@@ -5,7 +5,7 @@ using CommandDeck.Extensions.Views;
 
 namespace CommandDeck.ExtensionProtocol;
 
-// Mutable wire members preserve omitted defaults under the .NET 10 source generator.
+// Mutable wire members preserve omitted defaults under the source generator.
 public sealed class ListItemConverter : JsonConverter<ListItem>
 {
     public override ListItem Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options )

@@ -68,7 +68,7 @@
         "dependencies": {
           "AngleSharp": "[1.10.3, )",
           "CommandDeck.Core": "[1.0.0, )",
-          "CommandDeck.ExtensionProtocol": "[0.1.0-preview.6, )",
+          "CommandDeck.ExtensionProtocol": "[0.1.0-preview.7, )",
           "Microsoft.Data.Sqlite": "[11.0.0, )",
           "Tmds.DBus.Protocol": "[0.95.2, )"
         }

@@ -1,7 +1,7 @@
 # Search Notebook
 
-A .NET 10 Native AOT example of one saved note with an explicit search provider.
-It uses SDK `0.1.0-preview.6`. Its search child receives only the saved projection;
+A .NET 11 Native AOT example of one saved note with an explicit search provider.
+It uses SDK `0.1.0-preview.7`. Its search child receives only the saved projection;
 opening the result starts a fresh interactive command.
 
 Build from the checkout:

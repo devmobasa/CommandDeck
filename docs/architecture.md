@@ -27,7 +27,7 @@ flowchart LR
 | `CommandDeck.Extensions.Testing` | In-memory author tests using the real SDK; no daemon dependency or isolation claim |
 | `CommandDeck.ExtensionTools` | Experimental project creation/build/package/development tools |
 
-The backend targets `net11.0`; the public extension packages target `net10.0`.
+The backend and the public extension packages target `net11.0`.
 The app is designed for Native AOT. JSON wire types use explicit serialization
 contexts. `Directory.Packages.props` and lock files keep dependency versions
 reviewable.

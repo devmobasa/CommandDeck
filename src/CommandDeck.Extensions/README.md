@@ -1,6 +1,6 @@
 # CommandDeck.Extensions
 
-Experimental .NET 10 author SDK for CommandDeck command processes. Register
+Experimental .NET 11 author SDK for CommandDeck command processes. Register
 `IExtensionCommand` instances with `ExtensionApp.RunAsync(args, commands)` and
 publish typed views with `context.Views.ReplaceAsync(view, cancellationToken)`.
 Use `PushAsync` for List/Detail navigation and handle `PageRequested` to replace a
@@ -57,6 +57,13 @@ it cannot use `CommandContext`, brokers, or persistent writes. A selected result
 opens the declared command with `searchItemId` and `searchContext` inputs.
 `samples/extensions/SearchNotebook` demonstrates the full workflow. See
 [search preview](../../docs/extensions/search.md) for budgets and query consent.
+
+## Migrating to preview.7
+
+Preview.7 targets .NET 11; the API and the child wire shapes do not change.
+Set `TargetFramework` to `net11.0` and `LangVersion` to `15.0`, reference
+`0.1.0-preview.7`, and pin SDK `11.0.100` with `latestPatch` in `global.json`.
+`commanddeck-ext` `0.1.0-preview.8` creates projects with these settings.
 
 ## Migrating to preview.6
 

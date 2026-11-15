@@ -8,15 +8,15 @@ installation-scoped persistent storage. The [connection preview](connections.md)
 adds selected-file access, scoped HTTP and host-owned credentials. UUID Tools and Local Draft are examples
 built outside the daemon source tree. Validate their actual desktop journeys
 against matching installed host and renderer artifacts.
-The SDK targets .NET 10; the daemon
+The SDK targets .NET 11; the daemon
 retains the SDK pinned in the repository's `global.json`. The NuGet packages are
 a local preview feed, not a public compatibility release.
 
 ## Prerequisites
 
-- The repository's .NET SDK and .NET SDK **10.0.403**, installed side by side.
-  Building the SDK feed needs exactly 10.0.403. A project that `new` creates
-  also builds with a later 10.0.4xx patch.
+- The repository's .NET SDK and .NET SDK **11.0.100**, installed side by side
+  (today the repository pins 11.0.100 too). Building the SDK feed needs exactly
+  11.0.100. A project that `new` creates also builds with a later 11.0.1xx patch.
 - Linux x64 with Native AOT build prerequisites (Clang and the native development
   libraries used by the .NET SDK).
 - To run: a matching published CommandDeck daemon and repository renderer,
@@ -39,7 +39,7 @@ does not require copying source from the checkout. From the repository root:
 repo_dir="$PWD"
 feed="$repo_dir/artifacts/extensions/author-tools/feed"
 dotnet scripts/build-extension-sdk.cs --output "$feed"
-dotnet tool install CommandDeck.ExtensionTools --version 0.1.0-preview.7 \
+dotnet tool install CommandDeck.ExtensionTools --version 0.1.0-preview.8 \
   --tool-path /tmp/commanddeck-author-tools --add-source "$feed"
 /tmp/commanddeck-author-tools/commanddeck-ext new \
   --directory /tmp/my-commanddeck-draft --id org.example.my-draft \
@@ -51,7 +51,7 @@ dotnet tool install CommandDeck.ExtensionTools --version 0.1.0-preview.7 \
 ```
 
 `new` refuses existing directories and writes the SDK band, mapped preview feed,
-project, manifest, and source. The template requests SDK `0.1.0-preview.6`, which
+project, manifest, and source. The template requests SDK `0.1.0-preview.7`, which
 includes the data APIs it uses; cached `0.1.0-preview.1` packages cannot satisfy
 that reference. SDK and tooling changes must get new package versions instead
 of replacing existing preview versions with different bytes. This also protects
@@ -215,7 +215,7 @@ cd /tmp/commanddeck-uuid-author
 Create `global.json` in that author directory:
 
 ```json
-{"sdk":{"version":"10.0.403","rollForward":"latestPatch"}}
+{"sdk":{"version":"11.0.100","rollForward":"latestPatch"}}
 ```
 
 Create `NuGet.Config`, replacing `ABSOLUTE_REPOSITORY_PATH` with the checkout

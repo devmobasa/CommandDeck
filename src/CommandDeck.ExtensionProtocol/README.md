@@ -1,7 +1,7 @@
 # CommandDeck.ExtensionProtocol
 
 Experimental bounded JSON-RPC contracts and duplex transport for CommandDeck
-extension processes. Targets .NET 10 and supports source-generated serialization
+extension processes. Targets .NET 11 and supports source-generated serialization
 and Native AOT without referencing daemon assemblies.
 
 This package defines protocol frames, cancellation, handshakes, manifests, and
@@ -18,7 +18,7 @@ Preview.6 introduces typed action and field APIs and immutable sequences while
 preserving existing JSON field names, defaults, and ordering. Views retain the
 strict leading `kind` discriminator. Action and field converters accept the
 established wire order and reject unknown kinds or unrelated payload properties.
-Source-generated boundary DTOs retain omitted-field defaults under .NET 10;
+Source-generated boundary DTOs retain omitted-field defaults under .NET 11;
 the public author records use `init`. No reflection is required.
 
 `errors.codes@1` is an optional handshake feature: both peers must confirm support

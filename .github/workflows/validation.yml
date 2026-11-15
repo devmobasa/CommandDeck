@@ -24,8 +24,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
         with:
-          # The independent SDK consumer builds with the exact .NET 10 SDK it pins.
-          dotnet-version: 10.0.403
+          # The independent SDK consumer builds with the exact .NET 11 SDK it pins.
+          dotnet-version: 11.0.100
           global-json-file: global.json
       - name: Install validation tools
         run: |
