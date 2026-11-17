@@ -180,6 +180,13 @@ public sealed class LauncherPreferences
                 EnabledInSearch = true,
                 EnabledOnHome = false,
                 Position = 20
+            },
+            new( )
+            {
+                SourceId = SourceIds.Themes,
+                EnabledInSearch = true,
+                EnabledOnHome = false,
+                Position = 21
             }
         ]
     };
@@ -346,7 +353,8 @@ public static class LauncherSourceRegistry
         new( ) { Id = SourceIds.WebSearch, Label = "Web Search", Icon = "internet-web-browser" },
         new( ) { Id = SourceIds.Emoji, Label = "Emoji", Icon = "face-smile" },
         new( ) { Id = SourceIds.DesktopControls, Label = "Desktop controls", Icon = "preferences-desktop" },
-        new( ) { Id = SourceIds.Processes, Label = "Processes", Icon = "utilities-system-monitor" }
+        new( ) { Id = SourceIds.Processes, Label = "Processes", Icon = "utilities-system-monitor" },
+        new( ) { Id = SourceIds.Themes, Label = "Themes", Icon = "preferences-desktop-theme" }
     ];
 
     public static IReadOnlyList<SourceDescriptor> Configurable => ConfigurableDescriptors;
@@ -489,7 +497,9 @@ public static partial class FilterAliasValidator
     [GeneratedRegex( AliasValidator.Pattern, RegexOptions.CultureInvariant )]
     private static partial Regex ValidAliasRegex( );
 
-    public static string NormalizeAndValidate( string alias )
+    // A saved alias, for example one being removed, may use a name reserved
+    // after it was saved; see SearchFilterRegistry.IsReservedForSavedAlias.
+    public static string NormalizeAndValidate( string alias, bool saved = false )
     {
         var value = alias
             .Trim( )
@@ -501,7 +511,7 @@ public static partial class FilterAliasValidator
             throw new InvalidOperationException( "Filter aliases must be 1-32 ASCII letters, digits, dots, underscores, or hyphens." );
         }
 
-        if ( SearchFilterRegistry.IsReserved( value ) )
+        if ( saved ? SearchFilterRegistry.IsReservedForSavedAlias( value ) : SearchFilterRegistry.IsReserved( value ) )
         {
             throw new InvalidOperationException( $"Filter alias '{value}' conflicts with built-in launcher syntax." );
         }
@@ -545,7 +555,9 @@ public static partial class AliasValidator
     [GeneratedRegex( Pattern, RegexOptions.CultureInvariant )]
     private static partial Regex ValidAliasRegex( );
 
-    public static string NormalizeAndValidate( string alias )
+    // A saved alias may use a name reserved after it was saved; a new or
+    // changed one may not. See SearchFilterRegistry.IsReservedForSavedAlias.
+    public static string NormalizeAndValidate( string alias, bool saved = false )
     {
         var value = alias.Trim( );
         if ( !ValidAliasRegex( )
@@ -554,7 +566,7 @@ public static partial class AliasValidator
             throw new InvalidOperationException( InvalidMessage );
         }
 
-        if ( SearchFilterRegistry.IsReserved( value ) )
+        if ( saved ? SearchFilterRegistry.IsReservedForSavedAlias( value ) : SearchFilterRegistry.IsReserved( value ) )
         {
             throw new InvalidOperationException( ReservedMessage.Replace( "{0}", value, StringComparison.Ordinal ) );
         }

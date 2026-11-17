@@ -35,9 +35,10 @@ items, open windows, and Omarchy controls.
 ### Sources
 
 A source is one kind of result. CommandDeck has sources for apps, files, config
-keys, windows and workspaces, Omarchy menus, desktop controls, processes, user
-services, projects, snippets, script commands, clipboard history, Herdr, HEY
-mail, quicklinks, web search, time zones, emoji, the calculator, and AI.
+keys, windows and workspaces, Omarchy menus, Omarchy themes, desktop controls,
+processes, user services, projects, snippets, script commands, clipboard
+history, Herdr, HEY mail, quicklinks, web search, time zones, emoji, the
+calculator, and AI.
 
 A prefix limits a search to one source. For example, `app: firefox` finds only
 apps. Type `?` to see every prefix with an example. In Settings, you can turn

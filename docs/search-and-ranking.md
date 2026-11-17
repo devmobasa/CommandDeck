@@ -175,6 +175,7 @@ a query preserves its expression; clipboard and HEY privacy checks still apply.
 | `agents:` / `hagents:` / `herdr-agents:` | Every Herdr agent across spaces, most urgent first |
 | `ctl:` / `control:` / `controls:` | built-in desktop controls; they also match plain search |
 | `kill:` / `proc:` / `process:` / `processes:` | the user's own processes; plain search offers only a row that opens this list |
+| `theme:` / `themes:` | installed Omarchy themes; plain search offers only a row that opens this list |
 | `=` | calculator |
 | `>` | command mode: a **Run** row for a program on PATH, then command-oriented providers |
 | `@provider` | explicit provider ID |

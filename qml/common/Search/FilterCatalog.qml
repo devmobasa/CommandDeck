@@ -54,6 +54,7 @@ QtObject {
     [Ui.QueryPrefix.Web]: "web: wayland layer shell",
     [Ui.QueryPrefix.Emoji]: "emoji: rocket",
     [Ui.QueryPrefix.EmojiShort]: "e: rocket",
+    [Ui.QueryPrefix.Theme]: "theme: tokyo",
     [Ui.QueryPrefix.Calculator]: "= 100 km to miles",
     [Ui.QueryPrefix.Run]: "> htop"
   })

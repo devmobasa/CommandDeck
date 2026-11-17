@@ -230,6 +230,7 @@ var ResultKinds = Object.freeze({
   Setting: "setting",
   Status: "status",
   Tab: "tab",
+  Theme: "theme",
   Timezone: "timezone",
   WebSearch: "web-search",
   Window: "window",
@@ -258,6 +259,7 @@ var SearchFilterIds = Object.freeze({
   Services: "services",
   Snippets: "snippets",
   SystemMenu: "system-menu",
+  Themes: "themes",
   Timezone: "timezone",
   WebSearch: "web-search",
   Windows: "windows",
@@ -286,6 +288,7 @@ var SourceIds = Object.freeze({
   Snippets: "snippets",
   Status: "status",
   SystemdUnits: "systemd-units",
+  Themes: "themes",
   Timezone: "timezone",
   WebSearch: "web-search",
   WindowsWorkspaces: "windows-workspaces"
@@ -322,6 +325,7 @@ var ProviderIds = Object.freeze({
   Settings: "settings",
   Snippets: "snippets",
   SystemdUnits: "systemd-units",
+  Themes: "themes",
   Timezone: "timezone",
   WebSearch: "web-search"
 });
@@ -668,6 +672,9 @@ var ResultMetadataKeys = Object.freeze({
   Section: "section",
   Source: "source",
   SourceGroup: "sourceGroup",
+  ThemeCurrent: "themeCurrent",
+  ThemeName: "themeName",
+  ThemePreview: "themePreview",
   Value: "value",
   ValueColumn: "valueColumn",
   ValueLine: "valueLine",

@@ -33,6 +33,7 @@ public static class ProviderIds
     public const string Scripts = "scripts";
     public const string Snippets = "snippets";
     public const string SystemdUnits = "systemd-units";
+    public const string Themes = "themes";
     public const string Settings = "settings";
     public const string Timezone = "timezone";
     public const string WebSearch = "web-search";

@@ -57,6 +57,7 @@ Rectangle {
       case Protocol.ResultKinds.Quicklink: return ["internet-web-browser"]
       case Protocol.ResultKinds.CustomCommand: return ["utilities-terminal", "system-run"]
       case Protocol.ResultKinds.Process: return ["utilities-system-monitor", "system-run"]
+      case Protocol.ResultKinds.Theme: return ["preferences-desktop-theme", "preferences-desktop"]
       default: return []
     }
   }
@@ -96,6 +97,7 @@ Rectangle {
       case Protocol.ResultKinds.Assistant: return "✦"
       case Protocol.ResultKinds.Omarchy: return "O"
       case Protocol.ResultKinds.Process: return "◉"
+      case Protocol.ResultKinds.Theme: return "◐"
       default: return "•"
     }
   }

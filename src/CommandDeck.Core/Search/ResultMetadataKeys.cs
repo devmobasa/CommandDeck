@@ -51,6 +51,12 @@ public static class ResultMetadataKeys
     public const string OmarchyMenuPath = "omarchyMenuPath";
     public const string OmarchyMenuItems = "omarchyMenuItems";
 
+    // Omarchy theme rows: the folder name omarchy-theme-set takes, the theme's
+    // preview image, and "true" on the theme in use (the row shows ✓ Current).
+    public const string ThemeName = "themeName";
+    public const string ThemePreview = "themePreview";
+    public const string ThemeCurrent = "themeCurrent";
+
     // The file or folder a row stands for.
     public const string Path = "path";
 

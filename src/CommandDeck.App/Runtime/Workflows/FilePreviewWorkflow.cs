@@ -27,6 +27,17 @@ internal sealed class FilePreviewWorkflow(
             return FilePreviewOutcome.Failure( "The result expired. Search again before previewing it." );
         }
 
+        // A theme row previews the image its provider found for it, which must
+        // stay inside that theme's folder.
+        if ( string.Equals( cached.Result.Kind, ResultKinds.Theme, StringComparison.Ordinal ) )
+        {
+            return cached.Result.Metadata.TryGetValue( ResultMetadataKeys.ThemePreview, out var image )
+                ? await previews
+                    .ReadImageAsync( image, OmarchyThemeCatalog.PreviewRoot( image ), cancellationToken )
+                    .ConfigureAwait( false )
+                : FilePreviewOutcome.Failure( "This theme has no preview image." );
+        }
+
         if ( !string.Equals( cached.Result.Kind, ResultKinds.File, StringComparison.Ordinal ) ||
              !cached.Result.Metadata.TryGetValue( ResultMetadataKeys.Path, out var path ) )
         {

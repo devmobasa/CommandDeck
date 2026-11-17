@@ -34,6 +34,10 @@ public static class CapabilityRegistry
             "for a `kill:` search"),
             "SIGTERM or SIGKILL through a pidfd to the chosen process after its PID, start time, and owner are checked again",
             "Confirmed Terminate or Force kill naming the PID and process", "Cancel the confirmation; disable the Processes source" ),
+        new( "Omarchy themes", "On", ("Theme folder and preview file names and the current theme name, only for a `theme:` search; " +
+            "the selected theme's preview image"),
+            "`omarchy-theme-set` with the theme's folder name, started detached in the user session",
+            "Explicit Enter on Apply Theme", "Disable the Themes source" ),
         new( "Color picker", "On when hyprpicker is installed", "Screen pixels, inside hyprpicker after the launcher closes",
             "The picked color to the clipboard through hyprpicker --autocopy", "Explicit Enter on Pick Color; a 300 ms user timer starts hyprpicker",
             "Escape in hyprpicker; disable the Desktop controls source" ),

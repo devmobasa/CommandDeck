@@ -10,7 +10,7 @@ public sealed partial class SqliteCatalog : IQuicklinkStore
 
     public async ValueTask ConfigureQuicklinksAsync( IReadOnlyList<QuicklinkOptions> configured, CancellationToken cancellationToken )
     {
-        QuicklinkValidator.ValidateUnique( configured );
+        QuicklinkValidator.ValidateUnique( configured, savedAliases: true );
         var previous = _configuredQuicklinks;
         _configuredQuicklinks = configured.ToArray( );
 
@@ -61,7 +61,8 @@ public sealed partial class SqliteCatalog : IQuicklinkStore
                 throw new InvalidOperationException( "quicklinks.save requires quicklink." );
             }
 
-            QuicklinkValidator.Validate( quicklink );
+            // Whether the alias is new or changed is known once the stored link is read.
+            QuicklinkValidator.Validate( quicklink, savedAlias: true );
             id = quicklink.Id;
         }
         else if ( RequiresQuicklinkId( action, id ) )
@@ -156,11 +157,18 @@ public sealed partial class SqliteCatalog : IQuicklinkStore
                     throw new InvalidOperationException( $"Quicklink ID '{id}' is configured more than once." );
                 }
 
+                // A new or changed alias may not use any reserved name; an edit
+                // may keep the alias the link was saved with.
+                if ( quicklink!.Alias is not null && !string.Equals( quicklink.Alias, user?.Quicklink.Alias, StringComparison.Ordinal ) )
+                {
+                    AliasValidator.NormalizeAndValidate( quicklink.Alias );
+                }
+
                 QuicklinkValidator.ValidateUnique( (_configuredQuicklinks ?? [])
                     .Concat( before
                         .Quicklinks.Where( entry => entry.Source == QuicklinkSources.User && entry != user )
                         .Select( entry => entry.Quicklink ) )
-                    .Append( quicklink! ) );
+                    .Append( quicklink ), savedAliases: true );
 
                 if ( IsUserQuicklinkCapacityReached( user, before ) )
                 {
@@ -255,7 +263,7 @@ public sealed partial class SqliteCatalog : IQuicklinkStore
         List<QuicklinkEntry> links = MergeQuicklinkEntries( disabled, state );
 
         // A new configuration cannot silently take over a stored user identity or alias.
-        QuicklinkValidator.ValidateUnique( links.Select( entry => entry.Quicklink ) );
+        QuicklinkValidator.ValidateUnique( links.Select( entry => entry.Quicklink ), savedAliases: true );
 
         command.CommandText = "SELECT NULLIF(value,'') FROM launcher_preferences WHERE key='web_fallback_quicklink_id';";
 
@@ -281,8 +289,10 @@ public sealed partial class SqliteCatalog : IQuicklinkStore
         {
             if ( entry.Quicklink.Alias is { } alias )
             {
+                // Every link is checked here, including ones saved before a name
+                // was reserved; a new or changed alias was checked strictly on save.
                 await EnsureAliasAvailableAsync( connection, transaction, alias, QuicklinkAliasNamespace, entry.Quicklink.Id, _configuredQuicklinks ?? [],
-                        cancellationToken )
+                        savedAlias: true, cancellationToken )
                     .ConfigureAwait( false );
             }
         }

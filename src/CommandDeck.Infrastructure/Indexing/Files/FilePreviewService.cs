@@ -53,11 +53,13 @@ public sealed partial class FilePreviewService
     };
 
     private readonly IndexExclusionPolicy _exclusions;
+    private readonly PathPolicy _privacy;
     private readonly ImagePreviewRenderer _images;
 
     public FilePreviewService( IndexingOptions indexing, PrivacyOptions privacy, ImagePreviewRenderer? images = null )
     {
         _exclusions = new IndexExclusionPolicy( indexing, privacy );
+        _privacy = new PathPolicy( privacy );
         _images = images ?? new ImagePreviewRenderer( );
     }
 

@@ -136,6 +136,12 @@ public static class CodexBinaryLocator
 
             var target = info.ResolveLinkTarget( returnFinalTarget: true );
 
+            // A link left behind by an uninstalled CLI points at nothing.
+            if ( target is { Exists: false } )
+            {
+                throw new AiOperationException( AiErrorCategories.Unavailable, safeSummary: "The CLI binary link points to a missing file." );
+            }
+
             return Path.GetFullPath( target?.FullName ?? info.FullName );
         }
         catch ( IOException )
@@ -146,7 +152,18 @@ public static class CodexBinaryLocator
 
     public static string ValidateOwnership( string canonicalPath )
     {
-        using var file = SafeRegularFile.Open( canonicalPath, followLeafSymbolicLink: false );
+        SafeRegularFile opened;
+
+        try
+        {
+            opened = SafeRegularFile.Open( canonicalPath, followLeafSymbolicLink: false );
+        }
+        catch ( InvalidOperationException )
+        {
+            throw new AiOperationException( AiErrorCategories.Unavailable, safeSummary: "The CLI binary could not be opened." );
+        }
+
+        using var file = opened;
         if ( !LinuxMountIdentity.TryGetOwnership( file.Handle, out var owner, out var permissions ) )
         {
             throw new AiOperationException( AiErrorCategories.Unavailable, safeSummary: "The Codex binary identity could not be read." );

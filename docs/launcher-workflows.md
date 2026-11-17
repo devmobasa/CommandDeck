@@ -417,6 +417,33 @@ again; CommandDeck does not repeat an uncertain edit automatically.
 Without the module, Hyprland can intercept keys during recording. Manually configured launcher hotkeys
 stay read-only; run `commanddeck hotkey install` to let Settings manage the launcher hotkey.
 
+## Switch theme
+
+Type `theme:` (also `themes:`) to list the installed Omarchy themes by name. The
+list comes from the folders that `omarchy-theme-list` reads. A theme in
+`~/.config/omarchy/themes` replaces the Omarchy theme with the same name. The theme
+in use reads **✓ Current**. Add text to filter: `theme: tokyo`. In plain search,
+`theme`, `switch theme`, or `theme tokyo` offers one **Switch Theme** row that
+opens this list; ordinary typing never reads the theme folders.
+
+The list has these limits:
+
+- Only folder names that `omarchy-theme-set` takes as they are are listed. A name
+  starts with a lowercase letter or digit, has at most 128 characters, and uses
+  only lowercase letters, digits, `.`, `_`, and `-`. Omarchy can list other names,
+  such as one that starts with `_`.
+- The list shows at most 512 themes.
+- The preview pane shows the theme's `preview.*` image, or else the first image in
+  its `backgrounds` folder. The image must be PNG, JPEG, WebP, GIF, or BMP, at most
+  16 MiB, and inside the theme folder. A link that points outside the theme folder,
+  or into a never-index path, shows no image. Video previews, which Omarchy's
+  picker can play, are not shown.
+
+**Enter** runs **Apply Theme** (**Reapply Theme** on the current one): it starts
+`omarchy-theme-set <name>` detached in your session, as Omarchy's own theme picker
+does, and closes the launcher. The action menu also offers **Open Theme Folder**
+and **Copy Theme Name**.
+
 ## Kill process
 
 Type `kill:` (also `proc:` or `process:`) to list your own processes, largest

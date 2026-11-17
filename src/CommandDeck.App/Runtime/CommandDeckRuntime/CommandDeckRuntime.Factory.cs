@@ -152,7 +152,8 @@ public sealed partial class CommandDeckRuntime
                     new DesktopControlsProvider( ),
                     new SettingsProvider( ),
                     new RunCommandProvider( ),
-                    new ProcessProvider( )
+                    new ProcessProvider( ),
+                    new OmarchyThemeProvider( )
                 ];
 
                 if ( clipboardProvider is not null )

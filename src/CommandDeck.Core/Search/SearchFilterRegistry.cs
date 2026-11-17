@@ -45,7 +45,9 @@ public static class SearchFilterRegistry
         Filter( SearchFilterIds.DesktopControls, "Desktop controls", "ctl:", ProviderIds.DesktopControls, SourceIds.DesktopControls, null,
             "control:", "controls:" ),
         Filter( ProcessResultIds.FilterId, "Processes", "kill:", ProviderIds.Processes, SourceIds.Processes, ResultKinds.Process,
-            "proc:", "process:", "processes:" )
+            "proc:", "process:", "processes:" ),
+        Filter( SearchFilterIds.Themes, "Themes", "theme:", ProviderIds.Themes, SourceIds.Themes, ResultKinds.Theme,
+            "themes:" )
     ];
 
     private static readonly Dictionary<string, FilterDescriptor> ById = Descriptors.ToDictionary( static value => value.Id, StringComparer.OrdinalIgnoreCase );
@@ -58,6 +60,20 @@ public static class SearchFilterRegistry
             StringComparer.OrdinalIgnoreCase );
 
     private static readonly string[] ReservedKeywords = ["home", "settings"];
+
+    // The names the first release, v0.1.0-preview.1, reserved. Each later
+    // release reserves the names of the filters it adds, and an alias saved
+    // before then may already use one: "agents" in preview.2, "theme" after it.
+    // Saved aliases, backups, and the configuration file are checked against
+    // this list, so they keep loading; a new or changed alias may not use any
+    // reserved name. A built-in filter still wins over a filter alias it shadows.
+    private static readonly string[] FirstReleaseReservedAliases =
+    [
+        "ai", "app", "ask", "browse", "cfg", "claude", "clip", "cmd", "codex", "config", "control", "controls", "ctl", "cursor", "e", "emoji",
+        "file", "files", "grok", "hattention", "herdr", "herdr-attention", "herdr-space", "herdr-tab", "hey", "home", "hspace", "hspaces", "htab",
+        "htabs", "kill", "link", "mail", "oma", "proc", "process", "processes", "proj", "script", "service", "settings", "snip", "svc", "system",
+        "text", "time", "tz", "unit", "web", "win", "window", "workspace", "workspaces", "ws"
+    ];
 
     public static IReadOnlyList<FilterDescriptor> All => Descriptors;
 
@@ -93,6 +109,11 @@ public static class SearchFilterRegistry
 
     public static bool IsReserved( string value ) =>
         FindByToken( value ) is not null || ReservedKeywords.Contains( value, StringComparer.OrdinalIgnoreCase );
+
+    // Whether an alias that was already saved, or written in the configuration
+    // file, clashes with launcher syntax: only a name reserved since the first release does.
+    public static bool IsReservedForSavedAlias( string value ) =>
+        IsReserved( value ) && FirstReleaseReservedAliases.Contains( NormalizeToken( value ), StringComparer.OrdinalIgnoreCase );
 
     public static bool Matches( FilterDescriptor filter, SearchResult result ) =>
         string.Equals( filter.SourceId, result.SourceId, StringComparison.Ordinal ) &&

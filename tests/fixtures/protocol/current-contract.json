@@ -637,6 +637,17 @@
       "providerId": "processes",
       "sourceId": "processes",
       "kind": "process"
+    },
+    {
+      "id": "themes",
+      "label": "Themes",
+      "token": "theme:",
+      "aliases": [
+        "themes:"
+      ],
+      "providerId": "themes",
+      "sourceId": "themes",
+      "kind": "theme"
     }
   ],
   "sources": [
@@ -758,6 +769,12 @@
       "id": "processes",
       "label": "Processes",
       "icon": "utilities-system-monitor",
+      "homeAvailable": true
+    },
+    {
+      "id": "themes",
+      "label": "Themes",
+      "icon": "preferences-desktop-theme",
       "homeAvailable": true
     }
   ]

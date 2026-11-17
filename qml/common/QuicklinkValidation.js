@@ -18,7 +18,11 @@ function validate(link, entries) {
   if (link.alias) {
     const alias = link.alias.trim()
     if (!new RegExp(Rules.aliasPattern).test(alias)) return Rules.aliasMessage
-    if (Rules.reservedAliases.indexOf(alias.toLowerCase()) >= 0)
+    // An edit may keep the alias the link was saved with, even when a later
+    // release reserved that name; a new or changed alias may not use one.
+    const saved = (entries || []).find(entry => entry.quicklink.id === link.id)
+    const unchanged = !!saved && saved.quicklink.alias === alias
+    if (!unchanged && Rules.reservedAliases.indexOf(alias.toLowerCase()) >= 0)
       return Rules.reservedAliasMessage.replace("{0}", alias)
     if (alias !== link.alias) return Rules.aliasMessage
   }

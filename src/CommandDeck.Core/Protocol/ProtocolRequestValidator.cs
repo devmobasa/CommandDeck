@@ -91,7 +91,9 @@ public static partial class ProtocolRequestValidator
 
         if ( request.Quicklink is not null )
         {
-            QuicklinkValidator.Validate( request.Quicklink );
+            // The quicklink store checks a new or changed alias against every
+            // reserved name; an edit may keep an alias saved before its name was reserved.
+            QuicklinkValidator.Validate( request.Quicklink, savedAlias: true );
         }
 
         ValidateSavedSearch( request, registry, deferFilterResolution );

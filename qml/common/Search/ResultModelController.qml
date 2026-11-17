@@ -144,6 +144,8 @@ QtObject {
         === nextMetadata[Protocol.ResultMetadataKeys.OmarchyMenuItems]
       && previousMetadata[Protocol.ResultMetadataKeys.Keybinding]
         === nextMetadata[Protocol.ResultMetadataKeys.Keybinding]
+      && previousMetadata[Protocol.ResultMetadataKeys.ThemeCurrent]
+        === nextMetadata[Protocol.ResultMetadataKeys.ThemeCurrent]
       && sameList(previous.aliases, next.aliases, (left, right) => left === right)
       && sameList(previous.matchedRanges, next.matchedRanges,
         (left, right) => left.start === right.start && left.length === right.length)

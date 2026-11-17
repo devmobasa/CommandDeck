@@ -96,31 +96,41 @@ Item {
             child.Layout.bottomMargin = Math.round(10 * root.theme.scale)
           }
         }
-        onChildrenChanged: Qt.callLater(padChildren)
+        // The dividers follow the children once per batch of changes. A
+        // Repeater adds its rows one at a time, and rebuilding every divider
+        // for each row took seconds for a list of 200 desktop shortcuts.
+        property var dividedRows: []
+        function divideRows() { content.dividedRows = Array.from(content.children) }
+        onChildrenChanged: {
+          Qt.callLater(padChildren)
+          Qt.callLater(divideRows)
+        }
         onImplicitHeightChanged: Qt.callLater(padChildren)
-        Component.onCompleted: Qt.callLater(padChildren)
+        Component.onCompleted: {
+          Qt.callLater(padChildren)
+          divideRows()
+        }
         Connections {
           target: root.theme
           function onScaleChanged() { content.padChildren() }
         }
       }
+      // A divider goes above each shown row that has a row above it. The rows'
+      // laid-out positions decide, not their order in the list, so a row that
+      // moves in place needs no new batch. The layout starts at 0 and skips
+      // hidden rows, so only the first shown row starts at its own top margin.
       Repeater {
-        model: content.children
+        model: content.dividedRows
         delegate: Rectangle {
+          // Null once the row is destroyed, until the next batch drops it.
           required property var modelData
-          required property int index
-          readonly property bool preceding: {
-            for (let before = 0; before < index; before++) {
-              const child = content.children[before]
-              if (child.visible && child.height > 0) return true
-            }
-            return false
-          }
+          readonly property real rowTop: modelData ? modelData.y - modelData.Layout.topMargin : 0
+          objectName: "settingsCardDivider"
           x: root.pad
-          y: modelData.y - (modelData.settingsRow === true ? 0 : Math.round(10 * root.theme.scale))
+          y: rowTop
           width: content.width
           height: 1
-          visible: preceding && modelData.visible && modelData.height > 0
+          visible: !!modelData && rowTop > 0.5 && modelData.visible && modelData.height > 0
           color: root.theme.separator
         }
       }

@@ -787,7 +787,11 @@ Both configuration and management use the same validation and error messages:
 IDs use 1–64 ASCII letters, digits, dots, underscores, or hyphens and start with
 a letter or digit. IDs and aliases are unique case-insensitively. Quicklink,
 bookmark, and filter aliases share a namespace; built-in launcher tokens are
-reserved. Titles use
+reserved. A new release can reserve more tokens, such as `theme`, when it adds a
+filter. An alias that you saved earlier, or wrote in the configuration file, then
+keeps working, and you can edit or remove it. A new or changed alias cannot use a
+reserved token. When a filter alias has the same name as a built-in filter, the
+built-in filter is used. Titles use
 1–64 characters, URL templates 1–2048, and optional icons 1–256; controls are
 rejected. Optional aliases use 1–32 ASCII letters, digits, dots, underscores,
 or hyphens and start with a letter or digit. URLs must be absolute HTTP or

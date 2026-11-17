@@ -48,6 +48,8 @@ Rectangle {
   readonly property int renderedMatchCount: matchedFields.renderedCount
   readonly property bool hasWindowPreview: windowPreview.hasPreview
   readonly property bool isFileResult: root.result && root.result.kind === Protocol.ResultKinds.File
+  // A theme row previews its image the way a file row previews an image file.
+  readonly property bool isPreviewResult: root.isFileResult || (root.result && root.result.kind === Protocol.ResultKinds.Theme)
   readonly property bool isCalculator: root.result && root.result.kind === Protocol.ResultKinds.Calculator
   readonly property string calcValue: root.result && root.result.title ? root.result.title : ""
   readonly property string calcInput: root.result && root.result.subtitle ? root.result.subtitle : ""
@@ -198,9 +200,9 @@ Rectangle {
 
         Layout.fillWidth: true
         theme: root.theme
-        preview: root.isFileResult ? root.filePreview : null
-        loading: root.isFileResult && root.previewLoading
-        error: root.isFileResult ? root.previewError : ""
+        preview: root.isPreviewResult ? root.filePreview : null
+        loading: root.isPreviewResult && root.previewLoading
+        error: root.isPreviewResult ? root.previewError : ""
         typingTarget: root.typingTarget
         previousTabStop: root.previousTabStop
         nextTabStop: root.nextTabStop

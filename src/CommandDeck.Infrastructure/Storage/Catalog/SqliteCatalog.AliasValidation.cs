@@ -7,9 +7,9 @@ public sealed partial class SqliteCatalog
     private const string QuicklinkAliasNamespace = "quicklink";
 
     internal static async ValueTask EnsureAliasAvailableAsync( SqliteConnection connection, SqliteTransaction transaction, string alias, string aliasNamespace,
-        string? ownerId, IReadOnlyList<QuicklinkOptions> configured, CancellationToken cancellationToken )
+        string? ownerId, IReadOnlyList<QuicklinkOptions> configured, bool savedAlias, CancellationToken cancellationToken )
     {
-        AliasValidator.NormalizeAndValidate( alias );
+        AliasValidator.NormalizeAndValidate( alias, savedAlias );
         var configuredConflict = HasConfiguredAliasConflict( configured, alias, aliasNamespace, ownerId );
         await using var command = connection.CreateCommand( );
         command.Transaction = transaction;

@@ -192,6 +192,7 @@ A prefix limits the search to one source:
 | `clip:` / `snip:` / `proj:` | Clipboard history, snippets, and projects |
 | `ctl:` / `kill:` / `svc:` | Desktop controls, your processes, and user services |
 | `link:` / `web:` / `tz:` / `emoji:` | Quicklinks, web search, time zones, and emoji |
+| `theme:` | Omarchy themes, with a preview image when the theme has one; Enter applies one |
 | `ai:` / `hey:` | The AI assistant and HEY mail |
 | `=` / `>` | The full calculator, and run a program |
 

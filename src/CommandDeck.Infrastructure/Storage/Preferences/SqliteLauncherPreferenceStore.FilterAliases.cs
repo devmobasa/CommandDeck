@@ -37,7 +37,8 @@ internal sealed partial class SqliteLauncherPreferenceStore
 
     public async ValueTask<IReadOnlyList<FilterAlias>> SetFilterAliasAsync( string aliasToken, string? filterId, CancellationToken cancellationToken )
     {
-        var normalizedAlias = FilterAliasValidator.NormalizeAndValidate( aliasToken );
+        // Removing names a saved alias, which may use a name reserved after it was saved.
+        var normalizedAlias = FilterAliasValidator.NormalizeAndValidate( aliasToken, saved: filterId is null );
         if ( HasBuiltinFilterAliasConflict( filterId, normalizedAlias ) )
         {
             throw new InvalidOperationException( "The filter alias conflicts with a registered source token." );
@@ -86,7 +87,7 @@ internal sealed partial class SqliteLauncherPreferenceStore
         {
             await SqliteCatalog
                 .EnsureAliasAvailableAsync( connection, transaction, normalizedAlias, FilterAliasNamespace, null, _configuredQuicklinks( ),
-                    cancellationToken )
+                    savedAlias: false, cancellationToken )
                 .ConfigureAwait( false );
 
             await EnsureFilterAliasCapacityAsync( connection, transaction, normalizedAlias, cancellationToken )

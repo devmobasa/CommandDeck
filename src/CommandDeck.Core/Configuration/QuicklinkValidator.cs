@@ -12,7 +12,10 @@ public static class QuicklinkValidator
     public const string UrlMessage = "Quicklink URL must be an absolute HTTP or HTTPS URL without credentials; only {query} placeholders are supported.";
     public static readonly string IconMessage = $"Quicklink icon must be 1-{MaximumIconCharacters} characters without controls.";
 
-    public static void Validate( QuicklinkOptions link )
+    // savedAlias: the link was saved earlier, or is written in the configuration
+    // file, so its alias may use a name reserved after that; see
+    // SearchFilterRegistry.IsReservedForSavedAlias.
+    public static void Validate( QuicklinkOptions link, bool savedAlias = false )
     {
         if ( link is null )
         {
@@ -34,7 +37,7 @@ public static class QuicklinkValidator
 
         if ( link.Alias is not null )
         {
-            var alias = AliasValidator.NormalizeAndValidate( link.Alias );
+            var alias = AliasValidator.NormalizeAndValidate( link.Alias, savedAlias );
             if ( alias != link.Alias )
             {
                 throw new InvalidOperationException( AliasValidator.InvalidMessage );
@@ -61,13 +64,13 @@ public static class QuicklinkValidator
         }
     }
 
-    public static void ValidateUnique( IEnumerable<QuicklinkOptions> links )
+    public static void ValidateUnique( IEnumerable<QuicklinkOptions> links, bool savedAliases = false )
     {
         HashSet<string> ids = new( StringComparer.OrdinalIgnoreCase );
         HashSet<string> aliases = new( StringComparer.OrdinalIgnoreCase );
         foreach ( var link in links )
         {
-            Validate( link );
+            Validate( link, savedAliases );
 
             if ( !ids.Add( link.Id ) )
             {

@@ -315,7 +315,8 @@ function requestPreview(root, result, matchIndex) {
   root.cancelPreview()
   if (matchIndex === undefined) root.filePreview = null
   root.previewError = ""
-  if (!root.opened || !root.previewPaneVisible || !result || result.kind !== Protocol.ResultKinds.File) {
+  const previewable = !!result && (result.kind === Protocol.ResultKinds.File || result.kind === Protocol.ResultKinds.Theme)
+  if (!root.opened || !root.previewPaneVisible || !previewable) {
     return
   }
 

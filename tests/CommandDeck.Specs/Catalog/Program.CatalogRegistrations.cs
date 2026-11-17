@@ -11,6 +11,9 @@ public static partial class Program
         await RunAsync( "quicklinks export restore and reset preserve portable state atomically", QuicklinkExportAndResetAsync );
         await RunAsync( "quicklinks migration upgrades existing catalogs beside independent preferences", QuicklinkMigrationPreservesExistingStateAsync );
         await RunAsync( "quicklinks storage atomically updates search aliases preferences and survives reopening", QuicklinkStorageIsAtomicAndPersistentAsync );
+        Run( "saved aliases keep names reserved after them, and new aliases cannot take one", SavedAliasesKeepNamesReservedAfterThem );
+        await RunAsync( "quicklinks and filter aliases saved before a name was reserved keep working",
+            QuicklinksAndFilterAliasesSavedBeforeANameWasReservedKeepWorkingAsync );
         await RunAsync( "quicklinks generation publication cannot restore stale rows", QuicklinkGenerationCannotRestoreStaleRowsAsync );
         await RunAsync( "an old catalog cancellation token cannot interrupt a later pooled borrower", OldCatalogTokenCannotInterruptLaterBorrowerAsync );
         await RunAsync( "home query probes items by stable id instead of scanning the catalog", HomeQueryProbesItemsInsteadOfScanningTheCatalogAsync );

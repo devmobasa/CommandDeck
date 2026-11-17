@@ -15,7 +15,7 @@ Rectangle {
     Calculator: "calc", Service: "service", Application: "app", File: "file",
     Configuration: "config", Window: "window", Command: "command", Ai: "ai",
     Link: "link", System: "system", Search: "search", Herdr: "herdr", Control: "control",
-    Process: "process", Menu: "menu"
+    Process: "process", Menu: "menu", Theme: "theme"
   })
 
   NumberAnimation on opacity {
@@ -85,7 +85,10 @@ Rectangle {
     && !!root.result.metadata[Protocol.ResultMetadataKeys.OmarchyMenu]
   readonly property string omarchyMenuItems: root.omarchySubmenu
     ? String(root.result.metadata[Protocol.ResultMetadataKeys.OmarchyMenuItems] || "") : ""
-  readonly property string kindCue: root.cueLabel(root.cueFamily)
+  // The theme in use reads "✓ Current" where other themes read "Theme".
+  readonly property bool currentTheme: !!root.result && !!root.result.metadata
+    && root.result.metadata[Protocol.ResultMetadataKeys.ThemeCurrent] === "true"
+  readonly property string kindCue: root.currentTheme ? "✓ Current" : root.cueLabel(root.cueFamily)
   readonly property bool hasKindCue: root.kindCue.length > 0
   // A calculator row leads its value with `=` in the accent colour so the answer
   // reads as an answer, not an echo of what was typed.
@@ -99,6 +102,8 @@ Rectangle {
       case Protocol.SourceIds.Herdr: return root.cueFamilies.Herdr
       case Protocol.SourceIds.DesktopControls: return root.cueFamilies.Control
       case Protocol.SourceIds.Processes: return root.cueFamilies.Process
+      case Protocol.SourceIds.Themes:
+        return kind === Protocol.ResultKinds.Theme ? root.cueFamilies.Theme : root.cueFamilies.Command
     }
     switch (kind) {
       case Protocol.ResultKinds.Application: return root.cueFamilies.Application
@@ -135,6 +140,7 @@ Rectangle {
       case root.cueFamilies.Control: return "Control"
       case root.cueFamilies.Process: return "Process"
       case root.cueFamilies.Menu: return "Menu"
+      case root.cueFamilies.Theme: return "Theme"
       default: return ""
     }
   }

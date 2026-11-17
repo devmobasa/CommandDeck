@@ -96,4 +96,48 @@ public static partial class Program
             Directory.Delete( root, recursive: true );
         }
     }
+
+    // A CLI uninstalled without its link leaves the link pointing at nothing; the
+    // doctor reports that assistant as unavailable instead of failing as a whole.
+    private static void CliDiscoveryReportsALinkToAMissingBinaryAsUnavailable( )
+    {
+        if ( !OperatingSystem.IsLinux( ) )
+        {
+            throw new SpecSkippedException( "This fixture requires Linux." );
+        }
+
+        var root = SpecTemporaryFiles.PathFor( $"commanddeck-cli-dangling-{Guid.NewGuid( ):N}" );
+        Directory.CreateDirectory( root );
+
+        try
+        {
+            var link = Path.Combine( root, "cursor-agent" );
+            File.CreateSymbolicLink( link, Path.Combine( root, "removed", "cursor-agent" ) );
+
+            var dangling = UnavailableSummary( ( ) => CliAgentBinaryLocator.Locate( new ClaudeCodeProfile( ), link ) );
+            Equal( "The CLI binary link points to a missing file.", dangling );
+            var absent = UnavailableSummary( ( ) => CodexBinaryLocator.ValidateOwnership( Path.Combine( root, "absent" ) ) );
+            Equal( "The CLI binary could not be opened.", absent );
+        }
+        finally
+        {
+            Directory.Delete( root, recursive: true );
+        }
+
+        static string? UnavailableSummary( Func<object> locate )
+        {
+            try
+            {
+                locate( );
+            }
+            catch ( AiOperationException exception )
+            {
+                Equal( AiErrorCategories.Unavailable, exception.Category );
+
+                return exception.SafeSummary;
+            }
+
+            throw new InvalidOperationException( "The locator accepted a missing binary." );
+        }
+    }
 }

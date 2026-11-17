@@ -393,6 +393,7 @@ Generated from Core protocol constants and registries. Run `scripts/generate-pro
 | `emoji` | `emoji:` | `e:` |
 | `desktop-controls` | `ctl:` | `control:`, `controls:` |
 | `processes` | `kill:` | `proc:`, `process:`, `processes:` |
+| `themes` | `theme:` | `themes:` |
 
 ## Configurable sources
 
@@ -416,3 +417,4 @@ Generated from Core protocol constants and registries. Run `scripts/generate-pro
 - `emoji` — Emoji
 - `desktop-controls` — Desktop controls
 - `processes` — Processes
+- `themes` — Themes

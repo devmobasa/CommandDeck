@@ -25,6 +25,7 @@ public static class ResultKinds
     public const string Tab = "tab";
     public const string Mail = "mail";
     public const string Process = "process";
+    public const string Theme = "theme";
 }
 
 public static class SourceIds
@@ -53,6 +54,7 @@ public static class SourceIds
     public const string DesktopControls = "desktop-controls";
     public const string Processes = "processes";
     public const string Settings = "settings";
+    public const string Themes = "themes";
 
     public static readonly IReadOnlySet<string> All = new HashSet<string>( StringComparer.Ordinal )
     {
@@ -79,7 +81,8 @@ public static class SourceIds
         Herdr,
         Hey,
         DesktopControls,
-        Processes
+        Processes,
+        Themes
     };
 }
 

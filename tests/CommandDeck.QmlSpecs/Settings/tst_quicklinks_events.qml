@@ -127,6 +127,17 @@ Item {
       compare(error, data.error)
     }
 
+    // A link saved before "theme" was reserved can still be edited; a new or
+    // renamed alias cannot take a reserved name.
+    function test_an_edit_keeps_an_alias_saved_before_its_name_was_reserved() {
+      const saved = [{ quicklink: { id: "themes-site", alias: "theme" } }]
+      const link = alias => ({ id: "themes-site", title: "Themes", urlTemplate: "https://example.test/?q={query}", alias: alias })
+      compare(Validation.validate(link("theme"), saved), "")
+      compare(Validation.validate(link("themes"), saved), "Alias 'themes' is reserved by launcher syntax.")
+      compare(Validation.validate(Object.assign(link("theme"), { id: "other" }), saved),
+        "Alias 'theme' is reserved by launcher syntax.")
+    }
+
     function test_add_preview_validation_save_and_reopen() {
       openCard()
       keyClick(Qt.Key_Return)

@@ -13,7 +13,9 @@ public sealed partial class SqliteCatalog
             throw new InvalidOperationException( "Invalid quicklink backup." );
         }
 
-        QuicklinkValidator.ValidateUnique( (_configuredQuicklinks ?? []).Concat( state.UserQuicklinks.Select( entry => entry.Quicklink ) ) );
+        // A backup may come from a release that reserved fewer names.
+        QuicklinkValidator.ValidateUnique( (_configuredQuicklinks ?? []).Concat( state.UserQuicklinks.Select( entry => entry.Quicklink ) ),
+            savedAliases: true );
 
         await InitializeAsync( cancellationToken )
             .ConfigureAwait( false );

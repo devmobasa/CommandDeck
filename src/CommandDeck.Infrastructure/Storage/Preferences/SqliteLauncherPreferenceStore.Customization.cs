@@ -32,7 +32,7 @@ internal sealed partial class SqliteLauncherPreferenceStore
         {
             await SqliteCatalog
                 .EnsureAliasAvailableAsync( connection, transaction, value, BookmarkAliasNamespace, stableId, _configuredQuicklinks( ),
-                    cancellationToken )
+                    savedAlias: false, cancellationToken )
                 .ConfigureAwait( false );
 
             await using var conflict = connection.CreateCommand( );

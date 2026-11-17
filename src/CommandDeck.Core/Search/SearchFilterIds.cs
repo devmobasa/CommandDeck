@@ -27,4 +27,5 @@ public static class SearchFilterIds
     public const string DesktopControls = "desktop-controls";
     public const string Configuration = "configuration";
     public const string Timezone = "timezone";
+    public const string Themes = "themes";
 }

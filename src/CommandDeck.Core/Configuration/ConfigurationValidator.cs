@@ -28,7 +28,9 @@ public static partial class ConfigurationValidator
             throw new InvalidOperationException( "quicklinks must be an array." );
         }
 
-        QuicklinkValidator.ValidateUnique( options.Quicklinks );
+        // A configuration file may predate a reserved name, so its aliases
+        // keep loading; see SearchFilterRegistry.IsReservedForSavedAlias.
+        QuicklinkValidator.ValidateUnique( options.Quicklinks, savedAliases: true );
         ValidateWebEngines( options.Search?.WebEngines );
         ValidateProjects( options.Projects );
 
@@ -116,7 +118,7 @@ public static partial class ConfigurationValidator
                 "underscores, or hyphens, and must start with a letter or digit." );
         }
 
-        if ( SearchFilterRegistry.IsReserved( value ) )
+        if ( SearchFilterRegistry.IsReservedForSavedAlias( value ) )
         {
             throw new InvalidOperationException( $"Web engine alias '{value}' conflicts with built-in launcher syntax." );
         }

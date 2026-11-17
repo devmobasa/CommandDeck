@@ -61,7 +61,7 @@ var QueryPrefix = Object.freeze({
   Workspace: "workspace:", Workspaces: "workspaces:", Ws: "ws:",
   Projects: "proj:", Snippets: "snip:", Scripts: "script:", Clipboard: "clip:", Browse: "browse:",
   Omarchy: "oma:", HerdrTab: "htab:", Command: "cmd:", Quicklink: "link:", Unit: "unit:",
-  Timezone: "tz:", Time: "time:", Web: "web:", Emoji: "emoji:", EmojiShort: "e:",
+  Timezone: "tz:", Time: "time:", Web: "web:", Emoji: "emoji:", EmojiShort: "e:", Theme: "theme:",
   Calculator: "=", Run: ">"
 });
 // Launcher colours: the active Omarchy theme, or CommandDeck's own palette.

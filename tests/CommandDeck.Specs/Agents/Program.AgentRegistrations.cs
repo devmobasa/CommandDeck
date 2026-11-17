@@ -14,6 +14,7 @@ public static partial class Program
             CodexVersionRangeAdmitsTheZeroLineButRejectsAMajorBumpAsync );
 
         await RunAsync( "Codex discovery skips launcher shims and reports direct-path options", CodexDiscoverySkipsLauncherShimsAsync );
+        Run( "CLI discovery reports a link to a missing binary as unavailable", CliDiscoveryReportsALinkToAMissingBinaryAsUnavailable );
 
         await RunAsync( "unrestricted launch names the fix when the Codex socket link is unreachable",
             UnrestrictedLaunchNamesTheFixForAnUnreachableSocketLinkAsync );
