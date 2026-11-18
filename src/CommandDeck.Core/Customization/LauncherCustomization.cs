@@ -76,14 +76,14 @@ public sealed class LauncherPreferences
             },
             new( )
             {
-                SourceId = SourceIds.OmarchyControl,
+                SourceId = SourceIds.Applications,
                 EnabledInSearch = true,
                 EnabledOnHome = true,
                 Position = 1
             },
             new( )
             {
-                SourceId = SourceIds.Applications,
+                SourceId = SourceIds.OmarchyControl,
                 EnabledInSearch = true,
                 EnabledOnHome = true,
                 Position = 2

@@ -52,14 +52,11 @@ Rectangle {
 
     const indexing = root.status ? root.status.indexing : null
     const inspection = root.status ? root.status.inspection : null
-    if (inspection && (inspection.failedItemCount > 0
-        || inspection.staleItemCount > 0 || inspection.pendingItemCount > 0)) {
+    if (inspection && (inspection.failedItemCount > 0 || inspection.staleItemCount > 0)) {
       const bound = inspection.workItemCountsExact === false ? "≥" : ""
       values.push({
-        count: inspection.failedItemCount + inspection.staleItemCount + inspection.pendingItemCount,
-        title: bound + inspection.failedItemCount + " failed · "
-          + bound + inspection.staleItemCount + " stale · "
-          + bound + inspection.pendingItemCount + " pending",
+        count: inspection.failedItemCount + inspection.staleItemCount,
+        title: bound + inspection.failedItemCount + " failed · " + bound + inspection.staleItemCount + " stale",
         detail: "Index work needs inspection.",
         remediation: "Open the index inspector for safe path and reason details."
       })

@@ -143,7 +143,7 @@
     "cases": [
       {
         "query": "sig",
-        "coldFirst": "omarchy:install.signal",
+        "coldFirst": "app:signal.desktop",
         "learnedFirst": "app:signal.desktop",
         "learnedSection": "top-match"
       },

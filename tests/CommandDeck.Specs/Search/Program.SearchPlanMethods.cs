@@ -2,6 +2,56 @@ namespace CommandDeck.Specs;
 
 public static partial class Program
 {
+    private static async Task SearchGroupsPutApplicationsFirstByDefaultAsync( )
+    {
+        var database = SpecTemporaryFiles.PathFor( $"commanddeck-source-order-{Guid.NewGuid( ):N}.db" );
+
+        try
+        {
+            await using SqliteCatalog catalog = new( new StorageOptions { DatabasePath = database } );
+            await catalog.ReplaceAllAsync( AsAsync( [
+                new( )
+                {
+                    StableId = "app:opencode.desktop",
+                    Kind = ResultKinds.Application,
+                    Title = "OpenCode",
+                    ProviderId = ProviderIds.Applications,
+                    SourceId = SourceIds.Applications
+                },
+                new( )
+                {
+                    StableId = "omarchy:setup.default.agent.openclaw",
+                    Kind = ResultKinds.Omarchy,
+                    Title = "OpenClaw",
+                    ProviderId = ProviderIds.Catalog,
+                    SourceId = SourceIds.OmarchyControl
+                }
+            ] ), null, default );
+
+            await using SearchCoordinator search = new( [new CatalogSearchProvider( catalog, catalog )], new SearchOptions( ), catalog, catalog );
+            var request = new SearchRequest { Query = "open" };
+            var defaults = await search.SearchAsync( request, default );
+            Equal( SourceIds.Applications, defaults[0].Section?.Id );
+            Equal( SourceIds.OmarchyControl, defaults[1].Section?.Id );
+
+            var preferences = await catalog.GetPreferencesAsync( default );
+            await catalog.PatchSourcePreferencesAsync( new SourcePreferencePatch
+            {
+                RegistryRevision = preferences.RegistryRevision,
+                PreferenceRevision = preferences.PreferenceRevision,
+                Changes = [new SourcePreferenceChange { SourceId = SourceIds.OmarchyControl, Position = 1 }]
+            }, default );
+
+            var custom = await search.SearchAsync( request, default );
+            Equal( SourceIds.OmarchyControl, custom[0].Section?.Id );
+            Equal( SourceIds.Applications, custom[1].Section?.Id );
+        }
+        finally
+        {
+            DeleteDatabase( database );
+        }
+    }
+
     private static async Task SearchPlanFreezesCatalogSourcesAsync( )
     {
         var database = SpecTemporaryFiles.PathFor( $"commanddeck-search-plan-{Guid.NewGuid( ):N}.db" );

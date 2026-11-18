@@ -77,6 +77,7 @@ public static partial class Program
         await RunAsync( "search outcome distinguishes failed providers from empty results", SearchOutcomeDistinguishesFailedProviderAsync );
         await RunAsync( "search plan freezes the folder request during provider work", SearchPlanFreezesFolderRequestAsync );
         await RunAsync( "search plan freezes catalog sources while preferences change during provider work", SearchPlanFreezesCatalogSourcesAsync );
+        await RunAsync( "search groups put applications first by default and honor saved order", SearchGroupsPutApplicationsFirstByDefaultAsync );
         await RunAsync( "catalog source snapshot distinguishes omitted and empty source sets", CatalogSourceSnapshotDistinguishesOmittedAndEmptyAsync );
         await RunAsync( "search socket reports incomplete execution without diagnostics", SearchSocketReportsIncompleteWithoutDiagnosticsAsync );
         await RunAsync( "Home provider deadlines retain partial results and late-work capacity", HomeProviderDeadlineRetainsCapacityAsync );

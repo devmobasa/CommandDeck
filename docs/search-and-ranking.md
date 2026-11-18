@@ -442,10 +442,10 @@ Promoted sources count toward that target. Learned promotions yield slots to
 source diversity; explicit/exact matches take precedence on very small pages.
 
 Group budgets reserve slots for needed sources **before** emitting rows. Groups
-remain contiguous and follow configured source order. A source's early group
-cannot be extended past a reserved first-page boundary; if later sources have
-few candidates, this can yield fewer rows than the request limit. There is no
-second copy of an earlier group on later pages.
+remain contiguous and follow configured source order, with Applications first
+by default. A source's early group stops at a reserved first-page boundary. If
+later sources have few candidates, this can yield fewer rows than the request
+limit. Each group appears once.
 
 Bare Home, filter-only queries, and folder browsing retain their prior assembly.
 Filtered text such as `app: sig` can promote within its allowed sources.

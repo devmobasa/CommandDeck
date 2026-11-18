@@ -315,6 +315,21 @@ EventPathFixture {
       verify(fixture.part_footerActions.width <= fixture.part_footerActions.availableWidth)
     }
 
+    function test_health_indicator_ignores_queued_updates() {
+      const banner = createTemporaryObject(fixture.part_runtimeBannerComponent, fixture, {
+        theme: fixture.part_theme,
+        status: { inspection: { failedItemCount: 0, staleItemCount: 0, pendingItemCount: 85 } }
+      })
+      verify(!banner.visible)
+      verify(!banner.hasIndexIssue)
+      compare(banner.issueCount, 0)
+
+      banner.status = { inspection: { failedItemCount: 1, staleItemCount: 2, pendingItemCount: 85 } }
+      verify(banner.visible)
+      verify(banner.hasIndexIssue)
+      compare(banner.summary, "3 index issues")
+    }
+
     function test_health_indicator_counts_missing_roots_once() {
       const banner = createTemporaryObject(fixture.part_runtimeBannerComponent, fixture, {
         theme: fixture.part_theme,
