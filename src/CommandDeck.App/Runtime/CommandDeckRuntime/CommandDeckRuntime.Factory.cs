@@ -175,7 +175,8 @@ public sealed partial class CommandDeckRuntime
                 AiProviderSettingsService aiSettings = new( options.Ai, new AiProviderSettingsStore( AiProviderSettingsStore.ResolvePath( configPath ) ) );
 
                 resources.Own( aiSettings );
-                FilePreviewService previews = new( options.Indexing, options.Privacy );
+                FilePreviewService previews = new( options.Indexing, options.Privacy, folders: indexer.FolderRules,
+                    databasePath: options.Storage.DatabasePath );
 
                 AiPreflightService preflights = new( aiSettings, previews, catalog.AiPreferences,
                     ( owner, resultId ) => runtime?.ResolveOwnedCachedResult( owner, resultId ) );

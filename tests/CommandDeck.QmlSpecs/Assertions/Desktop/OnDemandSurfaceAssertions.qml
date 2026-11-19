@@ -54,6 +54,14 @@ QtObject {
     journeys.expect(() => journeys.search().activeFocus && journeys.deck().opened, message)
   }
 
+  // Checked in the turn that opens Settings, without waiting. Opening resizes
+  // the card for Settings at once, so a fade-in showed the launcher's results
+  // re-laid out underneath for a moment: a flicker on every open.
+  function settingsShownAtOnce(message) {
+    const panel = journeys.deck().testSettingsPanel
+    journeys.host.expect(panel !== null && panel.visible && panel.opacity === 1, message)
+  }
+
   function press(key, modifiers) { journeys.events().keyClick(key, modifiers || Qt.NoModifier) }
 
   function tabUntil(control, limit) {
@@ -98,6 +106,7 @@ QtObject {
       () => {
         journeys.searchReady("the launcher opens with search focused")
         journeys.press(Qt.Key_Comma, Qt.ControlModifier)
+        journeys.settingsShownAtOnce("Ctrl+, shows the first-built Settings fully opaque in the same turn")
       },
       () => {
         journeys.settings = journeys.deck().testSettingsPanel
@@ -116,6 +125,7 @@ QtObject {
           "typing in search leaves the closed Settings panel's query parse alone")
         journeys.press(Qt.Key_Backspace)
         journeys.press(Qt.Key_Comma, Qt.ControlModifier)
+        journeys.settingsShownAtOnce("reopening Settings shows it fully opaque in the same turn")
       },
       () => {
         journeys.expect(() => journeys.deck().testSettingsPanel === journeys.settings && journeys.settings.visible
@@ -163,6 +173,7 @@ QtObject {
         journeys.expect(() => !journeys.deck().settingsOpen, "clicking Close dismisses Settings")
         journeys.searchReady("closing Settings by mouse returns focus to launcher search")
         journeys.events().mouseClick(journeys.deck().testSettingsButton)
+        journeys.settingsShownAtOnce("clicking the settings button shows Settings fully opaque in the same turn")
       },
       () => {
         journeys.expect(() => journeys.settings.visible && journeys.settings.searchControl.activeFocus,

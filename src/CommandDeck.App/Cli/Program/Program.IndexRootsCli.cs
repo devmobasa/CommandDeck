@@ -58,59 +58,9 @@ public static partial class Program
             IndexRoots = import
         };
 
-        var client = await ConnectPreferenceDaemonAsync( arguments, cancellationToken )
+        var result = await ExecuteIndexPreferenceRequestAsync( arguments, request,
+                runtime => runtime.Indexer.ManageRootsAsync( operation, request.Path, request.RootId, import, cancellationToken ), cancellationToken )
             .ConfigureAwait( false );
-
-        IndexRootsResult? result = null;
-        if ( client is not null )
-        {
-            await using ( client )
-            {
-                await client
-                    .SendAsync( request, cancellationToken )
-                    .ConfigureAwait( false );
-
-                await foreach ( var line in client
-                                   .ReadRawMessagesAsync( cancellationToken )
-                                   .ConfigureAwait( false ) )
-                {
-                    var message = JsonSerializer.Deserialize( line, CommandDeckJsonContext.Default.ProtocolMessage );
-                    if ( message?.Type == ProtocolMessageTypes.Error )
-                    {
-                        throw new InvalidOperationException( message.Error );
-                    }
-
-                    result ??= message?.IndexRoots;
-
-                    if ( message?.Type == ProtocolMessageTypes.Done )
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-        else
-        {
-            await using var runtime = await CommandDeckRuntime
-                .CreateAsync( arguments.GetOption( CliOptionNames.Config ), new RuntimeConstructionOptions( ), includeClipboardHistory: false,
-                    cancellationToken )
-                .ConfigureAwait( false );
-
-            using var shutdown = cancellationToken.Register( runtime.CancelBackgroundIndexing );
-
-            result = await runtime
-                .Indexer.ManageRootsAsync( operation, request.Path, request.RootId, import, cancellationToken )
-                .ConfigureAwait( false );
-
-            await (( IndexCoordinator ) runtime.Indexer)
-                .WaitForBackgroundReindexAsync( cancellationToken )
-                .ConfigureAwait( false );
-        }
-
-        if ( result is null )
-        {
-            throw new InvalidOperationException( "The daemon did not return indexed folders." );
-        }
 
         if ( arguments.HasFlag( CliOptionNames.Json ) )
         {
@@ -126,6 +76,78 @@ public static partial class Program
         }
 
         return 0;
+    }
+
+    // Sends the request to the running daemon, or applies it with a local
+    // runtime that takes the same index journal lease when none is running.
+    private static async ValueTask<IndexRootsResult> ExecuteIndexPreferenceRequestAsync( CliArguments arguments, ProtocolRequest request,
+        Func<CommandDeckRuntime, ValueTask<IndexRootsResult>> local, CancellationToken cancellationToken )
+    {
+        var client = await ConnectPreferenceDaemonAsync( arguments, cancellationToken )
+            .ConfigureAwait( false );
+
+        IndexRootsResult? result = null;
+        if ( client is not null )
+        {
+            await using ( client )
+            {
+                result = await SendIndexPreferenceRequestAsync( client, request, cancellationToken )
+                    .ConfigureAwait( false );
+            }
+        }
+        else
+        {
+            await using var runtime = await CommandDeckRuntime
+                .CreateAsync( arguments.GetOption( CliOptionNames.Config ), new RuntimeConstructionOptions( ), includeClipboardHistory: false,
+                    cancellationToken )
+                .ConfigureAwait( false );
+
+            using var shutdown = cancellationToken.Register( runtime.CancelBackgroundIndexing );
+
+            result = await local( runtime )
+                .ConfigureAwait( false );
+
+            await (( IndexCoordinator ) runtime.Indexer)
+                .WaitForBackgroundReindexAsync( cancellationToken )
+                .ConfigureAwait( false );
+        }
+
+        if ( result is null )
+        {
+            throw new InvalidOperationException( "The daemon did not return indexed folders." );
+        }
+
+        return result;
+    }
+
+    private static async ValueTask<IndexRootsResult?> SendIndexPreferenceRequestAsync( UnixProtocolClient client, ProtocolRequest request,
+        CancellationToken cancellationToken )
+    {
+        IndexRootsResult? result = null;
+
+        await client
+            .SendAsync( request, cancellationToken )
+            .ConfigureAwait( false );
+
+        await foreach ( var line in client
+                           .ReadRawMessagesAsync( cancellationToken )
+                           .ConfigureAwait( false ) )
+        {
+            var message = JsonSerializer.Deserialize( line, CommandDeckJsonContext.Default.ProtocolMessage );
+            if ( message?.Type == ProtocolMessageTypes.Error )
+            {
+                throw new InvalidOperationException( message.Error );
+            }
+
+            result ??= message?.IndexRoots;
+
+            if ( message?.Type == ProtocolMessageTypes.Done )
+            {
+                break;
+            }
+        }
+
+        return result;
     }
 
     private static async ValueTask<IndexRootPreferences> ReadIndexRootsImportAsync( string path, CancellationToken cancellationToken )

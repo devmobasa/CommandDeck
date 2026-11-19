@@ -144,11 +144,12 @@ Rectangle {
     "Type  ?  for filters"
   ]
   property int placeholderIndex: 0
+  property bool homeShortcutsVisible: false
   // Rotate only while the launcher shows, the field is idle (empty), not
   // composing an input method, and motion is allowed. Typing a single character
   // stops it at once, and it resets to the descriptive first entry whenever
   // rotation stops.
-  readonly property bool placeholderRotating: root.surfaceVisible
+  readonly property bool placeholderRotating: root.surfaceVisible && !root.homeShortcutsVisible
     && !root.theme.reduceMotion
     && searchInput.text.length === 0
     && !searchInput.inputMethodComposing
@@ -323,7 +324,7 @@ Rectangle {
         } else if (event.key === Qt.Key_Tab && !control && !alt && !shift && argumentPills.count > 0) {
           argumentPills.focusFirst()
           event.accepted = true
-        } else if (event.key === Qt.Key_Tab && !control && !alt && !shift) {
+        } else if (event.key === Qt.Key_Tab && !control && !alt && !shift && !root.homeShortcutsVisible) {
           const completion = root.prefixHint !== null
             ? (searchInput.text.charAt(0) === "-" ? "-" : "") + root.prefixHint.token
             : root.controller.completionText()

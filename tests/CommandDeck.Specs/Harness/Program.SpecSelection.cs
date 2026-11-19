@@ -24,6 +24,9 @@ public static partial class Program
         await RunCatalogRegistrationsAsync( );
         await RunIncrementalIndexRegistrationsAsync( );
         await RunIndexPolicyRegistrationsAsync( );
+        await RunExcludedFolderRegistrationsAsync( );
+        await RunExcludedPatternRegistrationsAsync( );
+        await RunExcludedLocationRegistrationsAsync( );
         await RunProtocolRegistrationsAsync( );
         await RunAiSettingsRegistrationsAsync( );
         await RunCliRegistrationsAsync( );

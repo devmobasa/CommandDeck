@@ -103,11 +103,18 @@ internal sealed partial class InotifyTreeWatcher
         }
 
         Descriptor = descriptor;
-        _rootDirectory = _policy.EnterRoot( _boundary, _options, out _ );
+        _rootDirectory = _policy.EnterRoot( _boundary, _options, out var rootExclusion );
 
         if ( _rootDirectory is null )
         {
-            Error = "A privacy rule excludes the root, so nothing below it is watched.";
+            if ( rootExclusion?.Reason == IndexExclusionReasons.ExcludedFolder )
+            {
+                Error = "An excluded folder contains the root, so nothing below it is watched.";
+            }
+            else
+            {
+                Error = "A privacy rule excludes the root, so nothing below it is watched.";
+            }
 
             return false;
         }

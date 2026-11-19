@@ -54,6 +54,8 @@ public static partial class ProtocolRequestValidator
         CheckLength( request.Scope, nameof( request.Scope ), MaximumScopeCharacters );
         CheckLength( request.Path, nameof( request.Path ), MaximumPathCharacters );
         CheckLength( request.RootId, nameof( request.RootId ), ProtocolLimits.MaximumIdentifierCharacters );
+        CheckLength( request.ExclusionId, nameof( request.ExclusionId ), ProtocolLimits.MaximumIdentifierCharacters );
+        CheckLength( request.WorkItemId, nameof( request.WorkItemId ), ProtocolLimits.MaximumIdentifierCharacters );
         CheckLength( request.Alias, nameof( request.Alias ), MaximumAliasCharacters );
         CheckLength( request.TargetFilterId, nameof( request.TargetFilterId ), ProtocolLimits.MaximumIdentifierCharacters );
         CheckLength( request.CustomizationId, nameof( request.CustomizationId ), ProtocolLimits.MaximumIdentifierCharacters );

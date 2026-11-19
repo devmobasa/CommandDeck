@@ -19,16 +19,18 @@ public sealed partial class FileIndexSource : IDisposable
     private readonly List<IndexExclusionDiagnostic> _diagnostics = [];
     private readonly List<IndexWorkItem> _workItems = [];
 
-    public FileIndexSource( IndexingOptions options, PrivacyOptions privacy, string? databasePath = null ) : this( options, privacy, databasePath, null )
+    public FileIndexSource( IndexingOptions options, PrivacyOptions privacy, string? databasePath = null, ExcludedFolderRules? folders = null )
+        : this( options, privacy, databasePath, null, folders )
     {
     }
 
-    private FileIndexSource( IndexingOptions options, PrivacyOptions privacy, string? databasePath, IndexExclusionPolicy? exclusions )
+    private FileIndexSource( IndexingOptions options, PrivacyOptions privacy, string? databasePath, IndexExclusionPolicy? exclusions,
+        ExcludedFolderRules? folders = null )
     {
         _options = options;
         _pathPolicy = new PathPolicy( privacy );
 
-        Exclusions = exclusions ?? new IndexExclusionPolicy( options, privacy, databasePath, cacheRootBoundaries: true );
+        Exclusions = exclusions ?? new IndexExclusionPolicy( options, privacy, databasePath, cacheRootBoundaries: true, folders );
 
         _contentExtractor = new ContentExtractor( options );
         _storagePaths = databasePath is null ? null : new IndexStoragePaths( databasePath );

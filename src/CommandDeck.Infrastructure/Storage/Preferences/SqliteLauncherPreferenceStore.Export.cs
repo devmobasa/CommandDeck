@@ -69,6 +69,8 @@ internal sealed partial class SqliteLauncherPreferenceStore
             .ExecuteNonQueryAsync( connection, transaction, """
                                                             DELETE FROM added_index_roots;
                                                             DELETE FROM disabled_index_roots;
+                                                            DELETE FROM index_excluded_folders;
+                                                            DELETE FROM index_builtin_exclusion_overrides;
                                                             DELETE FROM user_quicklinks;
                                                             DELETE FROM disabled_configured_quicklinks;
                                                             DELETE FROM aliases;

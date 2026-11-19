@@ -347,8 +347,8 @@ EventPathFixture {
     function test_inspector_explains_file_and_root_issue_total() {
       const inspection = { stats: { itemCount: 18259 }, totalExclusionDiagnosticCount: 21,
         failedItemCount: 2, staleItemCount: 0, pendingItemCount: 0,
-        workItems: [{ path: "/one.zip", state: "failed", reason: "archive-invalid-or-limit" },
-          { path: "/two.zip", state: "failed", reason: "archive-invalid-or-limit" }] }
+        workItems: [{ id: "work:one", root: "/", relativePath: "one.zip", state: "failed", reason: "archive-invalid-or-limit" },
+          { id: "work:two", root: "/", relativePath: "two.zip", state: "failed", reason: "archive-invalid-or-limit" }] }
       const banner = createTemporaryObject(fixture.part_runtimeBannerComponent, fixture, {
         theme: fixture.part_theme,
         status: { inspection: inspection, indexing: { unwatchedRoots: ["/missing"], roots: [
@@ -365,7 +365,8 @@ EventPathFixture {
       mouseClick(banner)
       waitForValue(inspector, "opened", true)
       compare(inspector.heading, "Index inspector · 3 index issues")
-      compare(inspector.visibleWorkItemCount, 2)
+      compare(inspector.groups.length, 1, "two files with one cause read as one group")
+      compare(inspector.groups[0].items.length, 2)
       verify(inspector.healthDetails.indexOf("Index root unavailable") >= 0)
       waitForCondition(() => inspector.activeFocus)
       keyClick(Qt.Key_Escape)

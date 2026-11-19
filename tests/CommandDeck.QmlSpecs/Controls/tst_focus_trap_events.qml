@@ -17,7 +17,7 @@ Item {
   function workItems(count) {
     const values = []
     for (let index = 0; index < count; index++) {
-      values.push({ path: "/tmp/item-" + index, state: "failed", reason: "unreadable" })
+      values.push({ id: "index-work:" + index, root: "/tmp", relativePath: "item-" + index, state: "failed", reason: "unreadable" })
     }
     return values
   }
@@ -35,6 +35,8 @@ Item {
   }
 
   SignalSpy { id: stopIndexing; target: inspector; signalName: "stopIndexingRequested" }
+  SignalSpy { id: excludes; target: inspector; signalName: "excludeRequested" }
+  SignalSpy { id: reveals; target: inspector; signalName: "revealRequested" }
 
   CommandDeck.RuntimeStatusSurface {
     id: statusSurface
@@ -55,6 +57,8 @@ Item {
       inspector.foldersRelevant = true
       statusSurface.status = null
       stopIndexing.clear()
+      excludes.clear()
+      reveals.clear()
     }
 
     // Named to run before the Tab tests below: a missing indexed folder gets a
@@ -77,7 +81,10 @@ Item {
       inspector.missingRoots = statusSurface.missingRoots
       inspector.inspection = scene.inspection(2)
       inspector.opened = true
-      waitForValue(inspector.closeControl, "activeFocus", true)
+      waitForValue(inspector.listControl, "activeFocus", true)
+      // Let the open finish placing focus before the walk starts from Close.
+      wait(0)
+      inspector.closeControl.forceActiveFocus()
       const stop = inspector.stopIndexingControl
       verify(stop.visible)
       compare(stop.text, "Stop indexing ~/Projects")
@@ -98,47 +105,72 @@ Item {
       verify(!inspector.opened)
     }
 
-    function test_inspector_tab_stays_on_close_when_it_is_the_only_control() {
-      inspector.inspection = scene.inspection(2)
+    function test_inspector_without_issues_opens_on_close_and_shows_counts() {
+      inspector.inspection = scene.inspection(0)
       inspector.opened = true
       waitForValue(inspector.closeControl, "activeFocus", true)
-      verify(!inspector.previousControl.enabled && !inspector.nextControl.enabled)
+      verify(!inspector.listControl.visible)
 
       keyClick(Qt.Key_Tab)
-      compare(focused(), inspector.closeControl, "Tab keeps focus on Close")
+      compare(focused(), inspector.excludedFoldersControl, "Tab reaches Manage excluded folders")
+      keyClick(Qt.Key_Tab)
+      compare(focused(), inspector.closeControl, "Tab wraps to Close")
       keyClick(Qt.Key_Tab, Qt.ShiftModifier)
-      compare(focused(), inspector.closeControl, "Shift+Tab keeps focus on Close")
-      verify(literal.labelShowing(inspector,
-        "Files: Indexed 10 · Excluded about 0 · Failed 2 · Stale 0 · Pending 0") !== null)
+      compare(focused(), inspector.excludedFoldersControl, "Shift+Tab wraps to the last control")
+      verify(literal.labelShowing(inspector, "Indexed  10") !== null)
+      verify(literal.labelShowing(inspector, "No failed, stale, or pending index items.") !== null)
       keyClick(Qt.Key_Escape)
       verify(!inspector.opened)
     }
 
-    function test_inspector_tab_skips_the_disabled_page_button_and_wraps() {
+    // One cause is one row: six unreadable files in /tmp group together, the
+    // list expands with the arrow keys, and the exclude sheet edits the folder.
+    function test_inspector_groups_issues_and_excludes_with_keys() {
       inspector.healthDetails = "The clipboard service is not running."
       inspector.inspection = scene.inspection(6)
       inspector.opened = true
-      waitForValue(inspector.closeControl, "activeFocus", true)
-      verify(!inspector.previousControl.enabled && inspector.nextControl.enabled)
+      waitForValue(inspector.listControl, "activeFocus", true)
+      compare(inspector.groups.length, 1)
+      compare(inspector.listControl.rows.length, 1)
+      compare(inspector.detailControl.targetFolder, "/tmp")
+
+      keyClick(Qt.Key_Right)
+      compare(inspector.listControl.rows.length, 7, "Right expands the group")
+      keyClick(Qt.Key_Down)
+      compare(inspector.detailControl.item.relativePath, "item-0")
+      keyClick(Qt.Key_Left)
+      compare(inspector.listControl.selectedRow.kind, "group", "Left returns to the group")
+      keyClick(Qt.Key_Left)
+      compare(inspector.listControl.rows.length, 1, "Left collapses it")
 
       keyClick(Qt.Key_Tab)
-      compare(focused(), inspector.healthControl)
-      keyClick(Qt.Key_Tab)
-      compare(focused(), inspector.foldersControl, "Tab reaches indexed folder management")
-      keyClick(Qt.Key_Tab)
-      compare(focused(), inspector.nextControl, "Tab skips the disabled Previous button")
-      keyClick(Qt.Key_Tab)
-      compare(focused(), inspector.closeControl, "Tab wraps to Close")
-      keyClick(Qt.Key_Tab, Qt.ShiftModifier)
-      compare(focused(), inspector.nextControl, "Shift+Tab wraps to the last control")
+      compare(focused(), inspector.detailControl.excludeControl)
+      keyClick(Qt.Key_Space)
+      waitForValue(inspector.detailControl.sheetFieldControl, "activeFocus", true)
+      compare(inspector.detailControl.sheetFieldControl.text, "/tmp")
+      keyClick(Qt.Key_Escape)
+      verify(inspector.opened, "Escape closes the sheet first")
+      waitForValue(inspector.detailControl.excludeControl, "activeFocus", true)
 
-      keyClick(Qt.Key_PageDown)
-      compare(inspector.page, 1)
-      verify(inspector.previousControl.enabled && !inspector.nextControl.enabled)
-      inspector.closeControl.forceActiveFocus()
-      keyClick(Qt.Key_Tab, Qt.ShiftModifier)
-      compare(focused(), inspector.previousControl, "Shift+Tab skips the disabled Next button")
+      keyClick(Qt.Key_Space)
+      waitForValue(inspector.detailControl.sheetFieldControl, "activeFocus", true)
+      inspector.inspection = scene.inspection(6)
+      verify(inspector.detailControl.sheetOpen, "a refresh of the same issues keeps the sheet open")
+      verify(inspector.detailControl.sheetFieldControl.activeFocus)
+      keyClick(Qt.Key_Return)
+      compare(excludes.count, 1)
+      compare(excludes.signalArguments[0][0], "/tmp")
+      waitForValue(inspector.detailControl.excludeControl, "activeFocus", true)
 
+      keyClick(Qt.Key_Tab)
+      compare(focused(), inspector.detailControl.revealControl)
+      keyClick(Qt.Key_Space)
+      compare(reveals.count, 1)
+      compare(reveals.signalArguments[0][0], "index-work:0")
+
+      inspector.listControl.forceActiveFocus()
+      keyClick(Qt.Key_C, Qt.ControlModifier)
+      compare(inspector.statusText, "Copied the path.")
       keyClick(Qt.Key_Escape)
       verify(!inspector.opened, "Escape dismisses the inspector")
     }
@@ -153,7 +185,7 @@ Item {
       inspector.healthDetails = statusSurface.details
       inspector.inspection = scene.inspection(2)
       inspector.opened = true
-      waitForValue(inspector.closeControl, "activeFocus", true)
+      waitForValue(inspector.listControl, "activeFocus", true)
       verify(inspector.healthControl.visible)
       verify(!inspector.foldersControl.visible)
 

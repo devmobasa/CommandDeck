@@ -17,6 +17,7 @@ ComboBox {
   property var options: []
   property string placeholder: "Nothing to choose"
   property bool showCurrentDescription: true
+  property bool showSelection: true
   property Item windowProbe: Item { parent: root; visible: false }
 
   // Tab and Shift+Tab stay inside the settings dialog.
@@ -56,7 +57,7 @@ ComboBox {
   contentItem: Text {
     id: valueText
     textFormat: Text.PlainText
-    text: root.count > 0 ? root.currentTitle : root.placeholder
+    text: root.displayText || root.placeholder
     color: root.enabled && root.count > 0 ? root.theme.text : root.theme.textFaint
     horizontalAlignment: Text.AlignRight
     verticalAlignment: Text.AlignVCenter
@@ -105,7 +106,7 @@ ComboBox {
     id: row
     required property int index
     readonly property var option: index < (root.options || []).length ? root.options[index] : null
-    readonly property bool current: index === root.currentIndex
+    readonly property bool current: root.showSelection && index === root.currentIndex
     width: ListView.view ? ListView.view.width : root.width
     height: Math.round((row.option && row.option.description ? 52 : 38) * root.theme.scale)
     hoverEnabled: true

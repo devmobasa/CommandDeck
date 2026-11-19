@@ -97,9 +97,11 @@ Item {
       waitForValue(panel.searchControl, "activeFocus", true)
       reply([link("configured")])
       const folders = panel.part_indexRootsCard
+      const excluded = panel.part_excludedFoldersCard
       const quicklinks = panel.part_quicklinksCard
-      verify(folders.visible && quicklinks.visible)
-      verify(folders.y + folders.height <= quicklinks.y)
+      verify(folders.visible && excluded.visible && quicklinks.visible)
+      verify(folders.y + folders.height <= excluded.y)
+      verify(excluded.y + excluded.height <= quicklinks.y)
       for (let index = 0; index < 80 && !folders.pathControl.activeFocus; index++) keyClick(Qt.Key_Tab)
       verify(folders.pathControl.activeFocus)
       keyClick(Qt.Key_Tab)
@@ -107,9 +109,13 @@ Item {
       keyClick(Qt.Key_Tab)
       verify(folders.actionControlAt(0).activeFocus)
       keyClick(Qt.Key_Tab)
+      verify(excluded.pathControl.activeFocus, "Excluded folders follows Indexed folders")
+      keyClick(Qt.Key_Tab)
+      verify(excluded.addControl.activeFocus)
+      keyClick(Qt.Key_Tab)
       verify(control("quicklinkAdd").activeFocus)
       keyClick(Qt.Key_Tab, Qt.ShiftModifier)
-      verify(folders.actionControlAt(0).activeFocus)
+      verify(excluded.addControl.activeFocus)
       keyClick(Qt.Key_Tab)
       keyClick(Qt.Key_Space)
       waitForValue(control("quicklinkTitle"), "activeFocus", true)

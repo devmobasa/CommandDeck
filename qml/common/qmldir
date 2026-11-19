@@ -49,6 +49,7 @@ CommandDeckSearchField 1.0 Launcher/CommandDeckSearchField.qml
 CommandDeckState 1.0 Launcher/CommandDeckState.qml
 CommandDeckWindow 1.0 Launcher/CommandDeckWindow.qml
 CommandDeckWindowSettings 1.0 Launcher/CommandDeckWindowSettings.qml
+CommandDeckWindowInspector 1.0 Launcher/CommandDeckWindowInspector.qml
 ConfirmationSurface 1.0 Actions/ConfirmationSurface.qml
 DeckButton 1.0 DeckButton.qml
 DeckToast 1.0 Controls/DeckToast.qml
@@ -80,11 +81,15 @@ FirstRunStore 1.0 Controls/FirstRunStore.qml
 FooterHintBar 1.0 Controls/FooterHintBar.qml
 HelpSheet 1.0 Controls/HelpSheet.qml
 HerdrNavigationBar 1.0 Desktop/HerdrNavigationBar.qml
+HomeShortcutBar 1.0 Search/HomeShortcutBar.qml
 HiddenUndoBar 1.0 Personalization/HiddenUndoBar.qml
 HiddenItemsController 1.0 Personalization/HiddenItemsController.qml
 HyprlandDesktopIntegration 1.0 Desktop/HyprlandDesktopIntegration.qml
 ImageFilePreview 1.0 Preview/ImageFilePreview.qml
 IndexInspector 1.0 Personalization/IndexInspector.qml
+IndexInspectorList 1.0 Personalization/IndexInspectorList.qml
+IndexIssueDetail 1.0 Personalization/IndexIssueDetail.qml
+IndexInspectionController 1.0 Personalization/IndexInspectionController.qml
 IndexRootsController 1.0 Personalization/IndexRootsController.qml
 InvocationController 1.0 Actions/InvocationController.qml
 KeyCap 1.0 Controls/KeyCap.qml
@@ -143,6 +148,7 @@ SettingsField 1.0 Settings/Controls/SettingsField.qml
 SettingsFiltersPage 1.0 Settings/Pages/SettingsFiltersPage.qml
 SettingsHeyCard 1.0 Settings/Pages/SettingsHeyCard.qml
 SettingsHiddenItemsCard 1.0 Settings/Pages/SettingsHiddenItemsCard.qml
+SettingsLayoutPreview 1.0 Settings/Controls/SettingsLayoutPreview.qml
 SettingsNav 1.0 Settings/SettingsNav.qml
 SettingsNumber 1.0 Settings/Controls/SettingsNumber.qml
 SettingsPageHost 1.0 Settings/SettingsPageHost.qml
@@ -152,6 +158,7 @@ SettingsQuicklinksCard 1.0 Settings/Pages/SettingsQuicklinksCard.qml
 SettingsRow 1.0 Settings/Controls/SettingsRow.qml
 SettingsSearchPage 1.0 Settings/Pages/SettingsSearchPage.qml
 SettingsIndexRootsCard 1.0 Settings/Pages/SettingsIndexRootsCard.qml
+SettingsExcludedFoldersCard 1.0 Settings/Pages/SettingsExcludedFoldersCard.qml
 SettingsShortcutsPage 1.0 Settings/Pages/SettingsShortcutsPage.qml
 SettingsSlider 1.0 Settings/Controls/SettingsSlider.qml
 SettingsSearchFocus 1.0 Settings/SettingsSearchFocus.qml

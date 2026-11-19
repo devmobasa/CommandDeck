@@ -64,7 +64,7 @@ EventPathFixture {
       compare(panel.searchControl.background.border.width, 1)
     }
 
-    function test_sidebar_vectors_have_visible_white_shapes_on_every_tile() {
+    function test_sidebar_vectors_use_the_theme_and_have_visible_shapes() {
       const panel = fixture.part_settingsPanel
       panel.visible = true
       panel.searchControl.text = ""
@@ -75,23 +75,26 @@ EventPathFixture {
       const entries = panel.navigationControl.children[0].children.filter(item => item.modelData !== undefined)
       compare(entries.length, 7)
       for (const entry of entries) {
-        const tile = entry.children[0].children[0]
-        const glyph = tile.children[0]
+        const glyph = findChild(entry, "settingsNavGlyph")
+        verify(glyph !== null)
+        compare(glyph.ink, entry.current ? panel.theme.accent : panel.theme.textMuted)
         glyph.requestPaint()
         waitForFrame(glyph)
         const pixels = grabImage(scene)
-        const origin = tile.mapToItem(scene, 0, 0)
-        let left = tile.width, right = -1, top = tile.height, bottom = -1
-        for (let y = 0; y < tile.height; y++) {
-          for (let x = 0; x < tile.width; x++) {
+        const origin = glyph.mapToItem(scene, 0, 0)
+        const background = pixels.pixel(Math.floor(origin.x), Math.floor(origin.y))
+        let left = glyph.width, right = -1, top = glyph.height, bottom = -1
+        for (let y = 0; y < glyph.height; y++) {
+          for (let x = 0; x < glyph.width; x++) {
             const pixel = pixels.pixel(Math.floor(origin.x + x), Math.floor(origin.y + y))
-            if (pixel.r < 0.65 || pixel.g < 0.65 || pixel.b < 0.65 || pixel.a < 0.5) continue
+            const contrast = Math.max(Math.abs(pixel.r - background.r), Math.abs(pixel.g - background.g), Math.abs(pixel.b - background.b))
+            if (contrast < 0.2 || pixel.a < 0.5) continue
             left = Math.min(left, x); right = Math.max(right, x)
             top = Math.min(top, y); bottom = Math.max(bottom, y)
           }
         }
-        verify(right - left >= tile.width * 0.45 && bottom - top >= tile.height * 0.45,
-          entry.modelData.title + " has a white glyph of comparable visual size")
+        verify(right - left >= glyph.width * 0.45 && bottom - top >= glyph.height * 0.45,
+          entry.modelData.title + " has a legible glyph of comparable visual size")
       }
     }
 

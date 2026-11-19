@@ -52,15 +52,42 @@ public sealed partial class FilePreviewService
         [".zsh"] = "bash"
     };
 
-    private readonly IndexExclusionPolicy _exclusions;
+    private readonly IndexingOptions _indexing;
+    private readonly PrivacyOptions _privacyOptions;
+    private readonly string? _databasePath;
+    private readonly ExcludedFolderRulesSource? _folders;
+    private PreviewPolicy? _policy;
     private readonly PathPolicy _privacy;
     private readonly ImagePreviewRenderer _images;
 
-    public FilePreviewService( IndexingOptions indexing, PrivacyOptions privacy, ImagePreviewRenderer? images = null )
+    public FilePreviewService( IndexingOptions indexing, PrivacyOptions privacy, ImagePreviewRenderer? images = null, ExcludedFolderRulesSource? folders = null,
+        string? databasePath = null )
     {
-        _exclusions = new IndexExclusionPolicy( indexing, privacy );
+        _indexing = indexing;
+        _privacyOptions = privacy;
+        _databasePath = databasePath;
+        _folders = folders;
         _privacy = new PathPolicy( privacy );
         _images = images ?? new ImagePreviewRenderer( );
+    }
+
+    private sealed record PreviewPolicy( ExcludedFolderRules Folders, IndexExclusionPolicy Exclusions );
+
+    // One excluded folder snapshot per authorization; a new snapshot from the
+    // indexer replaces the cached policy.
+    private IndexExclusionPolicy CurrentPolicy( )
+    {
+        var folders = _folders?.Current ?? ExcludedFolderRules.Empty;
+        var cached = Volatile.Read( ref _policy );
+        if ( cached is not null && ReferenceEquals( cached.Folders, folders ) )
+        {
+            return cached.Exclusions;
+        }
+
+        PreviewPolicy created = new( folders, new IndexExclusionPolicy( _indexing, _privacyOptions, _databasePath, folders: folders ) );
+        Volatile.Write( ref _policy, created );
+
+        return created.Exclusions;
     }
 
     public async ValueTask<FilePreviewOutcome> ReadAsync( string path, CancellationToken cancellationToken, QueryExpression? expression = null,
@@ -209,7 +236,8 @@ public sealed partial class FilePreviewService
         }
 
         var requested = Path.GetFullPath( path );
-        var owner = _exclusions.FindRoot( requested );
+        var policy = CurrentPolicy( );
+        var owner = policy.FindRoot( requested );
         if ( owner is null )
         {
             return null;
@@ -219,7 +247,7 @@ public sealed partial class FilePreviewService
 
         try
         {
-            if ( TryAuthorizePreview( owner.Value.Boundary, owner.Value.Options, requested, opened ) )
+            if ( TryAuthorizePreview( policy, owner.Value.Boundary, owner.Value.Options, requested, opened ) )
             {
                 return opened;
             }
@@ -236,14 +264,15 @@ public sealed partial class FilePreviewService
         return null;
     }
 
-    private bool TryAuthorizePreview( CanonicalPathBoundary boundary, IndexRootOptions rootOptions, string requested, SafeRegularFile opened )
+    private static bool TryAuthorizePreview( IndexExclusionPolicy policy, CanonicalPathBoundary boundary, IndexRootOptions rootOptions, string requested,
+        SafeRegularFile opened )
     {
         if ( IsPreviewDisallowed( boundary, rootOptions, requested, opened ) )
         {
             return false;
         }
 
-        return _exclusions.Match( boundary, rootOptions, requested, opened.CanonicalPath, directory: false ) is null;
+        return policy.Match( boundary, rootOptions, requested, opened.CanonicalPath, directory: false ) is null;
     }
 
     private static (string Text, bool Truncated) TruncateLines( string text )

@@ -25,10 +25,22 @@ public sealed partial class UnixProtocolServer
     private async ValueTask HandleIndexControlAsync( ClientWriter writer, ProtocolRequest request, ClientRequestContext context )
     {
         var cancellationToken = context.CancellationToken;
+        if ( request.Operation == ProtocolOperations.IndexReveal )
+        {
+            await _runtime
+                .Indexer.RevealIndexIssueAsync( request.WorkItemId ?? "", cancellationToken )
+                .ConfigureAwait( false );
+
+            await writer
+                .DoneAsync( request.RequestId )
+                .ConfigureAwait( false );
+
+            return;
+        }
+
         if ( request.Operation is not (ProtocolOperations.IndexPause or ProtocolOperations.IndexResume) )
         {
-            var roots = await _runtime
-                .Indexer.ManageRootsAsync( request.Operation, request.Path, request.RootId, request.IndexRoots, cancellationToken )
+            var roots = await ManageIndexPreferencesAsync( request, cancellationToken )
                 .ConfigureAwait( false );
 
             await writer
@@ -53,6 +65,22 @@ public sealed partial class UnixProtocolServer
 
         await WriteStatusAsync( request.RequestId, writer, cancellationToken )
             .ConfigureAwait( false );
+    }
+
+    private ValueTask<IndexRootsResult> ManageIndexPreferencesAsync( ProtocolRequest request, CancellationToken cancellationToken )
+    {
+        if ( IsExclusionOperation( request.Operation ) )
+        {
+            return _runtime.Indexer.ManageExclusionsAsync( request.Operation, request.Path, request.ExclusionId, cancellationToken );
+        }
+
+        return _runtime.Indexer.ManageRootsAsync( request.Operation, request.Path, request.RootId, request.IndexRoots, cancellationToken );
+    }
+
+    private static bool IsExclusionOperation( string operation )
+    {
+        return operation is ProtocolOperations.IndexExclusionAdd or ProtocolOperations.IndexExclusionUpdate or ProtocolOperations.IndexExclusionRemove
+            or ProtocolOperations.IndexExclusionEnable or ProtocolOperations.IndexExclusionDisable;
     }
 
     private async ValueTask HandleSuggestionsAsync( ClientWriter writer, ProtocolRequest request, ClientRequestContext context )

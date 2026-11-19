@@ -22,11 +22,27 @@ QtObject {
     id: defaultClient
     property int exits: 0
     property var delays: []
-    property var exitTimes: []
+    // Each attempt the bridge starts, and the backoff interval of each timer
+    // that started one. QML timers run on the animation clock, which lags the
+    // wall clock while the event loop is busy, so a wall-clock gap between
+    // attempts is not a reliable measure of the wait.
+    property int starts: 0
+    property var attemptIntervals: []
     executable: "false"
     enabled: false
+    property Connections attempts: Connections {
+      target: defaultClient.bridge
+      function onRunningChanged() {
+        if (defaultClient.bridge.running) defaultClient.starts++
+      }
+    }
+    property Connections backoff: Connections {
+      target: defaultClient.reconnectTimer
+      function onTriggered() {
+        defaultClient.attemptIntervals = defaultClient.attemptIntervals.concat([defaultClient.reconnectTimer.interval])
+      }
+    }
     onDisconnected: {
-      defaultClient.exitTimes = defaultClient.exitTimes.concat([Date.now()])
       defaultClient.exits++
       defaultClient.delays = defaultClient.delays.concat([defaultClient.reconnectDelay])
     }
@@ -106,8 +122,8 @@ QtObject {
       host.expect(reached && spawns >= 3,
         "a bridge that keeps failing backs off instead of respawning every 500 ms ("
           + spawns + " observed failures)")
-      host.expect(defaultClient.exitTimes[1] - defaultClient.exitTimes[0] >= 450
-          && defaultClient.exitTimes[2] - defaultClient.exitTimes[1] >= 900,
+      host.expect(defaultClient.starts - 1 <= defaultClient.attemptIntervals.length
+          && defaultClient.attemptIntervals[0] === 500 && defaultClient.attemptIntervals[1] === 1000,
         "actual reconnect attempts honor the increasing minimum delays")
       host.expect(defaultClient.delays[0] === 500 && defaultClient.delays[1] === 1000
           && defaultClient.delays.every(delay => delay <= 30000),

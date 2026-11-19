@@ -34,7 +34,8 @@ public sealed partial class IndexCoordinator : IIndexCoordinator
         _timeProvider = timeProvider ?? TimeProvider.System;
         _diagnostic = diagnostic;
 
-        _files = new FileIndexSource( options.Indexing with { Roots = [.. options.Indexing.Roots] }, options.Privacy, options.Storage.DatabasePath );
+        _files = new FileIndexSource( options.Indexing with { Roots = [.. options.Indexing.Roots] }, options.Privacy, options.Storage.DatabasePath,
+            _folderRules.Current );
 
         _configured = new ConfiguredItemSource( options );
         _maintenanceStateStore = new IndexMaintenanceStateStore( options.Storage.DatabasePath );

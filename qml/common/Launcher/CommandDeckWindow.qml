@@ -248,10 +248,12 @@ PanelWindow {
     requestedHeight: display.sizing.contentHeight
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.top: parent.top
-    anchors.topMargin: launcherWindow.host.settingsOpen
+    // Settings and the index inspector use the larger, centered footprint.
+    readonly property bool wideSurface: launcherWindow.host.settingsOpen || launcherWindow.host.indexInspectorOpen
+    anchors.topMargin: palettePanel.wideSurface
       ? Math.round((launcherWindow.height - height) / 2)
       : topInset
-    radius: launcherWindow.host.settingsOpen ? launcherWindow.part_settingsTheme.radius : launcherWindow.part_appTheme.radius
+    radius: palettePanel.wideSurface ? launcherWindow.part_settingsTheme.radius : launcherWindow.part_appTheme.radius
     color: launcherWindow.part_appTheme.panelBackground
     border.width: 1
     border.color: launcherWindow.part_appTheme.border
@@ -420,28 +422,9 @@ PanelWindow {
       z: 15
       wanted: launcherWindow.presenting && launcherWindow.host.indexInspectorOpen
       onItemChanged: launcherWindow.publishTestParts()
-      sourceComponent: IndexInspector {
-        theme: launcherWindow.part_appTheme
-        opened: inspectorSurface.presented && launcherWindow.host.indexInspectorOpen
-        inspection: launcherWindow.host.runtimeStatus ? launcherWindow.host.runtimeStatus.inspection : null
-        healthDetails: launcherWindow.part_runtimeStatusSurface.details
-        healthSummary: launcherWindow.part_runtimeStatusSurface.issueCount > 0 ? launcherWindow.part_runtimeStatusSurface.summary : ""
-        missingRoots: launcherWindow.part_runtimeStatusSurface.missingRoots
-        foldersRelevant: launcherWindow.part_runtimeStatusSurface.hasIndexIssue
-        onStopIndexingRequested: rootId =>
-          launcherWindow.host.part_indexRootsController.change(Protocol.Operations.IndexDisable, "", rootId)
-        onIndexedFoldersRequested: {
-          launcherWindow.host.indexInspectorOpen = false
-          launcherWindow.host.openSettings()
-          Qt.callLater(function() {
-            const settings = settingsSurface.item as CommandDeckWindowSettings
-            if (settings) settings.showIndexedFolders()
-          })
-        }
-        onDismissed: {
-          launcherWindow.host.indexInspectorOpen = false
-          launcherWindow.host.focusRevision++
-        }
+      sourceComponent: CommandDeckWindowInspector {
+        host: launcherWindow
+        presented: inspectorSurface.presented
       }
     }
 

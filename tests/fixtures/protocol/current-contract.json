@@ -84,9 +84,15 @@
     "index.add",
     "index.disable",
     "index.enable",
+    "index.exclusion.add",
+    "index.exclusion.disable",
+    "index.exclusion.enable",
+    "index.exclusion.remove",
+    "index.exclusion.update",
     "index.pause",
     "index.remove",
     "index.resume",
+    "index.reveal",
     "index.roots",
     "index.roots.import",
     "invoke",
@@ -199,6 +205,7 @@
     "Decision",
     "DraftRevision",
     "Enabled",
+    "ExclusionId",
     "ExpectedRevision",
     "Expression",
     "Extension",
@@ -256,7 +263,8 @@
     "TrustDuration",
     "TrustLevel",
     "TurnId",
-    "Version"
+    "Version",
+    "WorkItemId"
   ],
   "responseFields": [
     "ActionResult",

@@ -34,7 +34,10 @@ public sealed partial class IndexCoordinator
         }
     }
 
-    private async ValueTask CommitRootChangeAsync( IndexRootPreferences after, bool reset, CancellationToken cancellationToken )
+    // With scope folders only excluded folders changed, and the purge reads only
+    // the rows below them. The candidate policy comes from the candidate preferences.
+    private async ValueTask CommitRootChangeAsync( IndexRootPreferences after, bool reset, CancellationToken cancellationToken,
+        IReadOnlyList<string>? scopeFolders = null, ExcludedFolderRules? prepared = null )
     {
         if ( _rootPreferences is not IIndexRootChangeStore store )
         {
@@ -42,11 +45,12 @@ public sealed partial class IndexCoordinator
         }
 
         var next = GetEnabledRootOptions( after );
+        var folders = prepared ?? CreateFolderRules( after );
 
-        using FileIndexSource replacement = new( _options.Indexing with { Roots = next }, _options.Privacy, _options.Storage.DatabasePath );
+        using FileIndexSource replacement = new( _options.Indexing with { Roots = next }, _options.Privacy, _options.Storage.DatabasePath, folders );
 
         await store
-            .CommitRootsAsync( after, _files.Exclusions, replacement.Exclusions, reset, cancellationToken )
+            .CommitRootsAsync( after, _files.Exclusions, replacement.Exclusions, reset, cancellationToken, scopeFolders )
             .ConfigureAwait( false );
 
         CancelFullScan( );
@@ -54,7 +58,7 @@ public sealed partial class IndexCoordinator
         _reindexError = null;
         _reindexProgress = null;
         _incremental.PauseUntilFullScan( ReindexRequiredReason );
-        ApplyRootPreferences( after );
+        ApplyRootPreferences( after, folders );
     }
 
     // Called under the catalog gate. A cancelled generation must reacquire that

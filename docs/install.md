@@ -261,7 +261,9 @@ dotnet restore CommandDeck.slnx --locked-mode
 Inspect [the configuration example](../config/commanddeck.example.jsonc).
 Default roots index home filenames/paths, including hidden files, and enable
 content search in selected document/configuration roots. Credential exclusions
-remain active. Narrow roots before the first reindex if you prefer.
+remain active, and built-in [excluded folders](configuration.md#excluded-folders)
+skip caches, package stores and container layers. Narrow roots before the first
+reindex if you prefer.
 
 ### Complete user-local installation
 
@@ -429,6 +431,19 @@ previews, and recovery require a live Wayland session; offscreen tests alone
 do not prove them.
 
 ## Disable or roll back
+
+Each release can add a database migration, and an older build refuses a newer
+database. Before installing a build over an existing one, keep a consistent copy
+of the database so you can roll back:
+
+```bash
+mkdir -p ~/.local/state/commanddeck/db-backups
+sqlite3 ~/.local/state/commanddeck/commanddeck.db \
+  ".backup '$HOME/.local/state/commanddeck/db-backups/commanddeck.db'"
+```
+
+To roll back, stop the service, restore that copy over `commanddeck.db`, and
+install the earlier build.
 
 ```bash
 commanddeck hotkey remove

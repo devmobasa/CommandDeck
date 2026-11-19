@@ -6,7 +6,7 @@ namespace CommandDeck;
 internal sealed partial class SqliteLauncherPreferenceStore : IIndexRootChangeStore
 {
     public async ValueTask CommitRootsAsync( IndexRootPreferences preferences, IndexExclusionPolicy previousPolicy, IndexExclusionPolicy policy, bool reset,
-        CancellationToken cancellationToken )
+        CancellationToken cancellationToken, IReadOnlyList<string>? scopeFolders = null )
     {
         await using var connection = await OpenAsync( cancellationToken )
             .ConfigureAwait( false );
@@ -24,10 +24,14 @@ internal sealed partial class SqliteLauncherPreferenceStore : IIndexRootChangeSt
         await WriteIndexRootsAsync( connection, transaction, preferences, cancellationToken )
             .ConfigureAwait( false );
 
-        await PurgeUncoveredRootsAsync( connection, transaction, policy, cancellationToken )
-            .ConfigureAwait( false );
+        // Excluded folders never change which roots exist, so coverage stays.
+        if ( scopeFolders is null )
+        {
+            await PurgeUncoveredRootsAsync( connection, transaction, policy, cancellationToken )
+                .ConfigureAwait( false );
+        }
 
-        await PurgeRootPolicyAsync( connection, transaction, previousPolicy, policy, cancellationToken )
+        await PurgeRootPolicyAsync( connection, transaction, previousPolicy, policy, scopeFolders, cancellationToken )
             .ConfigureAwait( false );
 
         await SqliteCatalog
@@ -105,31 +109,10 @@ internal sealed partial class SqliteLauncherPreferenceStore : IIndexRootChangeSt
     // fields. Changed extraction limits require fresh content, so changed root
     // policies revoke old bodies and extracted configuration before that scan.
     private static async ValueTask PurgeRootPolicyAsync( SqliteConnection connection, SqliteTransaction transaction, IndexExclusionPolicy previousPolicy,
-        IndexExclusionPolicy policy, CancellationToken cancellationToken )
+        IndexExclusionPolicy policy, IReadOnlyList<string>? scopeFolders, CancellationToken cancellationToken )
     {
-        await using var paths = connection.CreateCommand( );
-        paths.Transaction = transaction;
-
-        paths.CommandText = """
-                            SELECT DISTINCT path FROM catalog_items
-                            WHERE +source_id IN ($files, $config);
-                            """;
-
-        paths.Parameters.AddWithValue( "$files", SourceIds.Files );
-        paths.Parameters.AddWithValue( "$config", SourceIds.Configuration );
-        List<string> affected = [];
-
-        await using ( var reader = await paths
-                         .ExecuteReaderAsync( cancellationToken )
-                         .ConfigureAwait( false ) )
-        {
-            while ( await reader
-                       .ReadAsync( cancellationToken )
-                       .ConfigureAwait( false ) )
-            {
-                affected.Add( reader.GetString( 0 ) );
-            }
-        }
+        var affected = await ReadAffectedPathsAsync( connection, transaction, scopeFolders, cancellationToken )
+            .ConfigureAwait( false );
 
         Dictionary<IndexRootOptions, string> identities = [];
 
@@ -185,6 +168,60 @@ internal sealed partial class SqliteLauncherPreferenceStore : IIndexRootChangeSt
                 .ExecuteNonQueryAsync( cancellationToken )
                 .ConfigureAwait( false );
         }
+    }
+
+    // Every file and configuration row, or only those at or below the scope
+    // folders: the folder itself and the range of paths that start with "folder/".
+    private static async ValueTask<List<string>> ReadAffectedPathsAsync( SqliteConnection connection, SqliteTransaction transaction,
+        IReadOnlyList<string>? scopeFolders, CancellationToken cancellationToken )
+    {
+        List<string> affected = [];
+        var ranges = scopeFolders ?? [""];
+
+        foreach ( var folder in ranges )
+        {
+            await using var paths = connection.CreateCommand( );
+            paths.Transaction = transaction;
+            paths.CommandText = CreateAffectedPathsQuery( scopeFolders is not null );
+            paths.Parameters.AddWithValue( "$files", SourceIds.Files );
+            paths.Parameters.AddWithValue( "$config", SourceIds.Configuration );
+
+            if ( scopeFolders is not null )
+            {
+                var prefix = Path.TrimEndingDirectorySeparator( folder ) + Path.DirectorySeparatorChar;
+                paths.Parameters.AddWithValue( "$folder", folder );
+                paths.Parameters.AddWithValue( "$lower", prefix );
+                paths.Parameters.AddWithValue( "$upper", prefix[..^1] + ( char ) (prefix[^1] + 1) );
+            }
+
+            await using var reader = await paths
+                .ExecuteReaderAsync( cancellationToken )
+                .ConfigureAwait( false );
+
+            while ( await reader
+                       .ReadAsync( cancellationToken )
+                       .ConfigureAwait( false ) )
+            {
+                affected.Add( reader.GetString( 0 ) );
+            }
+        }
+
+        return affected
+            .Distinct( StringComparer.Ordinal )
+            .ToList( );
+    }
+
+    private static string CreateAffectedPathsQuery( bool scoped )
+    {
+        if ( !scoped )
+        {
+            return "SELECT DISTINCT path FROM catalog_items WHERE +source_id IN ($files, $config);";
+        }
+
+        return """
+               SELECT DISTINCT path FROM catalog_items
+               WHERE +source_id IN ($files, $config) AND (path = $folder OR (path >= $lower AND path < $upper));
+               """;
     }
 
     private static string SerializeFieldProvenance( FileIndexPolicy fields )

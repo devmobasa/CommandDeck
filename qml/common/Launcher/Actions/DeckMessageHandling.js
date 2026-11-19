@@ -9,6 +9,7 @@ function handleMessage(root, message) {
   // The search streams the most replies, so it is asked first.
   if (root.part_searchSession.handleMessage(message)) return
   if (root.part_indexRootsController.handleMessage(message)) return
+  if (root.part_indexInspectionController && root.part_indexInspectionController.handleMessage(message)) return
   if (root.part_clipboardController.handleMessage(message)) return
   if (root.part_queryHistoryController.handleMessage(message)) return
   if (root.part_queryRecall.handleMessage(message)) return

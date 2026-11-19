@@ -11,7 +11,6 @@ CommandDeck.IndexInspector {
   anchors.fill: host.part_host
   opened: false
   theme: host.part_theme
-  pageSize: 2
   inspection: ({
     stats: { itemCount: 8 },
     totalExclusionDiagnosticCount: 2,
@@ -19,9 +18,9 @@ CommandDeck.IndexInspector {
     staleItemCount: 1,
     pendingItemCount: 1,
     workItems: [
-      { state: "failed", root: "/safe", relativePath: "a.txt", reason: "read-failed" },
-      { state: "stale", root: "/safe", relativePath: "b.txt", reason: "version" },
-      { state: "pending", root: "/safe", relativePath: "c.txt", reason: "event" }
+      { id: "work:a", state: "failed", root: "/safe", relativePath: "a.txt", reason: "read-failed" },
+      { id: "work:b", state: "stale", root: "/safe", relativePath: "b.txt", reason: "version" },
+      { id: "work:c", state: "pending", root: "/safe", relativePath: "c.txt", reason: "event" }
     ]
   })
 }

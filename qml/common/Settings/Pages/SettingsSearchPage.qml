@@ -9,6 +9,7 @@ ScrollView {
   readonly property alias quicklinksCard: quicklinksCard
   required property var host
   readonly property alias part_indexRootsCard: indexRootsCard
+  readonly property alias part_excludedFoldersCard: excludedFoldersCard
   readonly property alias part_fileSearchCard: fileSearchCard
   readonly property alias part_homeFolderOnlyCheck: homeFolderOnlyCheck
   readonly property alias part_omarchyMenuStateCheck: omarchyMenuStateCheck
@@ -62,7 +63,7 @@ ScrollView {
       settingId: Protocol.SettingIds.SearchSources
       theme: searchScroll.host.theme
       title: "Search sources"
-      description: "Search: the source answers what you type. Home: its items show before you type. After Top Matches, results are grouped in this order: drag a source by its grip, or press Alt+Up or Alt+Down on a row."
+      description: "Choose which sources appear in search and on Home. Drag a source or press Alt+↑ or Alt+↓ to reorder its search group."
       DeckButton {
         id: manageExtensions
         theme: searchScroll.host.theme
@@ -250,6 +251,11 @@ ScrollView {
 
     SettingsIndexRootsCard {
       id: indexRootsCard
+      host: searchScroll.host
+    }
+
+    SettingsExcludedFoldersCard {
+      id: excludedFoldersCard
       host: searchScroll.host
     }
 

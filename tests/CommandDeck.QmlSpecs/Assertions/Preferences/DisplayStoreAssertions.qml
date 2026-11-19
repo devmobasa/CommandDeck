@@ -147,15 +147,20 @@ QtObject {
         } },
       { name: "explicit Recommended can replace an unknown profile",
         ready: () => !store.legacy && store.percent === 100 && store.profile.text() === "logical-v1\n",
-        run: () => { preferences.layoutStore.setSize(123, 137) } },
+        run: () => {
+          preferences.layoutStore.setHomeShortcuts(false)
+          preferences.layoutStore.setSize(123, 137)
+        } },
       { name: "layout dimensions persist alongside the old layout choices",
-        ready: () => preferences.layoutStore.file.text() === "compact=off\npreview=on\nwidth=125\nheight=135\n",
+        ready: () => preferences.layoutStore.file.text() === "compact=off\npreview=on\nhome-shortcuts=off\nwidth=125\nheight=135\n",
         run: () => {
           preferences.layoutStore.widthPercent = 100
           preferences.layoutStore.heightPercent = 100
+          preferences.layoutStore.homeShortcuts = true
           preferences.layoutStore.load()
           host.expect(frontend.launcherWidthPercent === 125 && frontend.launcherHeightPercent === 135,
             "reloading layout preferences restores the durable panel choices")
+          host.expect(!preferences.layoutStore.homeShortcuts, "reloading restores the Home shortcuts choice")
           fontReader.load()
           host.expect(fontReader.choice === "sans", "an absent interface font file defaults to Sans")
           preferences.interfaceFontStore.set("shell")

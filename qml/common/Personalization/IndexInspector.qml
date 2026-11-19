@@ -2,10 +2,14 @@ import ".."
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../FocusTrap.js" as FocusTrap
+import "IndexIssueGroups.js" as IssueGroups
 import "../Protocol.js" as Protocol
 import QtQuick.Controls
 import QtQuick.Layouts
 
+// The index inspector fills the card at the Settings size: counts, service
+// health, a grouped list of the index issues on the left, and what the
+// selected issue means and what to do about it on the right.
 FocusScope {
   id: root
 
@@ -17,42 +21,64 @@ FocusScope {
   // Configured folders that don't exist, as { id, path }; each gets a Stop indexing button.
   property var missingRoots: []
   property bool foldersRelevant: true
+  // Built-in and user excluded folders, for group labels and the built-in switch.
+  property var exclusions: []
+  property string homeDirectory: ""
+  property bool busy: false
+  property bool loading: false
+  property string statusText: ""
+  property string errorText: ""
   readonly property string heading: "Index inspector" + (healthSummary.length > 0 ? " · " + healthSummary : "")
-  property int page: 0
-  property int pageSize: healthDetails.length > 0 ? 4 : 6
   readonly property var workItems: inspection ? inspection.workItems || [] : []
-  readonly property int pageCount: Math.max(1, Math.ceil(workItems.length / pageSize))
-  readonly property int pageStart: page * pageSize
-  readonly property int visibleWorkItemCount: Math.max(
-    0, Math.min(pageSize, workItems.length - pageStart))
+  readonly property var builtIns: root.exclusions.filter(value => value.source === Protocol.IndexExclusionSources.BuiltIn)
+  readonly property var groups: IssueGroups.group(root.workItems, root.builtIns)
   readonly property bool countsExact: !inspection || inspection.workItemCountsExact !== false
+  readonly property bool partial: !!(inspection && inspection.workItemsTruncated)
   readonly property string countPrefix: countsExact ? "" : "at least "
-  readonly property string pageSummary: "Page " + (page + 1) + " of " + pageCount
-    + (inspection && inspection.workItemsTruncated ? " loaded" : "")
   readonly property bool focusTrapConfigured: true
+  readonly property bool showsStopIndexing: root.healthDetails.length > 0 && root.missingRoots.length > 0
+  readonly property bool showsFolders: root.foldersRelevant && root.healthDetails.length > 0
   readonly property alias closeControl: closeButton
   readonly property alias healthControl: healthText
-  readonly property alias previousControl: previousButton
-  readonly property alias nextControl: nextButton
   readonly property alias stopIndexingControl: stopIndexingButton
+  readonly property alias foldersControl: foldersButton
+  readonly property alias excludedFoldersControl: excludedFoldersButton
+  readonly property alias listControl: issueList
+  readonly property alias detailControl: detail
+  readonly property var focusTargets: detail.sheetOpen ? detail.focusTargets
+    : [closeButton, healthText, stopIndexingButton, foldersButton, issueList, ...detail.focusTargets, excludedFoldersButton]
 
   signal dismissed()
   signal indexedFoldersRequested()
+  signal excludedFoldersRequested()
   signal stopIndexingRequested(string rootId)
-  readonly property alias foldersControl: foldersButton
+  signal excludeRequested(string path)
+  signal builtInExclusionRequested(string exclusionId)
+  signal revealRequested(string workItemId)
 
   function close() {
     root.dismissed()
   }
 
-  function movePage(delta) {
-    page = Math.max(0, Math.min(pageCount - 1, page + delta))
+  function copy(path) {
+    if (!path) return
+    clipboardHelper.text = path
+    clipboardHelper.selectAll()
+    clipboardHelper.copy()
+    clipboardHelper.text = ""
+    root.statusText = "Copied the path."
   }
 
   onOpenedChanged: {
     if (!opened) return
-    page = 0
-    Qt.callLater(closeButton.forceActiveFocus)
+    root.statusText = ""
+    issueList.expanded = ({})
+    issueList.selectedKey = ""
+    issueList.ensureSelection()
+    Qt.callLater(function() {
+      if (root.groups.length > 0) issueList.forceActiveFocus()
+      else closeButton.forceActiveFocus()
+    })
   }
 
   visible: opened
@@ -68,53 +94,46 @@ FocusScope {
 
   Keys.onPressed: event => {
     if (event.key === Qt.Key_Escape) {
-      root.close()
-      event.accepted = true
-    } else if (event.key === Qt.Key_PageDown) {
-      root.movePage(1)
-      event.accepted = true
-    } else if (event.key === Qt.Key_PageUp) {
-      root.movePage(-1)
+      if (detail.sheetOpen) detail.closeSheet()
+      else root.close()
       event.accepted = true
     } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
-      // The details show only with health issues, and a page button is
-      // disabled at its end; both are skipped then.
-      FocusTrap.cycleTargets([closeButton, healthText, stopIndexingButton, foldersButton, previousButton, nextButton],
-        event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))
+      FocusTrap.cycleTargets(root.focusTargets, event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))
       event.accepted = true
     }
+  }
+
+  TextEdit {
+    id: clipboardHelper
+    visible: false
+    width: 1
   }
 
   Rectangle {
     anchors.fill: parent
-    color: root.theme.scrim
-
-    TapHandler {
-      onTapped: root.close()
-    }
-  }
-
-  Rectangle {
-    width: Math.min(parent.width - 48, 620)
-    height: Math.min(parent.height - 48, 520)
-    anchors.centerIn: parent
     radius: root.theme.radius
     color: root.theme.popupBackground
     border.width: 1
-    border.color: root.theme.separator
+    border.color: root.theme.border
 
-    TapHandler {
-      onTapped: eventPoint => eventPoint.accepted = true
-    }
-
-    ColumnLayout {
+    MouseArea {
       anchors.fill: parent
-      anchors.margins: root.theme.panelPadding
-      spacing: 10
+      acceptedButtons: Qt.AllButtons
+    }
+  }
 
-      RowLayout {
+  ColumnLayout {
+    anchors.fill: parent
+    anchors.margins: Math.round(18 * root.theme.scale)
+    spacing: Math.round(12 * root.theme.scale)
+
+    RowLayout {
+      Layout.fillWidth: true
+      spacing: Math.round(12 * root.theme.scale)
+
+      ColumnLayout {
         Layout.fillWidth: true
-
+        spacing: Math.round(2 * root.theme.scale)
         Text {
           Layout.fillWidth: true
           textFormat: Text.PlainText
@@ -122,58 +141,91 @@ FocusScope {
           color: root.theme.text
           font.family: root.theme.fontFamily
           font.pixelSize: root.theme.fontHeading
-          font.bold: true
-          wrapMode: Text.Wrap
+          font.weight: Font.DemiBold
+          elide: Text.ElideRight
         }
-
-        DeckButton {
-          id: closeButton
-          theme: root.theme
-          text: "Close"
-          Accessible.name: "Close index inspector"
-          onClicked: root.close()
-        }
-      }
-
-      Text {
-        Layout.fillWidth: true
-        text: root.inspection
-          ? "Files: Indexed " + root.inspection.stats.itemCount
-            + " · Excluded about " + root.inspection.totalExclusionDiagnosticCount
-            + " · Failed " + root.countPrefix + root.inspection.failedItemCount
-            + " · Stale " + root.countPrefix + root.inspection.staleItemCount
-            + " · Pending " + root.countPrefix + root.inspection.pendingItemCount
-          : "Index state unavailable"
-        color: root.theme.textMuted
-        font.family: root.theme.fontFamily
-        font.pixelSize: root.theme.fontSmall
-        wrapMode: Text.Wrap
-      }
-
-      ScrollView {
-        Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(100, healthText.implicitHeight + 12)
-        visible: root.healthDetails.length > 0
-        clip: true
-        contentWidth: availableWidth
-        TextArea {
-          id: healthText
-          text: root.healthDetails
-          textFormat: TextEdit.PlainText
-          readOnly: true
-          wrapMode: TextEdit.Wrap
+        Text {
+          Layout.fillWidth: true
+          text: "Files the index could not read or update. Pick an issue to see what to do."
           color: root.theme.textMuted
           font.family: root.theme.fontFamily
           font.pixelSize: root.theme.fontSmall
-          background: null
-          Accessible.name: "Index and service issue details"
+          elide: Text.ElideRight
         }
       }
+      DeckButton {
+        id: closeButton
+        theme: root.theme
+        text: "Close"
+        tabFence: false
+        Accessible.name: "Close index inspector"
+        onClicked: root.close()
+      }
+    }
+
+    Flow {
+      Layout.fillWidth: true
+      spacing: Math.round(8 * root.theme.scale)
+      visible: root.inspection !== null
+
+      Repeater {
+        model: root.inspection ? [
+          { label: "Failed", value: root.countPrefix + root.inspection.failedItemCount, urgent: root.inspection.failedItemCount > 0 },
+          { label: "Stale", value: root.countPrefix + root.inspection.staleItemCount, urgent: false },
+          { label: "Pending", value: root.countPrefix + root.inspection.pendingItemCount, urgent: false },
+          { label: "Indexed", value: String(root.inspection.stats ? root.inspection.stats.itemCount : 0), urgent: false },
+          { label: "Excluded", value: "about " + root.inspection.totalExclusionDiagnosticCount, urgent: false }
+        ] : []
+        delegate: Rectangle {
+          required property var modelData
+          implicitWidth: chip.implicitWidth + Math.round(18 * root.theme.scale)
+          implicitHeight: chip.implicitHeight + Math.round(8 * root.theme.scale)
+          radius: implicitHeight / 2
+          color: modelData.urgent ? root.theme.withAlpha(root.theme.urgent, 0.16) : root.theme.surfaceStrong
+          Text {
+            id: chip
+            anchors.centerIn: parent
+            text: parent.modelData.label + "  " + parent.modelData.value
+            color: parent.modelData.urgent ? root.theme.urgent : root.theme.textMuted
+            font.family: root.theme.fontFamily
+            font.pixelSize: root.theme.fontSmall
+            font.weight: Font.DemiBold
+          }
+        }
+      }
+    }
+
+    ScrollView {
+      Layout.fillWidth: true
+      Layout.preferredHeight: Math.min(Math.round(90 * root.theme.scale), healthText.implicitHeight + Math.round(8 * root.theme.scale))
+      visible: root.healthDetails.length > 0
+      clip: true
+      contentWidth: availableWidth
+      TextArea {
+        id: healthText
+        text: root.healthDetails
+        textFormat: TextEdit.PlainText
+        readOnly: true
+        wrapMode: TextEdit.Wrap
+        color: root.theme.textMuted
+        font.family: root.theme.fontFamily
+        font.pixelSize: root.theme.fontSmall
+        background: null
+        Accessible.name: "Index and service issue details"
+      }
+    }
+
+    Flow {
+      Layout.fillWidth: true
+      spacing: Math.round(8 * root.theme.scale)
+      // A hidden parent hides its children, so this reads the conditions, not their visibility.
+      visible: root.showsStopIndexing || root.showsFolders
 
       DeckButton {
         id: stopIndexingButton
-        visible: root.healthDetails.length > 0 && root.missingRoots.length > 0
+        visible: root.showsStopIndexing
         theme: root.theme
+        tabFence: false
         text: root.missingRoots.length === 1
           ? "Stop indexing " + String(root.missingRoots[0].path).replace(/^\/home\/[^/]+(?=\/|$)/, "~")
           : "Stop indexing " + root.missingRoots.length + " missing folders"
@@ -182,109 +234,100 @@ FocusScope {
         Accessible.description: "Turns the missing folders off in indexed folders. Your configuration file is not changed."
         onClicked: root.missingRoots.forEach(missing => root.stopIndexingRequested(String(missing.id)))
       }
-
       DeckButton {
         id: foldersButton
-        visible: root.foldersRelevant && root.healthDetails.length > 0
+        visible: root.showsFolders
         theme: root.theme
+        tabFence: false
         text: "Manage indexed folders"
         Accessible.name: "Manage indexed folders in Settings"
         onClicked: root.indexedFoldersRequested()
       }
+    }
+
+    Text {
+      Layout.fillWidth: true
+      visible: text.length > 0
+      text: root.errorText.length > 0 ? root.errorText : root.loading ? "Loading index details…" : root.statusText
+      color: root.errorText.length > 0 ? root.theme.urgent : root.theme.textMuted
+      font.family: root.theme.fontFamily
+      font.pixelSize: root.theme.fontSmall
+      wrapMode: Text.Wrap
+      Accessible.role: root.errorText.length > 0 ? Accessible.AlertMessage : Accessible.StaticText
+      Accessible.name: text
+    }
+
+    RowLayout {
+      Layout.fillWidth: true
+      Layout.fillHeight: true
+      spacing: Math.round(16 * root.theme.scale)
+
+      IndexInspectorList {
+        id: issueList
+        theme: root.theme
+        groups: root.groups
+        homeDirectory: root.homeDirectory
+        visible: root.groups.length > 0
+        Layout.fillHeight: true
+        Layout.fillWidth: true
+        Layout.preferredWidth: 11
+        activeFocusOnTab: false
+        onCopyRequested: root.copy(detail.targetPath)
+      }
+
+      IndexIssueDetail {
+        id: detail
+        theme: root.theme
+        row: issueList.selectedRow
+        homeDirectory: root.homeDirectory
+        busy: root.busy
+        visible: root.groups.length > 0
+        Layout.fillHeight: true
+        Layout.fillWidth: true
+        Layout.preferredWidth: 9
+        onExcludeRequested: path => root.excludeRequested(path)
+        onBuiltInExclusionRequested: id => root.builtInExclusionRequested(id)
+        onRevealRequested: id => root.revealRequested(id)
+        onCopyRequested: path => root.copy(path)
+      }
 
       Text {
+        visible: root.groups.length === 0
         Layout.fillWidth: true
-        visible: root.workItems.length === 0
+        Layout.fillHeight: true
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
         text: root.inspection && root.inspection.totalWorkItemCount > 0
           ? "No work items in this loaded page. More may remain."
           : "No failed, stale, or pending index items."
         color: root.theme.textMuted
         font.family: root.theme.fontFamily
         font.pixelSize: root.theme.fontBody
+        wrapMode: Text.Wrap
       }
+    }
 
-      ColumnLayout {
+    RowLayout {
+      Layout.fillWidth: true
+      spacing: Math.round(12 * root.theme.scale)
+
+      Text {
         Layout.fillWidth: true
-        Layout.fillHeight: true
-        spacing: 6
-
-        Repeater {
-          model: root.visibleWorkItemCount
-
-          Rectangle {
-            id: workRow
-
-            required property int index
-            readonly property var work: root.workItems[root.pageStart + index]
-            Layout.fillWidth: true
-            Layout.preferredHeight: 54
-            radius: root.theme.radiusSmall
-            color: root.theme.surfaceStrong
-            Accessible.role: Accessible.ListItem
-            Accessible.name: workRow.work.state + ": " + workRow.work.relativePath
-            Accessible.description: workRow.work.reason + "; root " + workRow.work.root
-
-            Column {
-              anchors.fill: parent
-              anchors.margins: 7
-              spacing: 2
-
-              Text {
-                width: parent.width
-                textFormat: Text.PlainText
-                text: workRow.work.state.toUpperCase()
-                  + " · " + workRow.work.relativePath
-                color: workRow.work.state === Protocol.IndexWorkStates.Failed
-                  ? root.theme.urgent
-                  : root.theme.text
-                font.family: root.theme.fontFamily
-                font.pixelSize: root.theme.fontBody
-                elide: Text.ElideMiddle
-              }
-
-              Text {
-                width: parent.width
-                textFormat: Text.PlainText
-                text: workRow.work.reason
-                color: root.theme.textMuted
-                font.family: root.theme.fontFamily
-                font.pixelSize: root.theme.fontSmall
-                elide: Text.ElideRight
-              }
-            }
-          }
-        }
+        text: (root.partial ? root.workItems.length + " issues loaded · " : "")
+          + "↑↓ Select     → ← Expand     Tab Actions     Ctrl+C Copy path     Esc Close"
+        color: root.theme.textFaint
+        font.family: root.theme.fontFamily
+        font.pixelSize: root.theme.fontSmall
+        elide: Text.ElideRight
       }
-
-      RowLayout {
-        Layout.fillWidth: true
-
-        DeckButton {
-          id: previousButton
-          theme: root.theme
-          text: "Previous"
-          enabled: root.page > 0
-          Accessible.name: "Previous index page"
-          onClicked: root.movePage(-1)
-        }
-
-        Text {
-          Layout.fillWidth: true
-          horizontalAlignment: Text.AlignHCenter
-          text: root.pageSummary
-          color: root.theme.textMuted
-          font.family: root.theme.fontFamily
-          font.pixelSize: root.theme.fontSmall
-        }
-
-        DeckButton {
-          id: nextButton
-          theme: root.theme
-          text: "Next"
-          enabled: root.page + 1 < root.pageCount
-          Accessible.name: "Next index page"
-          onClicked: root.movePage(1)
-        }
+      DeckButton {
+        id: excludedFoldersButton
+        theme: root.theme
+        compact: true
+        tabFence: false
+        text: "Manage excluded folders"
+        Accessible.name: "Manage excluded folders in Settings"
+        onClicked: root.excludedFoldersRequested()
       }
     }
   }

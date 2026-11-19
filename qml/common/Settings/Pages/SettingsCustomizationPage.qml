@@ -138,7 +138,14 @@ ScrollView {
       settingId: Protocol.SettingIds.Layout
       theme: customizationScroll.host.theme
       title: "Layout"
-      description: "Panel space and result details, without changing text or control size. Applies immediately."
+      description: "Adjust the space for results and choose what appears on Home. Changes apply immediately."
+
+      SettingsLayoutPreview {
+        theme: customizationScroll.host.theme
+        compact: customizationScroll.host.compactLayout
+        showPreview: customizationScroll.host.previewPaneVisible
+        showShortcuts: customizationScroll.host.homeShortcutsVisible
+      }
 
       LayoutSizeRow {
         id: layoutWidth
@@ -182,6 +189,16 @@ ScrollView {
         Accessible.name: "Preview pane"
         Accessible.description: "Show result details and file previews beside the results"
         onClicked: customizationScroll.host.previewPaneSelected(checked)
+      }
+
+      SettingsToggle {
+        objectName: "homeShortcutsToggle"
+        theme: customizationScroll.host.theme
+        Layout.fillWidth: true
+        text: "Home shortcuts"
+        help: "Show quick filters for applications, files and windows above your Home results."
+        checked: customizationScroll.host.homeShortcutsVisible
+        onClicked: customizationScroll.host.homeShortcutsSelected(checked)
       }
     }
 

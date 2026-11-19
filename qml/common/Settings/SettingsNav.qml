@@ -10,7 +10,6 @@ Item {
   id: root
 
   required property var theme
-  function tint(value, amount) { return Qt.rgba(value.r, value.g, value.b, amount) }
   property var pages: []
   property string currentId: ""
   signal selected(string pageId)
@@ -63,7 +62,7 @@ Item {
         Layout.preferredHeight: root.rowHeight
         radius: Math.min(root.theme.radius, Math.round(7 * root.theme.scale))
         color: entry.current
-          ? root.theme.surfaceStrong
+          ? root.theme.selectedBackground
           : hover.hovered ? root.theme.surface : "transparent"
         border.width: entry.current && root.activeFocus ? 2 : 0
         border.color: entry.current && root.activeFocus ? root.theme.focusRing : root.theme.selectedBorder
@@ -72,9 +71,21 @@ Item {
         Accessible.focusable: true
         Accessible.description: String(entry.modelData.subtitle || "")
         Accessible.selected: entry.current
+        Accessible.onPressAction: root.selected(entry.modelData.id)
 
         HoverHandler { id: hover }
         TapHandler { onTapped: root.selected(entry.modelData.id) }
+
+        Rectangle {
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.leftMargin: Math.round(3 * root.theme.scale)
+          width: Math.max(2, Math.round(2 * root.theme.scale))
+          height: Math.round(parent.height * 0.5)
+          radius: width / 2
+          color: root.theme.accent
+          visible: entry.current
+        }
 
         RowLayout {
           anchors.fill: parent
@@ -82,18 +93,12 @@ Item {
           anchors.rightMargin: Math.round(10 * root.theme.scale)
           spacing: Math.round(12 * root.theme.scale)
 
-          Rectangle {
+          SettingsSymbol {
+            objectName: "settingsNavGlyph"
             Layout.preferredWidth: Math.round(root.theme.fontBody * 1.5)
             Layout.preferredHeight: width
-            radius: width * 0.26
-            color: String(entry.modelData.iconColor)
-            SettingsSymbol {
-              anchors.centerIn: parent
-              width: Math.round(parent.width * 0.8)
-              height: width
-              symbol: String(entry.modelData.id)
-              ink: "white"
-            }
+            symbol: String(entry.modelData.id)
+            ink: entry.current ? root.theme.accent : root.theme.textMuted
           }
           Text {
             Layout.fillWidth: true

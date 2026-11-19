@@ -131,6 +131,8 @@ Item {
     else hudTimer.stop()
   }
   property bool aiFeaturesEnabled: true
+  // Settings and the index inspector show paths below it as ~/…
+  readonly property string homeDirectory: Quickshell.env(Protocol.EnvironmentVariableNames.Home) || ""
   readonly property string aiSaveDirectory: {
     const home = Quickshell.env(Protocol.EnvironmentVariableNames.Home)
     return home && home.length > 0 ? home + "/Documents" : ""

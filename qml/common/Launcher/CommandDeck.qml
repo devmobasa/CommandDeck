@@ -113,6 +113,9 @@ CommandDeckState {
   readonly property bool queryIsEmpty: navigation.queryText.trim().length === 0
     && navigation.activeFilters.length === 0
   readonly property bool hasResults: resultRows.count > 0
+  readonly property bool homeShortcutsVisible: part_layoutStore.homeShortcuts && opened && daemonAvailable
+    && !reconciliationPending && queryIsEmpty && hasResults && browseDirectory.length === 0
+    && !herdrViewOpen && !omarchyMenuOpen
   // The result model includes one section header before a sole result.
   readonly property bool calculatorOnly: resultRows.count === 2
     && currentResult !== null && currentResult.kind === Protocol.ResultKinds.Calculator
@@ -513,6 +516,14 @@ CommandDeckState {
       root.announcementText = announcement
       root.announceStatus(announcement)
     }
+  }
+
+  readonly property alias part_indexInspectionController: indexInspectionController
+  IndexInspectionController {
+    id: indexInspectionController
+    nextRequestId: () => ++root.requestSequence
+    available: root.daemonAvailable
+    onRequest: value => root.part_protocol.send(value)
   }
 
   readonly property alias part_indexRootsController: indexRootsController

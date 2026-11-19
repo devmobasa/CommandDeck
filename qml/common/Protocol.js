@@ -3,7 +3,12 @@
 var Version = 3;
 
 var EnvironmentVariableNames = Object.freeze({
+  AndroidHome: "ANDROID_HOME",
+  AndroidSdkRoot: "ANDROID_SDK_ROOT",
+  CargoHome: "CARGO_HOME",
+  ClaudeConfigDirectory: "CLAUDE_CONFIG_DIR",
   CodexHome: "CODEX_HOME",
+  CondaPackageDirectories: "CONDA_PKGS_DIRS",
   DbusSessionBusAddress: "DBUS_SESSION_BUS_ADDRESS",
   DotnetRoot: "DOTNET_ROOT",
   EnableDiagnostics: "DOTNET_EnableDiagnostics",
@@ -12,6 +17,9 @@ var EnvironmentVariableNames = Object.freeze({
   GcRegionRange: "DOTNET_GCRegionRange",
   GcRegionSize: "DOTNET_GCRegionSize",
   GcServer: "DOTNET_gcServer",
+  GoModuleCache: "GOMODCACHE",
+  GoPath: "GOPATH",
+  GradleUserHome: "GRADLE_USER_HOME",
   Home: "HOME",
   HyprlandInstanceSignature: "HYPRLAND_INSTANCE_SIGNATURE",
   Language: "LANG",
@@ -19,10 +27,20 @@ var EnvironmentVariableNames = Object.freeze({
   MallocArenaMaximum: "MALLOC_ARENA_MAX",
   MiseDataDirectory: "MISE_DATA_DIR",
   NoColor: "NO_COLOR",
+  NpmCache: "npm_config_cache",
+  NuGetHttpCachePath: "NUGET_HTTP_CACHE_PATH",
+  NuGetPackages: "NUGET_PACKAGES",
+  NuGetPluginsCachePath: "NUGET_PLUGINS_CACHE_PATH",
+  NvmDirectory: "NVM_DIR",
   OmarchyPath: "OMARCHY_PATH",
+  PnpmHome: "PNPM_HOME",
+  PyenvRoot: "PYENV_ROOT",
+  RustupHome: "RUSTUP_HOME",
   TemporaryDirectory: "TMPDIR",
   Terminal: "TERM",
   TieredPgo: "DOTNET_TieredPGO",
+  UvPythonInstallDirectory: "UV_PYTHON_INSTALL_DIR",
+  VoltaHome: "VOLTA_HOME",
   WaylandDisplay: "WAYLAND_DISPLAY"
 });
 
@@ -118,9 +136,15 @@ var Operations = Object.freeze({
   IndexAdd: "index.add",
   IndexDisable: "index.disable",
   IndexEnable: "index.enable",
+  IndexExclusionAdd: "index.exclusion.add",
+  IndexExclusionDisable: "index.exclusion.disable",
+  IndexExclusionEnable: "index.exclusion.enable",
+  IndexExclusionRemove: "index.exclusion.remove",
+  IndexExclusionUpdate: "index.exclusion.update",
   IndexPause: "index.pause",
   IndexRemove: "index.remove",
   IndexResume: "index.resume",
+  IndexReveal: "index.reveal",
   IndexRoots: "index.roots",
   IndexRootsImport: "index.roots.import",
   Invoke: "invoke",
@@ -542,6 +566,19 @@ var IndexWorkStates = Object.freeze({
   Stale: "stale"
 });
 
+var IndexExclusionSources = Object.freeze({
+  BuiltIn: "builtin",
+  User: "user"
+});
+
+var IndexExclusionCategories = Object.freeze({
+  Agents: "agents",
+  Applications: "applications",
+  Caches: "caches",
+  Containers: "containers",
+  Packages: "packages"
+});
+
 var QueryFieldIds = Object.freeze({
   Config: "config",
   Content: "content",
@@ -813,6 +850,7 @@ var SettingIds = Object.freeze({
   Diagnostics: "diagnostics.status",
   DisplaySize: "customization.display",
   Editors: "editors.editors",
+  ExcludedFolders: "search.exclusions",
   Favorites: "customization.favorites",
   FileSearch: "search.files",
   FilterAliases: "filters.aliases",
@@ -1073,6 +1111,7 @@ var SettingsEntries = Object.freeze({
   Diagnostics: {"id":"diagnostics.status","page":"diagnostics","section":"","title":"Status and timings","breadcrumb":"Diagnostics","keywords":"diagnostics debug info copy report bug version socket daemon process started index catalog database search timings slow latency providers timeout"},
   DisplaySize: {"id":"customization.display","page":"customization","section":"","title":"Display size","breadcrumb":"Customization","keywords":"customization display size scale zoom percent larger smaller screen match recommended previous"},
   Editors: {"id":"editors.editors","page":"editors","section":"","title":"File opening","breadcrumb":"Editors","keywords":"editors preferred graphical terminal executable arguments"},
+  ExcludedFolders: {"id":"search.exclusions","page":"search","section":"","title":"Excluded folders","breadcrumb":"Search","keywords":"search excluded folders exclude ignore skip hide noise cache caches packages containers podman docker cargo nuget trash built-in"},
   Favorites: {"id":"customization.favorites","page":"customization","section":"","title":"Favorites and aliases","breadcrumb":"Customization","keywords":"customization favorites aliases bookmarks order unavailable remove"},
   FileSearch: {"id":"search.files","page":"search","section":"","title":"File search","breadcrumb":"Search","keywords":"search home folder only indexed files configuration"},
   FilterAliases: {"id":"filters.aliases","page":"filters","section":"","title":"Filter aliases","breadcrumb":"Filters","keywords":"filters aliases tokens add remove"},
@@ -1080,7 +1119,7 @@ var SettingsEntries = Object.freeze({
   HiddenItems: {"id":"customization.hidden","page":"customization","section":"","title":"Hidden items","breadcrumb":"Customization","keywords":"customization hidden items hide restore don\u0027t show unavailable"},
   IndexedFolders: {"id":"search.folders","page":"search","section":"","title":"Indexed folders","breadcrumb":"Search","keywords":"search indexed folders roots path add remove disable enable configuration missing folder"},
   InterfaceFont: {"id":"customization.font","page":"customization","section":"","title":"Appearance","breadcrumb":"Customization","keywords":"customization appearance interface font typeface monospace sans mono shell"},
-  Layout: {"id":"customization.layout","page":"customization","section":"","title":"Layout","breadcrumb":"Customization","keywords":"customization layout width height panel percent reset compact dense rows one line badges footer shortcuts preview pane details"},
+  Layout: {"id":"customization.layout","page":"customization","section":"","title":"Layout","breadcrumb":"Customization","keywords":"customization layout width height panel percent reset compact dense rows one line badges footer shortcuts preview pane details home quick filters"},
   PromptTemplates: {"id":"ai.quick.templates","page":"ai","section":"quick","title":"Prompt templates","breadcrumb":"AI \u203A Quick answers","keywords":"ai providers prompt templates system user input new edit delete"},
   QuickAnswerProviders: {"id":"ai.quick.providers","page":"ai","section":"quick","title":"Providers","breadcrumb":"AI \u203A Quick answers","keywords":"ai quick answers providers direct enable ollama openai grok xai endpoint api key credential model provider add edit remove test"},
   QuickAnswerSelection: {"id":"ai.quick.selection","page":"ai","section":"quick","title":"Selected provider and model","breadcrumb":"AI \u203A Quick answers","keywords":"ai providers model refresh selection save selected active"},

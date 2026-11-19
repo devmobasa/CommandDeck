@@ -82,9 +82,12 @@ curl -fsSL https://raw.githubusercontent.com/devmobasa/CommandDeck/main/scripts/
 | `v0.1.0-preview.2` | Install this version, not the newest one. |
 
 > [!WARNING]
-> The install indexes the file names in your home folder, hidden files included. Privacy exclusions always apply. To
-> index less, open **Settings > Search > Indexed folders** and disable or remove folders. A change removes what it no
-> longer covers from the index. See [indexed folders](docs/configuration.md#indexed-folders-in-settings).
+> The install indexes the file names in your home folder, hidden files included. Privacy exclusions always apply, and
+> built-in exclusions skip caches, package stores, container layers, and app and agent state. To index less, open
+> **Settings > Search** and disable indexed folders or add excluded folders. A change removes what it no longer covers
+> from the index. See
+> [indexed folders](docs/configuration.md#indexed-folders-in-settings) and
+> [excluded folders](docs/configuration.md#excluded-folders).
 
 The [installation guide](docs/install.md) covers the requirements, manual installation, troubleshooting, rollback, and
 the standalone host.

@@ -24,6 +24,7 @@ QtObject {
   property bool compact: false
   // The result details and file preview beside the list.
   property bool preview: true
+  property bool homeShortcuts: true
   property int widthPercent: 100
   property int heightPercent: 100
   property bool loaded: false
@@ -39,7 +40,7 @@ QtObject {
   }
 
   function parse(text) {
-    const values = { compact: false, preview: true, widthPercent: 100, heightPercent: 100 }
+    const values = { compact: false, preview: true, homeShortcuts: true, widthPercent: 100, heightPercent: 100 }
     const lines = String(text === null || text === undefined ? "" : text).split("\n")
     for (let index = 0; index < lines.length; index++) {
       const parts = lines[index].trim().toLowerCase().split("=")
@@ -48,6 +49,7 @@ QtObject {
       const value = parts[1].trim()
       if (name === "compact") values.compact = value === "on"
       else if (name === "preview") values.preview = value !== "off"
+      else if (name === "home-shortcuts") values.homeShortcuts = value !== "off"
       else if (name === "width") values.widthPercent = normalize(value)
       else if (name === "height") values.heightPercent = normalize(value)
     }
@@ -57,6 +59,7 @@ QtObject {
   function serialize() {
     return "compact=" + (root.compact ? "on" : "off") + "\n"
       + "preview=" + (root.preview ? "on" : "off") + "\n"
+      + "home-shortcuts=" + (root.homeShortcuts ? "on" : "off") + "\n"
       + "width=" + root.widthPercent + "\nheight=" + root.heightPercent + "\n"
   }
 
@@ -72,6 +75,7 @@ QtObject {
     const parsed = root.parse(existing)
     root.compact = parsed.compact
     root.preview = parsed.preview
+    root.homeShortcuts = parsed.homeShortcuts
     root.widthPercent = parsed.widthPercent
     root.heightPercent = parsed.heightPercent
     root.loaded = true
@@ -90,13 +94,18 @@ QtObject {
     root.set(root.compact, root.preview, width, height)
   }
 
-  function set(compact, preview, width = root.widthPercent, height = root.heightPercent) {
+  function setHomeShortcuts(visible) {
+    root.set(root.compact, root.preview, root.widthPercent, root.heightPercent, visible === true)
+  }
+
+  function set(compact, preview, width = root.widthPercent, height = root.heightPercent, homeShortcuts = root.homeShortcuts) {
     const nextWidth = root.normalize(width)
     const nextHeight = root.normalize(height)
     if (root.loaded && compact === root.compact && preview === root.preview
-        && nextWidth === root.widthPercent && nextHeight === root.heightPercent) return
+        && nextWidth === root.widthPercent && nextHeight === root.heightPercent && homeShortcuts === root.homeShortcuts) return
     root.compact = compact
     root.preview = preview
+    root.homeShortcuts = homeShortcuts
     root.widthPercent = nextWidth
     root.heightPercent = nextHeight
     root.changed()

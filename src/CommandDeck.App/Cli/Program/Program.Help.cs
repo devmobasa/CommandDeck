@@ -47,6 +47,10 @@ public static partial class Program
                                  commanddeck index disable <root-id>
                                  commanddeck index enable <root-id>
                                  commanddeck index import <export-file>
+                                 commanddeck index exclusions [--json]
+                                 commanddeck index exclude <path>
+                                 commanddeck index exclusion edit <id> <path>
+                                 commanddeck index exclusion remove|enable|disable <id>
                                  commanddeck preferences export
                                  commanddeck preferences reset --yes
                                  commanddeck ranking inspect [--limit N] [--json]

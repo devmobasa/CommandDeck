@@ -30,7 +30,7 @@ QtObject {
   readonly property var launcher: Sizing.calculate(input(false))
   readonly property var settings: Sizing.calculate(input(true))
   readonly property int maximumFittingPercent: Sizing.maximumFittingPercent(input(false, 100))
-  readonly property var sizing: host.settingsOpen || host.extensionManagementOpen ? settings : launcher
+  readonly property var sizing: host.settingsOpen || host.extensionManagementOpen || host.indexInspectorOpen ? settings : launcher
   readonly property Theme theme: WindowTheme { source: root.host.part_appTheme; sizing: root.sizing }
   readonly property string description: host.displaySizePercent + "% requested"
     + (host.displaySizePercent === 100 && !host.part_displayScaleStore.legacy ? " (Recommended)" : "")

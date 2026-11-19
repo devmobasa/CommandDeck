@@ -165,6 +165,8 @@ public interface IIndexCoordinator : IAsyncDisposable, ICatalogOperations
     ValueTask<IndexRootsResult> ManageRootsAsync( string operation, string? path, string? rootId, IndexRootPreferences? import,
         CancellationToken cancellationToken );
 
+    ValueTask<IndexRootsResult> ManageExclusionsAsync( string operation, string? path, string? exclusionId, CancellationToken cancellationToken );
+    ValueTask RevealIndexIssueAsync( string workItemId, CancellationToken cancellationToken );
     ValueTask<LauncherPreferences> ResetPreferencesAsync( CancellationToken cancellationToken );
     ValueTask StartAsync( CancellationToken cancellationToken );
     ValueTask<ReindexReport> ReindexAsync( IProgress<IndexProgress>? progress, CancellationToken cancellationToken );

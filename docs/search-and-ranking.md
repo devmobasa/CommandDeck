@@ -208,10 +208,11 @@ words from it. Queries shorter than three characters, filters, the calculator,
 the assistant, and command mode list no Settings rows.
 
 Search inside Settings points at a control too. As you type, it opens the page
-that holds the best match and outlines that switch, checkbox, button, or row: a
-word counts most where it starts a word of the control's label, less elsewhere
-in the label, and least in its help text, so `preview pa` finds **Preview
-pane**. A pause of about half a second spotlights the outlined control while
+that holds the best match and outlines the matching control. When several groups
+match, **Jump to match** lists them with their page names and keeps the query
+when you choose one. A word counts most where it starts a word of the control's label,
+less elsewhere in the label, and least in its help text. `preview pa` finds
+**Preview pane**. A pause of about half a second spotlights the outlined control while
 the search keeps the keyboard; typing again lifts the dim, and the same control
 is not dimmed twice in one search. Enter moves keyboard focus to the outlined
 control and spotlights it, so Space toggles it next; Down still goes to the page
@@ -528,6 +529,11 @@ submenu adds a level. Shift+Escape returns to Home, and a closed submenu
 search is not kept for reopening.
 
 ## Home and keyboard behavior
+
+The Applications, Files, and Windows shortcuts above Home results open a scoped
+search and put focus back in the search field. Tab reaches them through the
+Settings button. **Settings → Customization → Layout** can hide the shortcut
+row. Its preview updates as you change shortcuts, result density, or the preview pane.
 
 Home uses existing Saved Searches, Bookmarks, Recent & Frequent,
 Windows & Workspaces, Herdr (only when the Herdr source is enabled on Home), and

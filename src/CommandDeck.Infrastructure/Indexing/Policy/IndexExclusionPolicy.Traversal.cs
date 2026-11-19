@@ -4,8 +4,8 @@ namespace CommandDeck;
 
 // Traversal checks each directory's contribution to the policy once. A child of
 // an authorized directory is then checked on its own path only, in the order
-// Match uses: storage, privacy, hidden, root exclusions, inclusions, generated
-// directories, and repository ignore rules. For the same canonical path the
+// Match uses: storage, privacy, excluded folders, cache folders, hidden, root exclusions,
+// inclusions, generated directories, and repository ignore rules. For the same canonical path the
 // result equals Match.
 internal sealed partial class IndexExclusionPolicy
 {
@@ -21,6 +21,9 @@ internal sealed partial class IndexExclusionPolicy
         {
             exclusion ??= MatchPrivacy( ancestor );
         }
+
+        // Only a folder the user excluded can hide an indexed folder itself.
+        exclusion ??= MatchUserExcludedRoot( boundary );
 
         if ( exclusion is not null )
         {
@@ -106,10 +109,10 @@ internal sealed partial class IndexExclusionPolicy
             return new IndexExclusion( IndexExclusionReasons.IndexStorage, null );
         }
 
-        var privacy = MatchPrivacy( path );
-        if ( privacy is not null )
+        var denied = MatchPrivacy( path ) ?? MatchExcludedFolder( parent.Boundary, path, directory ) ?? MatchCacheDirectory( path, directory );
+        if ( denied is not null )
         {
-            return privacy;
+            return denied;
         }
 
         var name = Path.GetFileName( path );
@@ -199,6 +202,17 @@ internal sealed partial class IndexExclusionPolicy
         }
 
         return null;
+    }
+
+    private IndexExclusion? MatchUserExcludedRoot( CanonicalPathBoundary boundary )
+    {
+        var rule = _folders.MatchUser( boundary.LexicalRoot ) ?? _folders.MatchUser( boundary.CanonicalRoot );
+        if ( rule is null )
+        {
+            return null;
+        }
+
+        return new IndexExclusion( IndexExclusionReasons.ExcludedFolder, rule.LexicalPath );
     }
 
     private IndexExclusion? MatchPrivacy( string path )

@@ -17,14 +17,19 @@ QtObject {
   property string recordingId: ""
   property var activeRecordingPill: null
   property int activeRecordingGeneration: -1
+  readonly property string waitError: "Wait for CommandDeck to reconnect and refresh shortcuts before trying again."
+  readonly property string interruptedError: "The connection closed. Press Escape if shortcut recording is still active."
   signal request(var value)
   signal snapshotReceived(var value)
   signal copyRequested(string text)
-  onReadyChanged: { if (!ready) disconnected() }
+  onReadyChanged: {
+    if (ready) reconnected()
+    else disconnected()
+  }
 
   function submit(operation, edit, confirmed) {
     if (!ready) {
-      error = "Wait for CommandDeck to reconnect and refresh shortcuts before trying again."
+      error = waitError
       return false
     }
     queue = queue.concat([{ operation: operation, shortcut: edit || ({}), confirmed: confirmed === true }])
@@ -96,12 +101,20 @@ QtObject {
     }
     return true
   }
+  // Only a recording or change cut off by the drop needs the warning: Hyprland
+  // can stay in the recording submap, and a change may or may not have saved.
+  // Readiness also drops while the launcher first connects, with nothing sent.
   function disconnected() {
+    const interrupted = recordingPill !== null || active !== null || queue.length > 0
     cancelRecording()
     active = null
     queue = []
     busyId = ""
     snapshot = null
-    error = "The connection closed. Press Escape if shortcut recording is still active."
+    if (interrupted) error = interruptedError
+  }
+  // The wait message only describes the drop; an interruption warning stays.
+  function reconnected() {
+    if (error === waitError) error = ""
   }
 }

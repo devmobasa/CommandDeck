@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import "../UiConstants.js" as Ui
 import "../Protocol.js" as Protocol
+import "Actions/SettingsCustomizationActions.js" as SettingsCustomizationActions
 
 // Settings inputs, derived summaries, and control references shared by the pages.
 FocusScope {
@@ -16,8 +17,14 @@ FocusScope {
   readonly property var part_aiRemoveConfirmation: parts.aiRemoveConfirmation
   readonly property var part_aiProviderEditor: parts.aiProviderEditor
   readonly property var part_indexRootsCard: parts.searchScroll.part_indexRootsCard
+  readonly property var part_excludedFoldersCard: parts.searchScroll.part_excludedFoldersCard
   property var indexRoots: []
+  property var indexExclusions: []
+  // Paths under it are shown as ~/…
+  property string homeDirectory: ""
   property string indexRootsError: ""
+  // The operation the error belongs to, so each folder card shows only its own.
+  property string indexRootsErrorOperation: ""
   property bool indexRootsBusy: false
   property bool indexReindexPending: false
   property var indexReindexProgress: null
@@ -25,10 +32,20 @@ FocusScope {
   signal indexRootsRequested()
   signal indexRootChangeRequested(string operation, string path, string rootId)
   signal indexRootPathEdited()
+  signal indexExclusionChangeRequested(string operation, string path, string exclusionId)
   function showIndexedFolders() {
     owner.part_settingsSearch.text = "indexed folders"
     owner.showPage(Ui.SettingsPage.Search)
     Qt.callLater(owner.part_indexRootsCard.focusPath)
+  }
+  function isExclusionOperation(operation) {
+    return [Protocol.Operations.IndexExclusionAdd, Protocol.Operations.IndexExclusionUpdate, Protocol.Operations.IndexExclusionRemove,
+      Protocol.Operations.IndexExclusionEnable, Protocol.Operations.IndexExclusionDisable].indexOf(operation) >= 0
+  }
+  function showExcludedFolders() {
+    owner.part_settingsSearch.text = "excluded folders"
+    owner.showPage(Ui.SettingsPage.Search)
+    Qt.callLater(owner.part_excludedFoldersCard.focusPath)
   }
   readonly property var part_fileSearchCard: parts.searchScroll.part_fileSearchCard
   readonly property var part_homeFolderOnlyCheck: parts.searchScroll.part_homeFolderOnlyCheck
@@ -265,6 +282,7 @@ FocusScope {
   property int launcherHeightPercent: 100
   property bool compactLayout: false
   property bool previewPaneVisible: true
+  property bool homeShortcutsVisible: true
   // Closing and reopening (QML-only, persisted outside the daemon snapshot).
   property bool escapeClearsSearch: false
   property int keepSearchSeconds: 0
@@ -292,16 +310,16 @@ FocusScope {
   property string currentPage: Ui.SettingsPage.Search
   property bool agentModelsAutoRequested: false
   readonly property var pages: [
-    { id: Ui.SettingsPage.Search, title: "Search", subtitle: "Sources, fallback, motion", icon: "⌕", iconColor: "#3d8bfd", group: 0 },
-    { id: Ui.SettingsPage.Ai, title: "AI", subtitle: "Assistant and quick answers", icon: "✦", iconColor: "#a970ff", group: 0 },
-    { id: Ui.SettingsPage.Editors, title: "Editors", subtitle: "Open files and lines", icon: "✎", iconColor: "#30b85a", group: 1 },
-    { id: Ui.SettingsPage.Filters, title: "Filters", subtitle: "Aliases and saved searches", icon: "⚲", iconColor: "#f59e0b", group: 1 },
-    { id: Ui.SettingsPage.Shortcuts, title: "Shortcuts", subtitle: "Effective bindings", icon: "⌘", iconColor: "#7d8590", group: 1 },
-    { id: Ui.SettingsPage.Customization, title: "Customization", subtitle: "Size, colors, favorites", icon: "☆", iconColor: "#f0509a", group: 2 },
-    { id: Ui.SettingsPage.Diagnostics, title: "Diagnostics", subtitle: "Version, index, search timings", icon: "ⓘ", iconColor: "#5b6573", group: 3 }
+    { id: Ui.SettingsPage.Search, title: "Search", subtitle: "Sources, indexed folders, and result behavior", group: 0 },
+    { id: Ui.SettingsPage.Ai, title: "AI", subtitle: "Assistant and quick answers", group: 0 },
+    { id: Ui.SettingsPage.Editors, title: "Editors", subtitle: "Open files and lines", group: 1 },
+    { id: Ui.SettingsPage.Filters, title: "Filters", subtitle: "Aliases and saved searches", group: 1 },
+    { id: Ui.SettingsPage.Shortcuts, title: "Shortcuts", subtitle: "Launcher and desktop bindings", group: 1 },
+    { id: Ui.SettingsPage.Customization, title: "Customization", subtitle: "Layout, appearance, and favorites", group: 2 },
+    { id: Ui.SettingsPage.Diagnostics, title: "Diagnostics", subtitle: "Version, index, and search timings", group: 3 }
   ]
   readonly property var pageCards: ({
-    search: [settingsState.owner.part_fileSearchCard, settingsState.owner.part_sourcesCard, settingsState.owner.part_heyCard, settingsState.owner.part_behaviorCard, settingsState.owner.part_indexRootsCard, settingsState.part_quicklinksCard],
+    search: [settingsState.owner.part_fileSearchCard, settingsState.owner.part_sourcesCard, settingsState.owner.part_heyCard, settingsState.owner.part_behaviorCard, settingsState.owner.part_indexRootsCard, settingsState.part_excludedFoldersCard, settingsState.part_quicklinksCard],
     assistant: [settingsState.owner.part_assistantCard, settingsState.owner.part_modelCard, settingsState.owner.part_trustCard, settingsState.owner.part_limitsCard, settingsState.owner.part_grantsCard, settingsState.owner.part_diagnosticsCard],
     editors: [settingsState.owner.part_editorsCard],
     filters: [settingsState.owner.part_filterAliasesCard, settingsState.owner.part_savedSearchesCard],
@@ -348,6 +366,7 @@ FocusScope {
   signal launcherSizeSelected(int widthPercent, int heightPercent)
   signal compactLayoutSelected(bool enabled)
   signal previewPaneSelected(bool visible)
+  signal homeShortcutsSelected(bool visible)
   signal launcherBehaviorSelected(bool escapeClears, int keepSeconds)
   signal colorThemeChanged(var change)
   signal colorThemeResetRequested()
@@ -462,4 +481,54 @@ FocusScope {
     return parts.join(" · ")
   }
 
+
+  // Customization helpers the pages and specs call on the panel.
+  function renderedAgentGrantAt(index) { return SettingsCustomizationActions.renderedAgentGrantAt(settingsState.owner, index) }
+  function renderedFilterAliasAt(index) { return SettingsCustomizationActions.renderedFilterAliasAt(settingsState.owner, index) }
+  function renderedSavedSearchAt(index) { return SettingsCustomizationActions.renderedSavedSearchAt(settingsState.owner, index) }
+  function renderedSourceAt(index) { return SettingsCustomizationActions.renderedSourceAt(settingsState.owner, index) }
+  function renderedSourceLabelAt(index) { return SettingsCustomizationActions.renderedSourceLabelAt(settingsState.owner, index) }
+  function renderedSourceWidthAt(index) { return SettingsCustomizationActions.renderedSourceWidthAt(settingsState.owner, index) }
+  function renderedSourceIconAt(index) { return SettingsCustomizationActions.renderedSourceIconAt(settingsState.owner, index) }
+  function renderedShortcutStatusAt(index) { return SettingsCustomizationActions.renderedShortcutStatusAt(settingsState.owner, index) }
+  function renderedShortcutAccessibleNameAt(index) {
+    const item = index >= 0 && index < settingsState.owner.part_shortcutRepeater.count
+      ? settingsState.owner.part_shortcutRepeater.itemAt(index)
+      : null
+    return item ? item.Accessible.name : ""
+  }
+
+  function sourceDescriptor(sourceId) { return SettingsCustomizationActions.sourceDescriptor(settingsState.owner, sourceId) }
+  function sourceLabel(sourceId) { return SettingsCustomizationActions.sourceLabel(settingsState.owner, sourceId) }
+  function sourceIcon(sourceId) { return SettingsCustomizationActions.sourceIcon(settingsState.owner, sourceId) }
+  function sourceHomeAvailable(sourceId) { return SettingsCustomizationActions.sourceHomeAvailable(settingsState.owner, sourceId) }
+  function shortcutStatus(binding) { return SettingsCustomizationActions.shortcutStatus(settingsState.owner, binding) }
+  function hasFallback(fallbackId) { return SettingsCustomizationActions.hasFallback(settingsState.owner, fallbackId) }
+  function filterAliasTokenIsBuiltIn(value) { return SettingsCustomizationActions.filterAliasTokenIsBuiltIn(settingsState.owner, value) }
+  function saveFilterAlias() { return SettingsCustomizationActions.saveFilterAlias(settingsState.owner) }
+  function editSavedSearch(search) { return SettingsCustomizationActions.editSavedSearch(settingsState.owner, search) }
+  function clearSavedSearchEditor() { return SettingsCustomizationActions.clearSavedSearchEditor(settingsState.owner) }
+  function saveSavedSearch() { return SettingsCustomizationActions.saveSavedSearch(settingsState.owner) }
+
+  onSavedSearchesChanged: {
+    if (!settingsState.savedSearchAwaitingAck) return
+    settingsState.savedSearchAwaitingAck = false
+    settingsState.clearSavedSearchEditor()
+  }
+
+  onSavedSearchErrorChanged: {
+    if (settingsState.savedSearchError.length > 0) settingsState.savedSearchAwaitingAck = false
+  }
+
+  function fallbackChoices() { return SettingsCustomizationActions.fallbackChoices(settingsState.owner) }
+  function removeUnavailable(customizationId) { return SettingsCustomizationActions.removeUnavailable(settingsState.owner, customizationId) }
+  function clonePreferences() { return SettingsCustomizationActions.clonePreferences(settingsState.owner) }
+  function historyChoice(name) { return SettingsCustomizationActions.historyChoice(settingsState.owner, name) }
+  function setHistoryChoice(name, value) { return SettingsCustomizationActions.setHistoryChoice(settingsState.owner, name, value) }
+  function mutateSource(index, field, value) { return SettingsCustomizationActions.mutateSource(settingsState.owner, index, field, value) }
+  function moveSource(index, delta) { return SettingsCustomizationActions.moveSource(settingsState.owner, index, delta) }
+  function moveSourceTo(from, to) { return SettingsCustomizationActions.moveSourceTo(settingsState.owner, from, to) }
+  function moveFavorite(index, delta) { return SettingsCustomizationActions.moveFavorite(settingsState.owner, index, delta) }
+  function syncEditorControls() { return SettingsCustomizationActions.syncEditorControls(settingsState.owner) }
+  function saveEditors() { return SettingsCustomizationActions.saveEditors(settingsState.owner) }
 }

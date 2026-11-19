@@ -1,6 +1,5 @@
 import ".."
 import "Actions/SettingsNavigationActions.js" as SettingsNavigationActions
-import "Actions/SettingsCustomizationActions.js" as SettingsCustomizationActions
 import "Actions/SettingsProviderActions.js" as SettingsProviderActions
 import "Actions/SettingsAiActions.js" as SettingsAiActions
 import "Actions/SettingsAgentActions.js" as SettingsAgentActions
@@ -154,15 +153,19 @@ SettingsPanelState {
     const last = SettingsNavigationActions.lastContentControl(pageStack)
     const within = control => control && SettingsNavigationActions.containsFocusItem(control, current)
     if (forward && within(settingsSearch)) {
-      if (root.filteredPages.length > 0) rail.forceActiveFocus()
+      if (matchChoice.visible) matchChoice.forceActiveFocus()
+      else if (root.filteredPages.length > 0) rail.forceActiveFocus()
       else closeButton.forceActiveFocus()
+    } else if (forward && within(matchChoice)) {
+      rail.forceActiveFocus()
     } else if (forward && within(rail)) {
       (first || closeButton).forceActiveFocus()
     } else if (forward && (within(closeButton) || within(last))) {
       if (within(closeButton)) settingsSearch.forceActiveFocus()
       else closeButton.forceActiveFocus()
     } else if (!forward && within(settingsSearch)) closeButton.forceActiveFocus()
-    else if (!forward && within(rail)) settingsSearch.forceActiveFocus()
+    else if (!forward && within(matchChoice)) settingsSearch.forceActiveFocus()
+    else if (!forward && within(rail)) (matchChoice.visible ? matchChoice : settingsSearch).forceActiveFocus()
     else if (!forward && within(closeButton)) (root.filteredPages.length === 0 ? settingsSearch : last || rail).forceActiveFocus()
     else if (!forward && within(first)) rail.forceActiveFocus()
     else {
@@ -313,54 +316,6 @@ SettingsPanelState {
   readonly property alias agentLoginControl: root.part_agentLogin
   readonly property alias agentStatusControl: root.part_agentStatusText
 
-  function renderedAgentGrantAt(index) { return SettingsCustomizationActions.renderedAgentGrantAt(root, index) }
-  function renderedFilterAliasAt(index) { return SettingsCustomizationActions.renderedFilterAliasAt(root, index) }
-  function renderedSavedSearchAt(index) { return SettingsCustomizationActions.renderedSavedSearchAt(root, index) }
-  function renderedSourceAt(index) { return SettingsCustomizationActions.renderedSourceAt(root, index) }
-  function renderedSourceLabelAt(index) { return SettingsCustomizationActions.renderedSourceLabelAt(root, index) }
-  function renderedSourceWidthAt(index) { return SettingsCustomizationActions.renderedSourceWidthAt(root, index) }
-  function renderedSourceIconAt(index) { return SettingsCustomizationActions.renderedSourceIconAt(root, index) }
-  function renderedShortcutStatusAt(index) { return SettingsCustomizationActions.renderedShortcutStatusAt(root, index) }
-  function renderedShortcutAccessibleNameAt(index) {
-    const item = index >= 0 && index < root.part_shortcutRepeater.count
-      ? root.part_shortcutRepeater.itemAt(index)
-      : null
-    return item ? item.Accessible.name : ""
-  }
-
-  function sourceDescriptor(sourceId) { return SettingsCustomizationActions.sourceDescriptor(root, sourceId) }
-  function sourceLabel(sourceId) { return SettingsCustomizationActions.sourceLabel(root, sourceId) }
-  function sourceIcon(sourceId) { return SettingsCustomizationActions.sourceIcon(root, sourceId) }
-  function sourceHomeAvailable(sourceId) { return SettingsCustomizationActions.sourceHomeAvailable(root, sourceId) }
-  function shortcutStatus(binding) { return SettingsCustomizationActions.shortcutStatus(root, binding) }
-  function hasFallback(fallbackId) { return SettingsCustomizationActions.hasFallback(root, fallbackId) }
-  function filterAliasTokenIsBuiltIn(value) { return SettingsCustomizationActions.filterAliasTokenIsBuiltIn(root, value) }
-  function saveFilterAlias() { return SettingsCustomizationActions.saveFilterAlias(root) }
-  function editSavedSearch(search) { return SettingsCustomizationActions.editSavedSearch(root, search) }
-  function clearSavedSearchEditor() { return SettingsCustomizationActions.clearSavedSearchEditor(root) }
-  function saveSavedSearch() { return SettingsCustomizationActions.saveSavedSearch(root) }
-
-  onSavedSearchesChanged: {
-    if (!savedSearchAwaitingAck) return
-    savedSearchAwaitingAck = false
-    clearSavedSearchEditor()
-  }
-
-  onSavedSearchErrorChanged: {
-    if (savedSearchError.length > 0) savedSearchAwaitingAck = false
-  }
-
-  function fallbackChoices() { return SettingsCustomizationActions.fallbackChoices(root) }
-  function removeUnavailable(customizationId) { return SettingsCustomizationActions.removeUnavailable(root, customizationId) }
-  function clonePreferences() { return SettingsCustomizationActions.clonePreferences(root) }
-  function historyChoice(name) { return SettingsCustomizationActions.historyChoice(root, name) }
-  function setHistoryChoice(name, value) { return SettingsCustomizationActions.setHistoryChoice(root, name, value) }
-  function mutateSource(index, field, value) { return SettingsCustomizationActions.mutateSource(root, index, field, value) }
-  function moveSource(index, delta) { return SettingsCustomizationActions.moveSource(root, index, delta) }
-  function moveSourceTo(from, to) { return SettingsCustomizationActions.moveSourceTo(root, from, to) }
-  function moveFavorite(index, delta) { return SettingsCustomizationActions.moveFavorite(root, index, delta) }
-  function syncEditorControls() { return SettingsCustomizationActions.syncEditorControls(root) }
-  function saveEditors() { return SettingsCustomizationActions.saveEditors(root) }
 
   onSnapshotChanged: syncEditorControls()
 
@@ -415,7 +370,7 @@ SettingsPanelState {
       visible: !root.railCollapsed
       Layout.preferredWidth: Math.round(212 * root.theme.scale)
       Layout.fillHeight: true
-      color: root.theme.withAlpha(root.theme.text, 0.03)
+      color: root.theme.withAlpha(root.theme.text, 0.035)
       radius: Math.round(12 * root.theme.scale)
       ColumnLayout {
         anchors.fill: parent
@@ -446,15 +401,28 @@ SettingsPanelState {
       spacing: Math.round(14 * root.theme.scale)
       RowLayout {
         Layout.fillWidth: true
-        Text {
+        ColumnLayout {
           visible: !root.railCollapsed
           Layout.fillWidth: true
-          text: root.pageDescriptor(root.currentPage).title
-          color: root.theme.text
-          elide: Text.ElideRight
-          font.family: root.theme.fontFamily
-          font.pixelSize: Math.round(root.theme.fontHeading * 1.15)
-          font.weight: Font.DemiBold
+          spacing: Math.round(2 * root.theme.scale)
+          Text {
+            Layout.fillWidth: true
+            text: root.pageDescriptor(root.currentPage).title
+            color: root.theme.text
+            elide: Text.ElideRight
+            font.family: root.theme.fontFamily
+            font.pixelSize: root.theme.fontHeading
+            font.weight: Font.DemiBold
+          }
+          Text {
+            Layout.fillWidth: true
+            visible: settingsSearch.text.trim().length === 0
+            text: root.pageDescriptor(root.currentPage).subtitle
+            color: root.theme.textMuted
+            elide: Text.ElideRight
+            font.family: root.theme.fontFamily
+            font.pixelSize: root.theme.fontSmall
+          }
         }
         SettingsChoice {
           id: pagePicker
@@ -482,6 +450,39 @@ SettingsPanelState {
         Layout.fillWidth: true
         implicitHeight: Math.round(root.theme.fontBody * 2.3)
       }
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Math.round(8 * root.theme.scale)
+        visible: searchFocus.matches.length > 1
+
+        Text {
+          Layout.fillWidth: true
+          text: searchFocus.matches.length + " matching groups"
+          color: root.theme.textMuted
+          font.family: root.theme.fontFamily
+          font.pixelSize: root.theme.fontSmall
+          elide: Text.ElideRight
+        }
+        SettingsChoice {
+          id: matchChoice
+          objectName: "settingsMatchChoice"
+          Layout.maximumWidth: Math.round(190 * root.theme.scale)
+          theme: root.theme
+          placeholder: "Jump to match"
+          displayText: placeholder
+          showCurrentDescription: false
+          showSelection: false
+          options: searchFocus.matches.map(entry => ({ id: entry.id, title: entry.title, description: entry.breadcrumb }))
+          currentIndex: -1
+          Accessible.name: "Jump to matching setting"
+          onOptionsChanged: currentIndex = -1
+          onActivated: index => {
+            const entry = searchFocus.matches[index]
+            currentIndex = -1
+            if (entry) searchFocus.revealMatch(entry)
+          }
+        }
+      }
       Text {
         id: saveErrorText
         Layout.fillWidth: true
@@ -503,13 +504,33 @@ SettingsPanelState {
         Layout.minimumHeight: 0
         Layout.fillHeight: true
       }
-      Item { visible: root.filteredPages.length === 0; Layout.fillHeight: true }
+      ColumnLayout {
+        visible: root.filteredPages.length === 0
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        spacing: Math.round(5 * root.theme.scale)
+        Text {
+          text: "No settings match"
+          color: root.theme.text
+          font.family: root.theme.fontFamily
+          font.pixelSize: Math.round(root.theme.fontBody * 1.15)
+          font.weight: Font.DemiBold
+        }
+        Text {
+          Layout.fillWidth: true
+          text: "Try a shorter search or press Esc to clear it."
+          color: root.theme.textMuted
+          font.family: root.theme.fontFamily
+          font.pixelSize: root.theme.fontBody
+          wrapMode: Text.Wrap
+        }
+        Item { Layout.fillHeight: true }
+      }
       Text {
         Layout.fillWidth: true
-        text: root.filteredPages.length === 0
-          ? "No settings found. Try a different search."
-          : "Ctrl+F Search · " + (root.searchTarget ? "Enter Go to setting · ↓ Pages" : "Enter Pages")
-            + " · Tab Controls · Esc " + (settingsSearch.text.length > 0 ? "Clear search" : "Close")
+        visible: root.filteredPages.length > 0
+        text: "Ctrl+F Search     " + (root.searchTarget ? "Enter Go to setting     " : "")
+          + "Tab Controls     Esc " + (settingsSearch.text.length > 0 ? "Clear search" : "Close")
         color: root.theme.textFaint
         font.family: root.theme.fontFamily
         font.pixelSize: root.theme.fontSmall

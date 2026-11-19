@@ -87,9 +87,15 @@ Generated from Core protocol constants and registries. Run `scripts/generate-pro
 - `index.add`
 - `index.disable`
 - `index.enable`
+- `index.exclusion.add`
+- `index.exclusion.disable`
+- `index.exclusion.enable`
+- `index.exclusion.remove`
+- `index.exclusion.update`
 - `index.pause`
 - `index.remove`
 - `index.resume`
+- `index.reveal`
 - `index.roots`
 - `index.roots.import`
 - `invoke`
@@ -204,6 +210,7 @@ Generated from Core protocol constants and registries. Run `scripts/generate-pro
 - `Decision`
 - `DraftRevision`
 - `Enabled`
+- `ExclusionId`
 - `ExpectedRevision`
 - `Expression`
 - `Extension`
@@ -262,6 +269,7 @@ Generated from Core protocol constants and registries. Run `scripts/generate-pro
 - `TrustLevel`
 - `TurnId`
 - `Version`
+- `WorkItemId`
 
 ## Response fields
 

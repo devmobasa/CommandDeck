@@ -18,6 +18,18 @@ Item {
   property var target: null
   property var spotlitTarget: null
   readonly property alias spotlight: dim
+  readonly property var matches: {
+    if (!root.panel.visible || root.searchField.text.trim().length === 0) return []
+    const entries = []
+    for (const page of root.panel.filteredPages) {
+      for (const card of root.panel.pageCards[page.id] || []) {
+        const entry = card ? card.settingEntry : null
+        if (entry && card.matchesSearch && (root.panel.aiFeaturesEnabled || entry.section.length === 0))
+          entries.push(entry)
+      }
+    }
+    return entries
+  }
 
   // An address opens the Quicklinks editor filled in, titled with its host.
   function revealSetting(settingId, url) {
@@ -61,7 +73,22 @@ Item {
 
   function revealTarget() {
     root.updateTarget()
-    const control = root.target
+    return root.focusTarget(root.target)
+  }
+
+  function revealMatch(entry) {
+    root.panel.showPage(entry.page)
+    if (entry.section.length > 0) root.panel.part_aiHub.section = entry.section
+    Qt.callLater(function() {
+      if (!root.panel.visible) return
+      const card = root.settingCard(entry.id)
+      const control = SettingsSearchTarget.find([card], root.searchField.text)
+      root.target = control
+      root.focusTarget(control || card)
+    })
+  }
+
+  function focusTarget(control) {
     if (!control) return false
     const focus = SettingsSearchTarget.focusItem(control)
     if (focus) focus.forceActiveFocus()

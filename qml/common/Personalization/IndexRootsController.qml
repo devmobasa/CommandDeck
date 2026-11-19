@@ -9,6 +9,8 @@ QtObject {
   property bool opened: false
   property bool busy: false
   property var roots: []
+  // Built-in and user excluded folders, from the same result as the roots.
+  property var exclusions: []
   property bool reindexPending: false
   property var progress: null
   property string reindexError: ""
@@ -30,9 +32,11 @@ QtObject {
       errorRootId = ""
     }
   }
-  function change(operation, path, rootId) {
+  // rootId names an indexed folder; exclusionId names an excluded folder.
+  // Errors are kept by operation and target, so each card shows its own.
+  function change(operation, path, rootId, exclusionId) {
     opened = true
-    if (operation !== Protocol.Operations.IndexRoots) clearActionError(operation, rootId)
+    if (operation !== Protocol.Operations.IndexRoots) clearActionError(operation, rootId || exclusionId)
     if (!available) {
       error = "Indexed folders are unavailable while the daemon is offline"
       errorOperation = Protocol.Operations.IndexRoots
@@ -43,21 +47,22 @@ QtObject {
       if (operation === Protocol.Operations.IndexRoots) return 0
       if (activeOperation !== Protocol.Operations.IndexRoots) {
         const queued = nextRequestId()
-        pendingChanges = pendingChanges.concat([{ requestId: queued, operation: operation, path: path, rootId: rootId }])
+        pendingChanges = pendingChanges.concat([{ requestId: queued, operation: operation, path: path, rootId: rootId,
+          exclusionId: exclusionId }])
         return queued
       }
     }
-    return send({ requestId: nextRequestId(), operation: operation, path: path, rootId: rootId })
+    return send({ requestId: nextRequestId(), operation: operation, path: path, rootId: rootId, exclusionId: exclusionId })
   }
 
   function send(change) {
-    if (change.operation !== Protocol.Operations.IndexRoots) clearActionError(change.operation, change.rootId)
+    if (change.operation !== Protocol.Operations.IndexRoots) clearActionError(change.operation, change.rootId || change.exclusionId)
     activeRequestId = change.requestId
     activeOperation = change.operation
-    activeRootId = change.rootId || ""
+    activeRootId = change.rootId || change.exclusionId || ""
     busy = true
-    request({ version: Protocol.Version, requestId: activeRequestId,
-      operation: change.operation, path: change.path || null, rootId: change.rootId || null })
+    request({ version: Protocol.Version, requestId: activeRequestId, operation: change.operation, path: change.path || null,
+      rootId: change.rootId || null, exclusionId: change.exclusionId || null })
     return activeRequestId
   }
 
@@ -101,6 +106,7 @@ QtObject {
     }
     if (message.type !== Protocol.Messages.IndexRootsResult) return false
     roots = message.indexRoots ? message.indexRoots.roots || [] : []
+    exclusions = message.indexRoots ? message.indexRoots.exclusions || [] : []
     reindexPending = !!(message.indexRoots && message.indexRoots.reindexPending)
     progress = message.indexRoots ? message.indexRoots.progress || null : null
     reindexError = message.indexRoots ? message.indexRoots.reindexError || "" : ""

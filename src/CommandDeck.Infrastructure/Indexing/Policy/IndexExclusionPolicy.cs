@@ -14,10 +14,12 @@ internal sealed partial class IndexExclusionPolicy
     private readonly GeneratedDirectoryPolicy _generated;
     private readonly RepositoryIgnorePolicy _repository;
     private readonly CanonicalPathBoundary?[]? _rootBoundaries;
+    private readonly ExcludedFolderRules _folders;
 
     // Indexing caches each root's boundary and revalidates it on every use;
     // on-demand previews resolve roots afresh.
-    public IndexExclusionPolicy( IndexingOptions options, PrivacyOptions privacy, string? databasePath = null, bool cacheRootBoundaries = false )
+    public IndexExclusionPolicy( IndexingOptions options, PrivacyOptions privacy, string? databasePath = null, bool cacheRootBoundaries = false,
+        ExcludedFolderRules? folders = null )
     {
         _options = options;
         _privacy = new PathPolicy( privacy );
@@ -25,26 +27,82 @@ internal sealed partial class IndexExclusionPolicy
         _generated = new GeneratedDirectoryPolicy( _inputs );
         _repository = new RepositoryIgnorePolicy( _inputs );
         _rootBoundaries = cacheRootBoundaries ? new CanonicalPathBoundary?[options.Roots.Count] : null;
+        _folders = folders ?? ExcludedFolderRules.Empty;
 
-        var configuration = "index-exclusions-v1\n" +
+        var configuration = "index-exclusions-v2\n" +
 
                             // Scheduler and watcher tuning do not change which paths are allowed.
                             JsonSerializer.Serialize( new IndexingOptions { Roots = options.Roots }, CommandDeckJsonContext.Default.IndexingOptions ) +
                             "\n" +
-                            JsonSerializer.Serialize( privacy, CommandDeckJsonContext.Default.PrivacyOptions );
+                            JsonSerializer.Serialize( privacy, CommandDeckJsonContext.Default.PrivacyOptions ) +
+                            "\n" +
+                            _folders.Fingerprint;
 
         ConfigurationFingerprint = Convert.ToHexString( SHA256.HashData( Encoding.UTF8.GetBytes( configuration ) ) );
     }
 
     public string ConfigurationFingerprint { get; }
+
+    public ExcludedFolderRules Folders => _folders;
     public long InputRevision => _inputs.Revision;
     public PolicyInputStamp[] SnapshotInputs( out long revision ) => _inputs.Snapshot( out revision );
 
     public bool RestoreInputsIfCurrent( IReadOnlyList<PolicyInputStamp> inputs, CancellationToken cancellationToken = default ) =>
         _inputs.RestoreIfCurrent( inputs, cancellationToken );
 
-    public IndexExclusion? Match( CanonicalPathBoundary boundary, IndexRootOptions options, string requestedPath, string canonicalPath, bool directory ) =>
-        MatchOnePath( boundary, options, requestedPath, directory ) ?? (MatchCanonicalPath( boundary, options, requestedPath, canonicalPath, directory ));
+    public IndexExclusion? Match( CanonicalPathBoundary boundary, IndexRootOptions options, string requestedPath, string canonicalPath, bool directory )
+    {
+        var requested = MatchOnePath( boundary, options, requestedPath, directory );
+
+        // Storage and privacy on the canonical form outrank an excluded folder
+        // on the requested form, so a private target stays redacted.
+        if ( IsFolderExclusionOfAlias( requested, requestedPath, canonicalPath ) )
+        {
+            return MatchStorageOrPrivacy( canonicalPath ) ?? requested;
+        }
+
+        return requested ?? MatchCanonicalPath( boundary, options, requestedPath, canonicalPath, directory );
+    }
+
+    private static bool IsFolderExclusionOfAlias( IndexExclusion? requested, string requestedPath, string canonicalPath )
+    {
+        return requested?.Reason == IndexExclusionReasons.ExcludedFolder && !string.Equals( requestedPath, canonicalPath, StringComparison.Ordinal );
+    }
+
+    private IndexExclusion? MatchStorageOrPrivacy( string path )
+    {
+        if ( _storage?.Contains( path ) == true )
+        {
+            return new IndexExclusion( IndexExclusionReasons.IndexStorage, null );
+        }
+
+        foreach ( var ancestor in RepositoryIgnorePolicy.Ancestors( path, includeLeaf: true ) )
+        {
+            if ( _privacy.TryGetDenial( ancestor, out var privacyRule ) )
+            {
+                return new IndexExclusion( IndexExclusionReasons.PrivacyRule, privacyRule );
+            }
+        }
+
+        return null;
+    }
+
+    // A user exclusion around the indexed folder hides every path in it, also
+    // when the path arrives in its resolved form through a linked root.
+    private IndexExclusion? MatchExcludedFolder( CanonicalPathBoundary boundary, string path, bool directory )
+    {
+        var rule = _folders.MatchUser( boundary.LexicalRoot ) ?? _folders.MatchUser( boundary.CanonicalRoot )
+            ?? _folders.Match( path, boundary.LexicalRoot, boundary.CanonicalRoot, directory );
+
+        if ( rule is not null )
+        {
+            return new IndexExclusion( IndexExclusionReasons.ExcludedFolder, rule.LexicalPath );
+        }
+
+        var pattern = _folders.MatchPattern( path, boundary.LexicalRoot, boundary.CanonicalRoot, directory );
+
+        return pattern is null ? null : new IndexExclusion( IndexExclusionReasons.ExcludedFolder, pattern );
+    }
 
     public (CanonicalPathBoundary Boundary, IndexRootOptions Options)? FindRoot( string path )
     {
@@ -115,17 +173,10 @@ internal sealed partial class IndexExclusionPolicy
 
     private IndexExclusion? MatchOnePath( CanonicalPathBoundary boundary, IndexRootOptions options, string path, bool directory )
     {
-        if ( _storage?.Contains( path ) == true )
+        var denied = MatchStorageOrPrivacy( path ) ?? MatchExcludedFolder( boundary, path, directory ) ?? MatchInCacheDirectory( boundary, path, directory );
+        if ( denied is not null )
         {
-            return new IndexExclusion( IndexExclusionReasons.IndexStorage, null );
-        }
-
-        foreach ( var ancestor in RepositoryIgnorePolicy.Ancestors( path, includeLeaf: true ) )
-        {
-            if ( _privacy.TryGetDenial( ancestor, out var privacyRule ) )
-            {
-                return new IndexExclusion( IndexExclusionReasons.PrivacyRule, privacyRule );
-            }
+            return denied;
         }
 
         var relative = boundary.GetRelativePath( path );

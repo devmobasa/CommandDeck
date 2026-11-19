@@ -19,6 +19,12 @@ public static partial class ProtocolOperations
     public const string IndexRootsImport = "index.roots.import";
     public const string IndexPause = "index.pause";
     public const string IndexResume = "index.resume";
+    public const string IndexExclusionAdd = "index.exclusion.add";
+    public const string IndexExclusionUpdate = "index.exclusion.update";
+    public const string IndexExclusionRemove = "index.exclusion.remove";
+    public const string IndexExclusionEnable = "index.exclusion.enable";
+    public const string IndexExclusionDisable = "index.exclusion.disable";
+    public const string IndexReveal = "index.reveal";
     public const string AiProvidersGet = "ai.providers.get";
     public const string AiModelsGet = "ai.models.get";
     public const string AiSelectionGet = "ai.selection.get";

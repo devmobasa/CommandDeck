@@ -91,6 +91,8 @@ public static partial class Program
                     .ConfigureAwait( false ),
                 IndexCommand when IsIndexRootsCommand( arguments ) => await RunIndexRootsCliAsync( arguments, shutdown.Token )
                     .ConfigureAwait( false ),
+                IndexCommand when IsIndexExclusionsCommand( arguments ) => await RunIndexExclusionsCliAsync( arguments, shutdown.Token )
+                    .ConfigureAwait( false ),
                 IndexCommand => await RunIndexControlCliAsync( arguments, shutdown.Token )
                     .ConfigureAwait( false ),
                 AgentCommand when AgentActionUsesDaemon( arguments ) => await RunAgentDaemonAsync( arguments, shutdown.Token )

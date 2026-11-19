@@ -13,21 +13,17 @@ QtObject {
     host.expect(host.part_queryHistory.confirmationControl !== null
         && host.part_queryHistory.resetControl.Accessible.description.indexOf("confirmation") >= 0,
       "query history destructive controls require confirmation")
-    host.expect(host.part_indexInspector.pageCount === 2
-        && host.part_indexInspector.visibleWorkItemCount === 2
+    host.expect(host.part_indexInspector.groups.length === 3
+        && host.part_indexInspector.groups[0].state === "failed"
         && host.part_indexInspector.focusTrapConfigured,
-      "index inspector pages bounded work rows and traps focus")
+      "index inspector groups work rows by cause, failures first, and traps focus")
     host.expect(host.part_indexInspector.foldersControl.Accessible.name === "Manage indexed folders in Settings",
       "index issues expose a Settings destination for indexed folders")
-    host.part_indexInspector.movePage(1)
-    host.expect(host.part_indexInspector.page === 1
-        && host.part_indexInspector.visibleWorkItemCount === 1,
-      "index inspector advances to the remaining work page")
     const exactInspection = host.part_indexInspector.inspection
     host.part_indexInspector.inspection = Object.assign({}, exactInspection, {
       totalWorkItemCount: 300, workItemsTruncated: true, workItemCountsExact: false
     })
-    host.expect(host.part_indexInspector.pageSummary.indexOf("loaded") >= 0
+    host.expect(host.part_indexInspector.partial
         && host.part_indexInspector.Accessible.description.indexOf("at least 1 failed") >= 0,
       "index inspector labels capped pages and lower-bound counts")
     host.part_indexInspector.inspection = exactInspection

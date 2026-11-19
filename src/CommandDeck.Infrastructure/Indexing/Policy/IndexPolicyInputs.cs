@@ -166,7 +166,8 @@ internal sealed class IndexPolicyInputs
     }
 
     internal static bool IsMarkerName( string name ) =>
-        name is IndexingConstants.GitDirectoryName or RepositoryFileNames.GitIgnoreFileName or IndexingConstants.PythonEnvironmentMarker ||
+        name is IndexingConstants.GitDirectoryName or RepositoryFileNames.GitIgnoreFileName or IndexingConstants.PythonEnvironmentMarker
+            or IndexingConstants.CacheDirectoryTag ||
         ProjectMarkerNames.IsMarker( name ) ||
         IsDotNetProject( name );
 

@@ -65,6 +65,69 @@ DeadlineTestCase {
     verify(deck.settingsOpen, "a normal row click still activates through the wheel host")
     deck.closeSettings()
     deck.close()
+    events.homeShortcutJourney(deck)
+  }
+
+  function homeShortcutJourney(deck) {
+    const descriptors = deck.filterDescriptors
+    const shortcuts = findChild(deck.testSurfaceWindow, "homeShortcuts")
+    const layout = deck.part_layoutStore
+    const previousVisibility = layout.homeShortcuts
+    const input = deck.testSearchInput
+    const settings = deck.testSurfaceWindow.part_searchBar.settingsControl
+    deck.filterDescriptors = [
+      { id: "applications", label: "Applications", token: "app:", sourceId: "applications" },
+      { id: "files", label: "Files", token: "file:", sourceId: "files" },
+      { id: "windows", label: "Windows", token: "win:", available: false }
+    ]
+    layout.setHomeShortcuts(true)
+    let phase = "open Home"
+    try {
+      deck.open("{}")
+      waitForValue(input, "activeFocus", true)
+      function deliverHome() {
+        waitForCondition(() => deck.part_searchSession.activeRequestId > 0)
+        const requestId = deck.part_searchSession.activeRequestId
+        deck.handleMessage({ type: Protocol.Messages.Result, requestId, result: {
+          id: "home-bookmark", kind: "application", title: "Bookmark", actions: []
+        } })
+        deck.handleMessage({ type: Protocol.Messages.Done, requestId })
+        waitForValue(shortcuts, "visible", true)
+      }
+      deliverHome()
+      compare(shortcuts.filters.length, 2)
+      compare(shortcuts.firstControl.text, "Applications")
+      phase = "hide and restore the shortcut row"
+      layout.setHomeShortcuts(false)
+      verify(!shortcuts.visible)
+      layout.setHomeShortcuts(true)
+      waitForFrame(shortcuts)
+      phase = "tab from search to the first shortcut"
+      keyClick(Qt.Key_Tab)
+      waitForValue(settings, "activeFocus", true)
+      keyClick(Qt.Key_Tab)
+      waitForValue(shortcuts.firstControl, "activeFocus", true)
+      phase = "open the application filter with Enter"
+      keyClick(Qt.Key_Return)
+      waitForValue(input, "activeFocus", true)
+      verify(!shortcuts.visible)
+      compare(deck.activeFilters[0].id, "applications")
+      phase = "return to Home and click Files"
+      keyClick(Qt.Key_Escape, Qt.ShiftModifier)
+      deliverHome()
+      waitForFrame(shortcuts)
+      mouseClick(shortcuts.lastControl)
+      waitForValue(input, "activeFocus", true)
+      compare(deck.activeFilters[0].id, "files")
+      keyClick(Qt.Key_N)
+      compare(input.text, "n")
+    } catch (error) {
+      throw new Error("Home shortcut journey could not " + phase + ": " + error)
+    } finally {
+      deck.close()
+      deck.filterDescriptors = descriptors
+      layout.setHomeShortcuts(previousVisibility)
+    }
   }
 
   name: "CommandDeck_result_pointer"

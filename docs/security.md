@@ -54,6 +54,14 @@ vector, the frontend invokes it by result reference without arguments, and the
 launch uses the same detached path as applications. Assistant tools cannot
 invoke it.
 
+The index inspector's **Show in file manager** sends only an issue id. The
+daemon looks the issue up in its own inspection, refuses redacted paths and paths
+clipped at 512 characters, and opens the issue's parent folder only when it lies
+inside an enabled root and neither its written nor its resolved form is private
+or index storage. As with a result's Reveal action, the folder is passed to
+`xdg-open` by name, so a process running as you could swap it between the check
+and the open; that grants nothing you could not already open yourself.
+
 Omarchy menu rows can carry `when` and `checked` bash conditions from Omarchy's
 own menu files and your menu extension file, the same trust as the row's action.
 With Omarchy menu state on (Settings > Search; until chosen there it follows

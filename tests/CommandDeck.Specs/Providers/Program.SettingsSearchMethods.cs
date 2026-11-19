@@ -27,6 +27,7 @@ public static partial class Program
 
         // Words inside a card find it, and AI cards name their section.
         Equal( "settings:search.behavior", (await FindAsync( "reduce motion" ))[0].Id );
+        Equal( "settings:customization.layout", (await FindAsync( "home shortcuts" ))[0].Id );
         var trust = (await FindAsync( "assistant trust" )).Single( );
         Equal( "settings:ai.assistant.trust", trust.Id );
         Equal( "Settings › AI › Assistant", trust.Subtitle );

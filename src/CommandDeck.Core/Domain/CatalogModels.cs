@@ -67,6 +67,7 @@ public static class IndexExclusionReasons
     public const string SizeLimit = "size-limit";
     public const string PathBoundary = "path-boundary";
     public const string RootUnavailable = "root-unavailable";
+    public const string ExcludedFolder = "excluded-folder";
 }
 
 public sealed class IndexExclusionDiagnostic

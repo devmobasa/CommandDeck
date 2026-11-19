@@ -80,7 +80,9 @@ public static class ProtocolRoutes
 
         Add( routes, ProtocolFamily.IndexControl, ProtocolOperations.IndexPause, ProtocolOperations.IndexResume, ProtocolOperations.IndexRoots,
             ProtocolOperations.IndexAdd, ProtocolOperations.IndexRemove, ProtocolOperations.IndexDisable, ProtocolOperations.IndexEnable,
-            ProtocolOperations.IndexRootsImport );
+            ProtocolOperations.IndexRootsImport, ProtocolOperations.IndexExclusionAdd, ProtocolOperations.IndexExclusionUpdate,
+            ProtocolOperations.IndexExclusionRemove, ProtocolOperations.IndexExclusionEnable, ProtocolOperations.IndexExclusionDisable,
+            ProtocolOperations.IndexReveal );
 
         Add( routes, ProtocolFamily.Files, ProtocolOperations.FilesSelect, ProtocolOperations.FilesClear, ProtocolOperations.FilesBatch );
 

@@ -52,6 +52,11 @@ internal sealed partial class IndexExclusionPolicy
                 {
                     scope = parent;
                 }
+                else if ( name == IndexingConstants.CacheDirectoryTag )
+                {
+                    // The tagged folder itself comes and goes, so its parent rescans.
+                    scope = Path.GetDirectoryName( parent );
+                }
                 else if ( IsGeneratedMarkerChange( name, options ) )
                 {
                     scope = name == IndexingConstants.PythonEnvironmentMarker ? Path.GetDirectoryName( parent ) : parent;

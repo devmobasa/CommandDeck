@@ -95,7 +95,8 @@ SettingsCard {
     id: errorText
     Layout.fillWidth: true
     visible: text.length > 0
-    text: card.host.indexRootsError
+    // Excluded folder errors belong to that card.
+    text: card.host.isExclusionOperation(card.host.indexRootsErrorOperation) ? "" : card.host.indexRootsError
     textFormat: Text.PlainText
     wrapMode: Text.Wrap
     color: card.theme.urgent

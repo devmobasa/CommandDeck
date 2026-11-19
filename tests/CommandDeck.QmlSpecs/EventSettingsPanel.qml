@@ -50,9 +50,14 @@ CommandDeck.SettingsPanel {
   property var rootRequests: []
   property bool delayRootReads: false
   property int rootSequence: 0
+  // Excluded folders the fixture daemon returns with every roots reply.
+  property var exclusionsReply: []
   readonly property alias part_indexRootsController: indexRootsController
   indexRoots: indexRootsController.roots
+  indexExclusions: indexRootsController.exclusions
+  homeDirectory: "/home/demo"
   indexRootsError: indexRootsController.error
+  indexRootsErrorOperation: indexRootsController.errorOperation
   indexRootsBusy: indexRootsController.busy
   indexReindexPending: indexRootsController.reindexPending
   indexReindexProgress: indexRootsController.progress
@@ -71,9 +76,10 @@ CommandDeck.SettingsPanel {
   }
   function respondRoots(requestId, roots) {
     indexRootsController.handleMessage({ requestId: requestId, type: Protocol.Messages.IndexRootsResult,
-      indexRoots: { roots: roots, reindexPending: indexRootsController.reindexPending,
+      indexRoots: { roots: roots, exclusions: settingsPanel.exclusionsReply, reindexPending: indexRootsController.reindexPending,
         progress: indexRootsController.progress, reindexError: indexRootsController.reindexError } })
   }
+  onIndexExclusionChangeRequested: (operation, path, exclusionId) => indexRootsController.change(operation, path, "", exclusionId)
   onIndexRootsRequested: indexRootsController.refresh()
   onIndexRootPathEdited: indexRootsController.clearActionError(Protocol.Operations.IndexAdd, "")
   onIndexRootChangeRequested: (operation, path, rootId) => {

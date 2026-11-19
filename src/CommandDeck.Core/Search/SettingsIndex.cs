@@ -12,6 +12,7 @@ public static class SettingIds
     public const string HeyMail = "search.hey";
     public const string SearchBehavior = "search.behavior";
     public const string IndexedFolders = "search.folders";
+    public const string ExcludedFolders = "search.exclusions";
     public const string Quicklinks = "search.quicklinks";
     public const string AiFeatures = "ai.features";
     public const string AssistantAccount = "ai.assistant.account";
@@ -82,6 +83,8 @@ public static class SettingsIndex
                 "snapshots") ),
         new( SettingIds.IndexedFolders, SearchPage, "", "Indexed folders", "Add folders to search or disable configuration folders.",
             "search indexed folders roots path add remove disable enable configuration missing folder" ),
+        new( SettingIds.ExcludedFolders, SearchPage, "", "Excluded folders", "Skip caches, package stores, and folders you choose.",
+            "search excluded folders exclude ignore skip hide noise cache caches packages containers podman docker cargo nuget trash built-in" ),
         new( SettingIds.Quicklinks, SearchPage, "", "Quicklinks", "Add web searches or links; {query} is the search text.",
             "quicklinks web searches urls templates aliases icons add edit remove disable enable" ),
         new( SettingIds.AiFeatures, AiPage, "", "AI features", "One switch for the assistant and quick answers.",
@@ -120,9 +123,9 @@ public static class SettingsIndex
             "customization appearance interface font typeface monospace sans mono shell" ),
         new( SettingIds.DisplaySize, CustomizationPage, "", "Display size", "Scale text and controls together.",
             "customization display size scale zoom percent larger smaller screen match recommended previous" ),
-        new( SettingIds.Layout, CustomizationPage, "", "Layout", "Panel width and height, compact rows, and the preview pane.",
+        new( SettingIds.Layout, CustomizationPage, "", "Layout", "Adjust panel size, result density, the preview pane, and Home shortcuts.",
             ("customization layout width height panel percent reset compact dense rows one line badges footer " +
-                "shortcuts preview pane details") ),
+                "shortcuts preview pane details home quick filters") ),
         new( SettingIds.Closing, CustomizationPage, "", "Closing and reopening", "What Escape does and how a reopened launcher starts.",
             "customization escape close reopen keep last search home root timeout" ),
         new( SettingIds.Colors, CustomizationPage, "", "Colors", "Follow the Omarchy theme or use CommandDeck's own palette.",

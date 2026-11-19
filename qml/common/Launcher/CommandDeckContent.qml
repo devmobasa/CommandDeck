@@ -60,9 +60,9 @@ ColumnLayout {
 
   id: launcherContent
   // The Herdr or Omarchy menu bar under the search field, first in Tab order
-  // after it; null when neither view is open.
+  // after it. On Home, the same slot holds the source shortcuts.
   readonly property var scopeBar: herdrNavigation.visible ? herdrNavigation
-    : omarchyNavigation.visible ? omarchyNavigation : null
+    : omarchyNavigation.visible ? omarchyNavigation : homeShortcuts.visible ? homeShortcuts : null
 
   PointerMoveGate { id: resultPointerGate }
   Connections {
@@ -82,6 +82,7 @@ ColumnLayout {
     focusRequestsEnabled: !launcherContent.host.host.part_extensionController.opened && !launcherContent.host.host.anyBlockingSurface
     filterDescriptors: launcherContent.host.host.filterDescriptors
     surfaceVisible: launcherContent.host.shown
+    homeShortcutsVisible: homeShortcuts.visible
     loading: launcherContent.host.host.part_searchSession.pending
     additionalTabStop: launcherContent.scopeBar ? launcherContent.scopeBar.firstControl : fileSelectionBar.visible ? fileSelectionBar.firstControl : runtimeStatusSurface.visible ? runtimeStatusSurface : footerActions.firstControl
     precedingTabStop: detailPane.lastPreviewControl || footerActions.lastControl
@@ -128,6 +129,22 @@ ColumnLayout {
     searchInput: searchBar.inputControl
     previousTabStop: searchBar.settingsControl
     nextTabStop: fileSelectionBar.visible ? fileSelectionBar.firstControl : runtimeStatusSurface.visible ? runtimeStatusSurface : footerActions.firstControl
+  }
+
+  HomeShortcutBar {
+    id: homeShortcuts
+    objectName: "homeShortcuts"
+    Layout.fillWidth: true
+    visible: launcherContent.host.host.homeShortcutsVisible === true && filters.length > 0
+    theme: launcherContent.host.part_appTheme
+    filterDescriptors: launcherContent.host.host.filterDescriptors
+    sources: launcherContent.host.host.launcherPreferences?.sources || []
+    previousControl: searchBar.settingsControl
+    nextControl: runtimeStatusSurface.visible ? runtimeStatusSurface : footerActions.firstControl
+    onFilterRequested: token => {
+      searchBar.inputControl.forceActiveFocus()
+      launcherContent.host.host.insertFilterToken(token)
+    }
   }
 
   FileSelectionBar {

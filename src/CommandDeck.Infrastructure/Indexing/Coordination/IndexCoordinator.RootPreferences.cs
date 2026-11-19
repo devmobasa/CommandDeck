@@ -65,19 +65,28 @@ public sealed partial class IndexCoordinator
             .Select( static group => group.FirstOrDefault( static root => root.Item3, group.First( ) ) );
     }
 
-    private void ApplyRootPreferences( IndexRootPreferences preferences )
+    // The indexer, previews and the watchers take the same policy. Watcher
+    // state is written last, so a failed write cannot leave the indexer or
+    // previews on the rules the committed preferences replaced.
+    private void ApplyRootPreferences( IndexRootPreferences preferences, ExcludedFolderRules? prepared = null )
     {
         _options.Indexing.Roots = DescribeRoots( preferences )
             .Where( static root => root.Enabled )
             .Select( static root => root.Options with { Path = IndexRootPaths.Normalize( root.Options.Path ) } )
             .ToList( );
 
+        var folders = prepared ?? CreateFolderRules( preferences );
         var indexing = _options.Indexing with { Roots = [.. _options.Indexing.Roots] };
-        var files = new FileIndexSource( indexing, _options.Privacy, _options.Storage.DatabasePath );
-        _incremental.ReplaceRoots( files.Exclusions );
-        _files.Dispose( );
+        var files = new FileIndexSource( indexing, _options.Privacy, _options.Storage.DatabasePath, folders );
+        var previous = _files;
         _files = files;
+        _folderRules.Publish( folders );
+        previous.Dispose( );
+        _incremental.ReplaceRoots( files.Exclusions );
     }
+
+    private static ExcludedFolderRules CreateFolderRules( IndexRootPreferences preferences ) =>
+        ExcludedFolderRules.Create( preferences.BuiltInExclusionOverrides, preferences.ExcludedFolders );
 
     public async ValueTask<LauncherPreferences> ResetPreferencesAsync( CancellationToken cancellationToken )
     {
@@ -105,8 +114,7 @@ public sealed partial class IndexCoordinator
                 .GetIndexRootsAsync( cancellationToken )
                 .ConfigureAwait( false );
 
-            var rootsChanged = before.Added.Count > 0 || before.DisabledConfiguredPaths.Count > 0;
-            if ( !rootsChanged )
+            if ( !HasIndexPreferences( before ) )
             {
                 return await _rootPreferences
                     .ResetAsync( cancellationToken )
@@ -123,6 +131,12 @@ public sealed partial class IndexCoordinator
             StartBackgroundReindex( );
             _indexLock.Release( );
         }
+    }
+
+    private static bool HasIndexPreferences( IndexRootPreferences preferences )
+    {
+        return preferences.Added.Count > 0 || preferences.DisabledConfiguredPaths.Count > 0 || preferences.ExcludedFolders?.Count > 0
+            || preferences.BuiltInExclusionOverrides?.Count > 0;
     }
 
     public async ValueTask<IndexRootsResult> ManageRootsAsync( string operation, string? path, string? rootId, IndexRootPreferences? import,
@@ -185,7 +199,8 @@ public sealed partial class IndexCoordinator
                 ValidateAddedRoot( root.Options );
             }
 
-            return new IndexRootPreferences
+            // A backup without exclusion lists keeps the current ones.
+            var merged = new IndexRootPreferences
             {
                 Added = import
                     .Added.Select( static root => new AddedIndexRoot
@@ -197,8 +212,14 @@ public sealed partial class IndexCoordinator
                 DisabledConfiguredPaths = import
                     .DisabledConfiguredPaths.Select( IndexRootPaths.Normalize )
                     .Distinct( StringComparer.Ordinal )
-                    .ToList( )
+                    .ToList( ),
+                ExcludedFolders = NormalizeImportedFolders( import.ExcludedFolders ?? preferences.ExcludedFolders ),
+                BuiltInExclusionOverrides = [.. import.BuiltInExclusionOverrides ?? preferences.BuiltInExclusionOverrides ?? []]
             };
+
+            merged.Validate( );
+
+            return merged;
         }
 
         if ( operation == ProtocolOperations.IndexAdd )
@@ -250,18 +271,24 @@ public sealed partial class IndexCoordinator
         return preferences;
     }
 
+    // A folder inside an excluded folder is still admissible; its issue says why
+    // it shows no results, and removing the exclusion brings it back.
     private void ValidateAddedRoot( IndexRootOptions options )
     {
         ConfigurationValidator.ValidateIndexRoot( options );
-        var issue = RootIssue( options );
-        if ( issue is not null )
+        var issue = RootIssue( options, out var reason );
+        if ( issue is not null && reason != IndexExclusionReasons.ExcludedFolder )
         {
             throw new InvalidOperationException( issue );
         }
     }
 
-    private string? RootIssue( IndexRootOptions options )
+    private string? RootIssue( IndexRootOptions options ) => RootIssue( options, out _ );
+
+    private string? RootIssue( IndexRootOptions options, out string? reason )
     {
+        reason = null;
+
         if ( !Directory.Exists( IndexRootPaths.Normalize( options.Path ) ) )
         {
             return "Folder does not exist.";
@@ -273,6 +300,12 @@ public sealed partial class IndexCoordinator
         }
 
         _files.Exclusions.EnterRoot( boundary, options, out var exclusion );
+        reason = exclusion?.Reason;
+
+        if ( exclusion?.Reason == IndexExclusionReasons.ExcludedFolder )
+        {
+            return $"Inside excluded folder {exclusion.Rule}.";
+        }
 
         return exclusion is null ? null : $"Index root is excluded: {exclusion.Reason}.";
     }
@@ -302,7 +335,8 @@ public sealed partial class IndexCoordinator
             ReindexPending = _reindexPending,
             Progress = _reindexProgress,
             ReindexError = _reindexError,
-            Roots = BuildManagedRoots( preferences, status )
+            Roots = BuildManagedRoots( preferences, status ),
+            Exclusions = BuildManagedExclusions( preferences )
         };
     }
 

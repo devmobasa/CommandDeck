@@ -145,7 +145,7 @@ QtObject {
           }
           host.part_hostEvents.keyClick(Qt.Key_Escape)
           host.expect(!deck.opened, "Escape closes the launcher")
-          deck.open("{}")
+          reopenAfterClose()
           host.expect(deck.queryText === restoredQuery,
             "reopening restores only an unused or newly edited search: " + scenario
               + "; restored query " + JSON.stringify(deck.queryText))

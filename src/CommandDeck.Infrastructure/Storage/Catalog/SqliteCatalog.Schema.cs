@@ -371,7 +371,8 @@ public sealed partial class SqliteCatalog
                                                          path TEXT PRIMARY KEY
                                                      ) WITHOUT ROWID;
                                                      """ ),
-        QuicklinksMigration
+        QuicklinksMigration,
+        ExcludedFoldersMigration
     ];
 
     // Activation replaces the search projection by recreating it, which frees

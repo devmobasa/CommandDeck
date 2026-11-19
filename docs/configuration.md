@@ -147,6 +147,125 @@ Review paths before importing. **Reset customizations** (or `preferences reset
 --yes`) removes added folders and re-enables all configuration roots, applying
 the effective roots live. Exported data is never restored automatically.
 
+## Excluded folders
+
+**Settings > Search > Excluded folders** skips folders inside indexed folders.
+Built-in exclusions keep caches, package stores and container layers out of
+search; you can turn each one off, and add, edit or remove your own folders.
+The index inspector's **Exclude folder…** action adds one from an issue.
+
+Built-in exclusions, by category as Settings shows them. `$XDG_*` bases,
+`$CODEX_HOME` and `$CLAUDE_CONFIG_DIR` count only when set to an absolute path;
+otherwise the default under home applies. A built-in that would resolve to the
+home folder or above it, directly or through a link, is ignored. All are on by
+default except where noted.
+
+Many built-ins also cover the same folder elsewhere: the Flatpak and Snap
+installs of an app, and the folder a tool's variable names when it holds an
+absolute path (each entry of a list such as `GOPATH`). Settings shows the first
+of these folders on this computer and lists the others. The daemon reads
+variables from its own service environment, so a variable set only in your
+shell does not count; exclude that folder yourself instead.
+
+**Caches**
+
+| Location | Holds |
+|---|---|
+| `$XDG_CACHE_HOME` (`~/.cache`) | Application caches |
+| `$XDG_DATA_HOME/Trash` | Deleted files |
+| `**/*-wal, *-shm, *-journal` | SQLite journals beside a file that is a SQLite database |
+| LevelDB files, `*.pid`, `.*.swp`, `.*.swo` | `LOCK`, `LOG`, `LOG.old`, `CURRENT`, `MANIFEST-<n>` and numbered `.ldb`, `.log` and `.sst` files in a folder whose `CURRENT` names an existing manifest; pid files and Vim swap files |
+| `**/<folder with CACHEDIR.TAG>` | Folders a tool marked as a cache with a [cache directory tag](https://bford.info/cachedir/) that starts with its signature, below an indexed folder |
+| `$XDG_CONFIG_HOME/<app>/**/Cache`, also `~/.var/app/<app>/**` and `~/snap/<app>/**` | Chromium and Electron cache folders inside any app folder: `Cache`, `Code Cache`, `GPUCache`, `DawnCache`, `DawnGraphiteCache`, `DawnWebGPUCache`, `GrShaderCache`, `ShaderCache`, `Service Worker`, `blob_storage`, `IndexedDB`, `Local Storage`, `Session Storage`, `WebStorage`, `Crashpad`, `component_crx_cache`, `Safe Browsing`, `OptimizationGuideModelsManifest`, `hyphen-data`, `shared_proto_db`, `GCM Store` |
+| `~/.var/app/<app>/cache` | Flatpak app caches, directly inside each app folder |
+| `~/snap/<app>/**/.cache` | Snap app caches |
+| `~/.npm/_cacache` (`$npm_config_cache`), `~/.bun/install/cache`, `~/.yarn/berry/cache`, `~/.gradle/caches` (`$GRADLE_USER_HOME`) | Download and build caches |
+| `$XDG_DATA_HOME/NuGet/{http-cache,plugin-cache}` (`$NUGET_HTTP_CACHE_PATH`, `$NUGET_PLUGINS_CACHE_PATH`) | NuGet caches |
+| `$XDG_DATA_HOME/dotnet/runfile`, `~/.dotnet/TelemetryStorageService` | .NET file-based app builds and telemetry queue |
+| `~/.aspire/{cache,logs,dashboard}` | Aspire CLI cache, logs and dashboard runs |
+| `$XDG_DATA_HOME/mise/downloads`, `~/.ghcup/cache` | Tool downloads |
+
+**Packages and toolchains**
+
+| Location | Holds |
+|---|---|
+| `~/.cargo/{registry,git}` (`$CARGO_HOME`), `~/.rustup/{toolchains,downloads}` (`$RUSTUP_HOME`) | Rust crates and toolchains |
+| `~/.nuget/packages` (`$NUGET_PACKAGES`), `~/.dotnet/{sdk,packs,shared,sdk-manifests,tools/.store}`, `~/.aspire/versions` | .NET packages, SDKs, workloads, global tool packages and Aspire versions |
+| `~/.m2/repository`, `~/.gradle/wrapper/dists` (`$GRADLE_USER_HOME`), `~/go/pkg/mod` (`$GOMODCACHE`, `$GOPATH/pkg/mod`) | Maven, Gradle and Go stores |
+| `$XDG_DATA_HOME/pnpm/store` (`$PNPM_HOME/store`), `~/.nvm/versions` (`$NVM_DIR`, `$XDG_CONFIG_HOME/nvm`), `~/.volta/tools` (`$VOLTA_HOME`), `$XDG_DATA_HOME/fnm/node-versions` | Node.js packages and versions |
+| `$XDG_DATA_HOME/uv/python` (`$UV_PYTHON_INSTALL_DIR`), `~/.pyenv/versions` (`$PYENV_ROOT`), `$XDG_DATA_HOME/virtualenvs`, `~/.conda/pkgs` (`$CONDA_PKGS_DIRS`, `~/{miniconda3,anaconda3,miniforge3}/pkgs`) | Python versions, environments and packages |
+| `~/.sdkman/candidates`, `~/.ghcup/ghc`, `~/.stack/{programs,snapshots}`, `~/.julia/{packages,artifacts}`, `~/Android/Sdk` (`$ANDROID_HOME`, `$ANDROID_SDK_ROOT`) | JVM, Haskell, Julia and Android toolchains |
+| `$XDG_DATA_HOME/nvim/{lazy,mason}`, `$XDG_DATA_HOME/mise/{installs,dotnet-root}` | Neovim plugins and tools, mise installs |
+| `~/.vscode/extensions`, `~/.vscode-server`, `~/.cursor/extensions`, `$XDG_DATA_HOME/JetBrains` | Editor extensions and IDE data |
+
+**AI coding agents**
+
+| Location | Holds | Stays searchable |
+|---|---|---|
+| `$CODEX_HOME` (`~/.codex`) | Codex sessions, history, caches and state | `config.toml`, `AGENTS.md`, `AGENTS.override.md`, `hooks.json`, `skills`, `prompts`, `rules`, `agents` |
+| `$CLAUDE_CONFIG_DIR` (`~/.claude`) | Claude Code transcripts, file history, caches and state | `CLAUDE.md`, `settings.json`, `settings.local.json`, `keybindings.json`, `skills`, `agents`, `commands`, `output-styles`, `hooks`, `rules`, `themes` |
+| `**/.claude/worktrees` | Claude Code worktrees inside projects | |
+
+**Containers**
+
+| Location | Holds |
+|---|---|
+| `$XDG_DATA_HOME/containers/storage/overlay` | Podman image layers |
+| `$XDG_DATA_HOME/containers/storage/volumes` | Podman volumes (off: can hold your data) |
+| `$XDG_DATA_HOME/docker` | Rootless Docker data (off: can hold your data) |
+
+**Apps and browser profiles**
+
+| Location | Holds | Stays searchable |
+|---|---|---|
+| `~/.mozilla`, `$XDG_CONFIG_HOME/mozilla`, also their Flatpak (`~/.var/app/org.mozilla.firefox/{.mozilla,config/mozilla}`) and Snap (`~/snap/firefox/common/.mozilla`) folders | Firefox profiles | `native-messaging-hosts`, each profile's `chrome` folder and `user.js` |
+| `$XDG_CONFIG_HOME/{chromium,google-chrome,BraveSoftware}`, also `~/.var/app/{org.chromium.Chromium,com.google.Chrome,com.brave.Browser}/config/…` and `~/snap/chromium/common/chromium` | Chromium, Chrome and Brave profiles | `NativeMessagingHosts` |
+| `$XDG_CONFIG_HOME/{Slack,Signal,discord}`, also `~/.var/app/{com.slack.Slack,org.signal.Signal,com.discordapp.Discord}` and `~/snap/{slack,signal-desktop,discord}` | Slack, Signal and Discord app data | |
+| `$XDG_DATA_HOME/flatpak` | Flatpak apps and runtimes | `overrides` |
+| `$XDG_DATA_HOME/Steam` | Steam library (off) | |
+
+A folder that keeps entries is entered, and only the paths listed stay indexed,
+with everything below them; `*` in a kept path stands for any one name. Name and pattern rules apply below an indexed
+folder only, so a folder you index explicitly, such as a worktree, is indexed.
+Excluding the whole folder yourself, for example `~/.codex`, also hides the
+entries a built-in keeps.
+
+Folders match by whole path components, in both their written and resolved
+forms: excluding `~/a/b` skips `~/a/b` and everything below it, not `~/a/bc`.
+Paths are literal; use `excludeGlobs` in a root for patterns. Privacy exclusions
+still win and keep their paths redacted. A folder you exclude yourself also
+hides an indexed folder inside it, and that folder's row says so. A built-in
+exclusion never hides an indexed folder at or inside it, so
+`commanddeck index add ~/.cache/notes` indexes that folder.
+
+A folder that does not exist yet is accepted and applies once it exists. You
+cannot exclude the home folder or a folder above it, a file, or a folder that
+is itself indexed; disable that one in Indexed folders instead. Up to 32 folders
+of 512 characters each are accepted, and every built-in can be switched.
+
+A change applies like an indexed folder change: one SQLite transaction stores it,
+removes rows below the folder from Search and Home at once, and requests a full
+reindex, which also restores rows when a folder is included again. Previews and
+AI attachments follow the same exclusions. JSONC is never changed.
+
+```bash
+commanddeck index exclusions [--json]
+commanddeck index exclude ~/Videos/raw
+commanddeck index exclusion edit <id> <path>
+commanddeck index exclusion remove <id>
+commanddeck index exclusion enable|disable <id>
+```
+
+Built-in ids, such as `xdg-cache` or `podman-layers`, are listed by
+`index exclusions`. Customization export includes your folders and built-in
+settings under `indexRoots`; `index import` restores them, and an older export
+without them keeps the current exclusions. Reset customizations clears your
+folders and turns the built-ins back to their defaults.
+
+The first start after an upgrade that changes the built-in list reconciles the
+index: until that full scan publishes, search can still return rows from newly
+excluded folders.
+
 ## Top Matches rollout switch
 
 `search.ranking.topMatches.enabled` defaults to `true`. It enables the bounded
@@ -592,7 +711,12 @@ incremental indexing disabled, run `commanddeck reindex` to apply file changes;
 a restart alone does not rescan roots.
 Configuration changes require a daemon restart.
 
-The index inspector shows an approximate exclusion count.
+The index inspector shows an approximate exclusion count. It groups its issues by
+cause and folder, explains each reason, and offers **Exclude folder…**, **Show in
+file manager** and **Copy path**. Show in file manager opens the issue's parent
+folder after the daemon checks that it lies inside an enabled root and is not
+private or index storage; the daemon resolves the issue itself and refuses paths
+that are redacted or clipped at 512 characters.
 `commanddeck catalog inspect` also lists skipped paths and matching rules from the last full scan,
 including `generated-directory` and `repository-ignore` reasons. Each inspection
 checks at most 256 recorded entries and omits path-level exclusions whose

@@ -79,13 +79,17 @@ SettingsPanel {
     }
   }
   onExtensionsRequested: settingsPanel.host.host.extensionManagementOpen = true
-  opacity: visible ? 1 : 0
-  Behavior on opacity {
-    NumberAnimation { duration: settingsPanel.host.part_appTheme.durationNormal }
-  }
+  // Settings appears at once, like the card. Opening resizes the card for
+  // Settings in the same frame, so a fade-in showed the launcher's results
+  // re-laid out underneath for a moment.
   theme: settingsPanel.host.part_settingsTheme
   indexRoots: settingsPanel.host.host.part_indexRootsController.roots
   indexRootsError: settingsPanel.host.host.part_indexRootsController.error
+  indexRootsErrorOperation: settingsPanel.host.host.part_indexRootsController.errorOperation
+  indexExclusions: settingsPanel.host.host.part_indexRootsController.exclusions
+  homeDirectory: settingsPanel.host.host.homeDirectory
+  onIndexExclusionChangeRequested: (operation, path, exclusionId) =>
+    settingsPanel.host.host.part_indexRootsController.change(operation, path, "", exclusionId)
   indexRootsBusy: settingsPanel.host.host.part_indexRootsController.busy
   indexReindexPending: settingsPanel.host.host.part_indexRootsController.reindexPending
   indexReindexProgress: settingsPanel.host.host.part_indexRootsController.progress
@@ -165,6 +169,8 @@ SettingsPanel {
   onCompactLayoutSelected: enabled => settingsPanel.host.host.applyCompactLayout(enabled)
   previewPaneVisible: settingsPanel.host.host.previewPaneVisible
   onPreviewPaneSelected: visible => settingsPanel.host.host.applyPreviewPane(visible)
+  homeShortcutsVisible: settingsPanel.host.host.part_layoutStore.homeShortcuts
+  onHomeShortcutsSelected: visible => settingsPanel.host.host.part_layoutStore.setHomeShortcuts(visible)
   escapeClearsSearch: settingsPanel.host.host.escapeClearsSearch
   keepSearchSeconds: settingsPanel.host.host.keepSearchSeconds
   onLauncherBehaviorSelected: (escapeClears, keepSeconds) =>

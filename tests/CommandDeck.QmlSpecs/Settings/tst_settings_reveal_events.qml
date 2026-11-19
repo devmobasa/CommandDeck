@@ -150,6 +150,53 @@ EventPathFixture {
       tryVerify(() => panel.searchTarget === panel.part_previewPaneCheck, 2000)
     }
 
+    function test_matching_group_jumps_to_its_page_and_keeps_the_query() {
+      const panel = openPanel()
+      typeText("layout")
+      const choice = findChild(panel, "settingsMatchChoice")
+      const index = choice.optionIndex(Protocol.SettingIds.Layout)
+      verify(index >= 0)
+      keyClick(Qt.Key_Tab)
+      waitForValue(choice, "activeFocus", true)
+      keyClick(Qt.Key_Backtab)
+      waitForValue(panel.searchControl, "activeFocus", true)
+      panel.showPage(Ui.SettingsPage.Search)
+      compare(panel.currentPage, Ui.SettingsPage.Search)
+
+      mouseClick(choice)
+      waitForValue(choice.popup, "opened", true)
+      const list = choice.popup.contentItem
+      list.positionViewAtIndex(index, ListView.Contain)
+      tryVerify(() => list.itemAtIndex(index) !== null)
+      mouseClick(list.itemAtIndex(index))
+      waitForValue(panel, "currentPage", Ui.SettingsPage.Customization)
+      tryCompare(panel.part_spotlight, "target", panel.compactLayoutControl)
+      waitForValue(panel.compactLayoutControl, "activeFocus", true)
+      compare(panel.searchControl.text, "layout")
+    }
+
+    function test_home_shortcuts_change_the_layout_preview() {
+      const panel = openPanel()
+      typeText("home shortcuts")
+      const toggle = findChild(panel, "homeShortcutsToggle")
+      const preview = findChild(panel, "settingsLayoutPreview")
+      tryCompare(panel, "searchTarget", toggle)
+      verify(preview.showShortcuts)
+      const handler = visible => panel.homeShortcutsVisible = visible
+      panel.homeShortcutsSelected.connect(handler)
+      try {
+        keyClick(Qt.Key_Return)
+        waitForValue(toggle, "activeFocus", true)
+        keyClick(Qt.Key_Space)
+        tryCompare(preview, "showShortcuts", false)
+        keyClick(Qt.Key_Space)
+        tryCompare(preview, "showShortcuts", true)
+      } finally {
+        panel.homeShortcutsSelected.disconnect(handler)
+        panel.homeShortcutsVisible = true
+      }
+    }
+
     function test_unknown_setting_changes_nothing() {
       const panel = openPanel()
       typeText("editors")
