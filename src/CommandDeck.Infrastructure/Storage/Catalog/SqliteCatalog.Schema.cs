@@ -372,7 +372,16 @@ public sealed partial class SqliteCatalog
                                                      ) WITHOUT ROWID;
                                                      """ ),
         QuicklinksMigration,
-        ExcludedFoldersMigration
+        ExcludedFoldersMigration,
+
+        // Every window search resolves icons and every search with file rows
+        // resolves Open With handlers from the applications. Without an index
+        // on kind both scan every file row.
+        new( 25, "Index application rows", """
+                                           CREATE INDEX IF NOT EXISTS ix_catalog_items_applications
+                                               ON catalog_items(kind, title COLLATE NOCASE)
+                                               WHERE kind = 'application';
+                                           """ )
     ];
 
     // Activation replaces the search projection by recreating it, which frees

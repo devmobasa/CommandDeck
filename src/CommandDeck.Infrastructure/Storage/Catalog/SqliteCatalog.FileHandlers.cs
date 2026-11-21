@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Data.Sqlite;
 
 namespace CommandDeck;
 
@@ -84,16 +85,7 @@ public sealed partial class SqliteCatalog
             await using var connection = await OpenAsync( cancellationToken )
                 .ConfigureAwait( false );
 
-            await using var command = connection.CreateCommand( );
-
-            command.CommandText = """
-                                  SELECT title, payload_json
-                                  FROM catalog_items
-                                  WHERE kind = $kind AND payload_json IS NOT NULL
-                                  ORDER BY title COLLATE NOCASE, stable_id;
-                                  """;
-
-            command.Parameters.AddWithValue( "$kind", ResultKinds.Application );
+            await using var command = CreateFileHandlersCommand( connection );
 
             await using var reader = await command
                 .ExecuteReaderAsync( cancellationToken )
@@ -121,6 +113,24 @@ public sealed partial class SqliteCatalog
         {
             _fileHandlerCacheLock.Release( );
         }
+    }
+
+    // The partial applications index keeps this off the file rows. A scan of
+    // a large catalog can outlast the Open With wait, which cancels it before
+    // its result is cached, so every later search would wait again. The kind
+    // predicate is written as the index defines it.
+    internal static SqliteCommand CreateFileHandlersCommand( SqliteConnection connection )
+    {
+        var command = connection.CreateCommand( );
+
+        command.CommandText = """
+                              SELECT title, payload_json
+                              FROM catalog_items
+                              WHERE kind = 'application' AND payload_json IS NOT NULL
+                              ORDER BY title COLLATE NOCASE, stable_id;
+                              """;
+
+        return command;
     }
 
     private static string[] ReadHandlerMimeTypes( Dictionary<string, string> payload )

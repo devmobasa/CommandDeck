@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.Data.Sqlite;
 
 namespace CommandDeck;
 
@@ -21,10 +22,33 @@ public sealed partial class SqliteCatalog
         await using var connection = await OpenAsync( cancellationToken )
             .ConfigureAwait( false );
 
-        await using var command = connection.CreateCommand( );
+        await using var command = CreateApplicationIconsCommand( connection, requested );
+        Dictionary<string, string> icons = new( StringComparer.OrdinalIgnoreCase );
+
+        await using var reader = await command
+            .ExecuteReaderAsync( cancellationToken )
+            .ConfigureAwait( false );
+
+        while ( await reader
+                   .ReadAsync( cancellationToken )
+                   .ConfigureAwait( false ) )
+        {
+            icons[reader.GetString( 0 )] = reader.GetString( 1 );
+        }
+
+        return icons;
+    }
+
+    // Every window search runs this. The partial applications index keeps it
+    // off the file rows, which it would otherwise scan: the OR of
+    // case-insensitive matches cannot use an index of its own. The kind
+    // predicate is written as the index defines it.
+    internal static SqliteCommand CreateApplicationIconsCommand( SqliteConnection connection, IReadOnlyList<string> windowClasses )
+    {
+        var command = connection.CreateCommand( );
         StringBuilder sql = new( "WITH requested(window_class) AS (VALUES " );
 
-        for ( var index = 0; index < requested.Length; index++ )
+        for ( var index = 0; index < windowClasses.Count; index++ )
         {
             if ( index > 0 )
             {
@@ -38,7 +62,7 @@ public sealed partial class SqliteCatalog
                 .Append( parameter )
                 .Append( ')' );
 
-            command.Parameters.AddWithValue( parameter, requested[index] );
+            command.Parameters.AddWithValue( parameter, windowClasses[index] );
         }
 
         sql.Append( """
@@ -47,7 +71,7 @@ public sealed partial class SqliteCatalog
                            COALESCE((
                                SELECT i.icon
                                FROM catalog_items i
-                               WHERE i.kind = $application_kind
+                               WHERE i.kind = 'application'
                                  AND i.icon IS NOT NULL
                                  AND i.icon <> ''
                                  AND (
@@ -69,22 +93,9 @@ public sealed partial class SqliteCatalog
                     """ );
 
         command.CommandText = sql.ToString( );
-        command.Parameters.AddWithValue( "$application_kind", ResultKinds.Application );
         command.Parameters.AddWithValue( "$desktop_extension", FileExtensions.Desktop );
-        Dictionary<string, string> icons = new( StringComparer.OrdinalIgnoreCase );
 
-        await using var reader = await command
-            .ExecuteReaderAsync( cancellationToken )
-            .ConfigureAwait( false );
-
-        while ( await reader
-                   .ReadAsync( cancellationToken )
-                   .ConfigureAwait( false ) )
-        {
-            icons[reader.GetString( 0 )] = reader.GetString( 1 );
-        }
-
-        return icons;
+        return command;
     }
 
     private static string[] NormalizeWindowClasses( IReadOnlyList<string> windowClasses )

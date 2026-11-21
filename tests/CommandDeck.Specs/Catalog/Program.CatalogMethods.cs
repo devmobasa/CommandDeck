@@ -68,7 +68,7 @@ public static partial class Program
 
             await using var reader = await check.ExecuteReaderAsync( );
             True( await reader.ReadAsync( ) );
-            Equal( 24L, reader.GetInt64( 0 ) );
+            Equal( 25L, reader.GetInt64( 0 ) );
             Equal( 1L, reader.GetInt64( 1 ) );
             Equal( 1L, reader.GetInt64( 2 ) );
             Equal( 1L, reader.GetInt64( 3 ) );

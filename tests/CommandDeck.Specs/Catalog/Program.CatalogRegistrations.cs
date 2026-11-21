@@ -18,6 +18,7 @@ public static partial class Program
         await RunAsync( "an old catalog cancellation token cannot interrupt a later pooled borrower", OldCatalogTokenCannotInterruptLaterBorrowerAsync );
         await RunAsync( "home query probes items by stable id instead of scanning the catalog", HomeQueryProbesItemsInsteadOfScanningTheCatalogAsync );
         await RunAsync( "fuzzy candidate lookup uses the source and title indexes", FuzzyCandidateLookupUsesTitleIndexesAsync );
+        await RunAsync( "window icon and Open With handler lookups read only applications", ApplicationLookupsUseTheApplicationsIndexAsync );
 
         await RunAsync( "sparse fuzzy lookup preserves visible rows without scanning disabled catalog growth",
             SparseFuzzyLookupIgnoresDisabledCatalogGrowthAsync );
