@@ -343,10 +343,11 @@ launcher. Type `left half`, `center third`, `maximize`, `tile`, `fullscreen`,
 
 The launcher is a layer-shell overlay, so opening it does not change
 Hyprland's active window. When a window command matches your search, the daemon
-reads `hyprctl -j activewindow` and binds that window's literal address to the
-row. At invocation it checks that the address is still a client, then dispatches
-only to that address. It never acts on whatever has focus at dispatch time. A
-closed window reports an error; search again.
+asks Hyprland's session socket for the active window, or runs
+`hyprctl -j activewindow` if the socket does not answer, and binds that window's
+literal address to the row. At invocation it checks that the address is still
+a client, then dispatches only to that address. It never acts on whatever has
+focus at dispatch time. A closed window reports an error; search again.
 
 The toggles are named for that window: a tiled window offers **Float Window**,
 and a floating one only **Tile Window**. A fullscreen window offers **Exit

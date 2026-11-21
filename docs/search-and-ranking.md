@@ -150,9 +150,10 @@ ID, without regard to case. A Chromium-based web app's class ends in its profile
 such as `chrome-discord.com__channels_@me-Default` or `-Profile_1`, so that
 suffix is ignored and the app is found in any profile. Terminal entries, whose
 windows belong to the terminal, launches that open files, and sessions without
-Hyprland always start a new copy. The daemon reads `hyprctl -j clients` when
-you press Enter; if Hyprland does not acknowledge the focus, the application
-launches as before.
+Hyprland always start a new copy. When you press Enter, the daemon reads the
+window list from Hyprland's session socket, or runs `hyprctl -j clients` if the
+socket does not answer; if Hyprland does not acknowledge the focus, the
+application launches as before.
 
 Saved queries keep literal input in the optional `expression.literalQuery` field,
 including spacing, quotes, negative values, and an explicit assistant backend
