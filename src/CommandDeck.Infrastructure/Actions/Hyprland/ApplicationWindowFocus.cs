@@ -17,11 +17,13 @@ internal sealed partial class ApplicationWindowFocus
     private static readonly TimeSpan ClientsTimeout = TimeSpan.FromMilliseconds( 400 );
 
     private readonly ExternalProcessRunner _run;
+    private readonly Func<string, string?> _environment;
     private readonly Func<bool> _inHyprland;
 
     public ApplicationWindowFocus( ExternalProcessRunner? hyprlandRunner = null, Func<bool>? inHyprland = null )
     {
         _run = hyprlandRunner ?? DefaultRunAsync;
+        _environment = HyprlandSocket.EnvironmentFor( hyprlandRunner );
         _inHyprland = inHyprland ?? (static ( ) =>
             !string.IsNullOrEmpty( Environment.GetEnvironmentVariable( EnvironmentVariableNames.HyprlandInstanceSignature ) ) &&
             ProcessRunner.ExistsOnPath( ToolExecutables.Hyprctl ));
@@ -38,18 +40,13 @@ internal sealed partial class ApplicationWindowFocus
             return null;
         }
 
-        ProcessResult clients;
-        try
-        {
-            clients = await _run( ToolExecutables.Hyprctl, ["-j", "clients"], ClientsTimeout, cancellationToken )
-                .ConfigureAwait( false );
-        }
-        catch ( Exception exception ) when ( exception is IOException or InvalidOperationException )
-        {
-            return null;
-        }
+        // The window list comes from the session's socket when it answers, so
+        // only the focus itself starts hyprctl.
+        var clients = await HyprlandSocket
+            .QueryOrRunAsync( "clients", _environment, _run, ClientsTimeout, cancellationToken )
+            .ConfigureAwait( false );
 
-        if ( clients is not { ExitCode: 0, TimedOut: false } || FindWindow( clients.StandardOutput, keys ) is not { } address )
+        if ( clients.Length == 0 || FindWindow( clients, keys ) is not { } address )
         {
             return null;
         }

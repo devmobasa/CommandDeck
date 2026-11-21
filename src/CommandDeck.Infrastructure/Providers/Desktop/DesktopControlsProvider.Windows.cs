@@ -59,21 +59,15 @@ public sealed partial class DesktopControlsProvider
         };
     }
 
+    // Through the session's socket when it answers, so a matching keystroke
+    // starts no hyprctl process; otherwise through hyprctl itself.
     private async Task<string?> ReadHyprlandAsync( string request, CancellationToken cancellationToken )
     {
-        ProcessResult result;
+        var reply = await HyprlandSocket
+            .QueryOrRunAsync( request, _hyprlandEnvironment, _hyprland, HyprctlTimeout, cancellationToken )
+            .ConfigureAwait( false );
 
-        try
-        {
-            result = await _hyprland( ToolExecutables.Hyprctl, ["-j", request], HyprctlTimeout, cancellationToken )
-                .ConfigureAwait( false );
-        }
-        catch ( Exception exception ) when ( exception is IOException or InvalidOperationException )
-        {
-            return null;
-        }
-
-        return GetSuccessfulOutput( result );
+        return reply.Length > 0 ? reply : null;
     }
 
     private static SearchResult BuildWindowRow( WindowCommand command, string title, HyprlandWindow window, double score )

@@ -49,6 +49,30 @@ public static class HyprlandSocket
         return remaining > TimeSpan.Zero ? await fallback( request, remaining, cancellationToken ).ConfigureAwait( false ) : "";
     }
 
+    // The same query with `run` starting hyprctl for the fallback. Empty when
+    // neither answers: hyprctl failed, timed out, or could not start.
+    internal static Task<string> QueryOrRunAsync( string request, Func<string, string?> environment, ExternalProcessRunner run, TimeSpan budget,
+        CancellationToken cancellationToken ) =>
+        QueryAsync( request, environment, async ( request, remaining, cancellationToken ) =>
+        {
+            try
+            {
+                var result = await run( ToolExecutables.Hyprctl, ["-j", request], remaining, cancellationToken )
+                    .ConfigureAwait( false );
+
+                return result is { ExitCode: 0, TimedOut: false, AnyOutputLimitExceeded: false } ? result.StandardOutput : "";
+            }
+            catch ( Exception exception ) when ( exception is IOException or InvalidOperationException )
+            {
+                return "";
+            }
+        }, budget, cancellationToken );
+
+    // Where a caller that may be given a stand-in for hyprctl looks for the
+    // socket. A stand-in answers for the whole compositor, so it hides the session's socket.
+    internal static Func<string, string?> EnvironmentFor( ExternalProcessRunner? standIn ) =>
+        standIn is null ? Environment.GetEnvironmentVariable : static _ => null;
+
     // The reply, or null when the socket cannot answer within the timeout, or
     // belongs to another user. The caller's own cancellation still throws.
     public static async ValueTask<string?> RequestAsync( string path, string request, TimeSpan timeout, CancellationToken cancellationToken ) =>

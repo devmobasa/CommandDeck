@@ -21,6 +21,7 @@ public sealed partial class DesktopControlsProvider : ICommandProvider
 
     private readonly Func<string, bool> _toolAvailable;
     private readonly ExternalProcessRunner _hyprland;
+    private readonly Func<string, string?> _hyprlandEnvironment;
     private readonly ExternalProcessRunner _stateProbe;
 
     public DesktopControlsProvider( Func<string, bool>? toolAvailable = null, ExternalProcessRunner? hyprlandRunner = null,
@@ -28,6 +29,7 @@ public sealed partial class DesktopControlsProvider : ICommandProvider
     {
         _toolAvailable = toolAvailable ?? ProcessRunner.ExistsOnPath;
         _hyprland = hyprlandRunner ?? DefaultRunAsync;
+        _hyprlandEnvironment = HyprlandSocket.EnvironmentFor( hyprlandRunner );
         _stateProbe = stateRunner ?? DefaultRunAsync;
     }
 

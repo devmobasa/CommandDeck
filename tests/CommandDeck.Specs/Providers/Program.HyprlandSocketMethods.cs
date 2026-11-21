@@ -113,6 +113,75 @@ public static partial class Program
         }
     }
 
+    // Window commands and app focus read Hyprland through the socket, falling
+    // back to hyprctl, and an injected stand-in for hyprctl hides the socket.
+    private static async Task HyprlandQueryFallsBackToHyprctlAsync( )
+    {
+        var runtime = Path.Combine( Path.GetDirectoryName( SpecTemporaryFiles.SocketPath( "hyprland-run" ) )!, "hr" + Guid.NewGuid( ).ToString( "N" )[..6] );
+        var directory = Path.Combine( runtime, "hypr", "sig" );
+        Directory.CreateDirectory( directory );
+        var path = Path.Combine( directory, ".socket.sock" );
+        var budget = TimeSpan.FromSeconds( 10 );
+        List<string> started = [];
+        ProcessResult next = new( ) { ExitCode = 0, StandardOutput = "[{\"address\":\"0x2\"}]", StandardError = "" };
+        Exception? failure = null;
+
+        ValueTask<ProcessResult> Hyprctl( string file, IReadOnlyList<string> arguments, TimeSpan timeout, CancellationToken cancellationToken )
+        {
+            started.Add( file + " " + string.Join( ' ', arguments ) );
+
+            return failure is null ? ValueTask.FromResult( next ) : ValueTask.FromException<ProcessResult>( failure );
+        }
+
+        string? Session( string name ) => name switch
+        {
+            "HYPRLAND_INSTANCE_SIGNATURE" => "sig",
+            "XDG_RUNTIME_DIR" => runtime,
+            _ => null
+        };
+
+        try
+        {
+            Equal( "[{\"address\":\"0x2\"}]", await HyprlandSocket.QueryOrRunAsync( "clients", Session, Hyprctl, budget, default ) );
+            Equal( "hyprctl -j clients", started.Single( ) );
+
+            next = new( ) { ExitCode = 1, StandardOutput = "[]", StandardError = "no" };
+            Equal( "", await HyprlandSocket.QueryOrRunAsync( "clients", Session, Hyprctl, budget, default ) );
+
+            next = new( ) { ExitCode = 0, StandardOutput = "[]", StandardError = "", TimedOut = true };
+            Equal( "", await HyprlandSocket.QueryOrRunAsync( "clients", Session, Hyprctl, budget, default ) );
+
+            next = new( ) { ExitCode = 0, StandardOutput = "[", StandardError = "", OutputLimitExceeded = true };
+            Equal( "", await HyprlandSocket.QueryOrRunAsync( "clients", Session, Hyprctl, budget, default ) );
+
+            failure = new IOException( "hyprctl did not start" );
+            Equal( "", await HyprlandSocket.QueryOrRunAsync( "clients", Session, Hyprctl, budget, default ) );
+            failure = null;
+
+            using Socket listener = new( AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified );
+            listener.Bind( new UnixDomainSocketEndPoint( path ) );
+            listener.Listen( );
+            started.Clear( );
+            var answered = AnswerOnceAsync( listener, "{\"address\":\"0x3\"}" );
+            Equal( "{\"address\":\"0x3\"}", await HyprlandSocket.QueryOrRunAsync( "activewindow", Session, Hyprctl, budget, default ) );
+            Equal( "j/activewindow", await answered );
+            True( started.Count == 0, "an answering socket needs no process" );
+
+            // An empty reply is still an answer: no focused window, and no hyprctl.
+            var empty = AnswerOnceAsync( listener, "" );
+            Equal( "", await HyprlandSocket.QueryOrRunAsync( "activewindow", Session, Hyprctl, budget, default ) );
+            Equal( "j/activewindow", await empty );
+            True( started.Count == 0, "an empty socket reply needs no process" );
+
+            True( HyprlandSocket.EnvironmentFor( Hyprctl )( "XDG_RUNTIME_DIR" ) is null, "a stand-in for hyprctl hides the session's socket" );
+            Equal( Environment.GetEnvironmentVariable( "PATH" ), HyprlandSocket.EnvironmentFor( null )( "PATH" ) );
+        }
+        finally
+        {
+            Directory.Delete( runtime, recursive: true );
+        }
+    }
+
     private static async Task<string> AnswerOnceAsync( Socket listener, string reply )
     {
         using var client = await listener.AcceptAsync( );
