@@ -291,13 +291,21 @@ internal sealed partial class IncrementalIndexEngine
 
     private void Signal( )
     {
+        // A pending wake-up already covers the newly recorded work. Checking
+        // first keeps a burst of events from throwing once per event; the
+        // catch still covers producers that race past the check.
+        if ( _signal.CurrentCount > 0 )
+        {
+            return;
+        }
+
         try
         {
             _signal.Release( );
         }
         catch ( SemaphoreFullException )
         {
-            // A pending wake-up already covers the newly recorded work.
+            // Another producer released it after the check.
         }
         catch ( ObjectDisposedException )
         {
