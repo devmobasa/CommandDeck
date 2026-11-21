@@ -206,6 +206,11 @@ public sealed partial class SqliteCatalog
             .Trim( );
     }
 
+    // An unqualified term searches the text columns. The source_id column exists
+    // for source filters and has no ranking weight; matching a term against it
+    // made "f" match every row of the files source and "a" every application.
+    private const string TextColumns = "{title subtitle path body config_keys} : ";
+
     private static string FtsFieldPrefix( QueryClause clause )
     {
         return clause.Field switch
@@ -215,7 +220,7 @@ public sealed partial class SqliteCatalog
             QueryFieldIds.Path => "path : ",
             QueryFieldIds.Content => "body : ",
             QueryFieldIds.Config => "config_keys : ",
-            _ => string.Empty
+            _ => TextColumns
         };
     }
 

@@ -129,7 +129,9 @@ Multiple positive source filters form a union. Positive text clauses intersect.
 Prefix a filter or clause with `-` to exclude it; quoted text remains one
 contiguous clause. For example, `file: app: roadmap -workspaces:` combines two
 sources while excluding workspaces. `title:"release notes" -path:/private`
-constrains displayed fields.
+constrains displayed fields. A word excludes text, not a source: `-files` drops
+results that contain a word starting with "files", and `-file:` drops the Files
+source.
 
 Assistant prompts are literal: `ai: Is -1 negative?` keeps the minus sign,
 punctuation, and spacing. Explicit `codex:`, `claude:`, `cursor:`, and `grok:`
