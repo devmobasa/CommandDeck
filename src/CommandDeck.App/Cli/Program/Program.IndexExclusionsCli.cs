@@ -79,7 +79,10 @@ public static partial class Program
         {
             return new ProtocolRequest
             {
-                RequestId = InitialRequestId, Operation = ProtocolOperations.IndexExclusionUpdate, ExclusionId = editedId, Path = editedPath
+                RequestId = InitialRequestId,
+                Operation = ProtocolOperations.IndexExclusionUpdate,
+                ExclusionId = editedId,
+                Path = editedPath
             };
         }
 

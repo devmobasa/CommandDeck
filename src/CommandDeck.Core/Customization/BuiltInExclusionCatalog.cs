@@ -1,7 +1,7 @@
 namespace CommandDeck;
 
-using Ids = BuiltInExclusionIds;
 using Categories = IndexExclusionCategories;
+using Ids = BuiltInExclusionIds;
 using Variables = EnvironmentVariableNames;
 
 // The built-in exclusions by category. Everything that is on by default holds
