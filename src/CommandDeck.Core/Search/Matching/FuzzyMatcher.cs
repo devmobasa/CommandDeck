@@ -293,7 +293,9 @@ public static partial class FuzzyMatcher
 
     private static FoldedText Fold( string value )
     {
-        if ( value.All( static character => char.IsAscii( character ) ) )
+        // Ascii.IsValid is vectorized. LINQ over a string allocates an
+        // enumerator per call under Native AOT, and every candidate is folded.
+        if ( Ascii.IsValid( value ) )
         {
             return new FoldedText( value, null, value.Length );
         }
@@ -401,7 +403,20 @@ public static partial class FuzzyMatcher
 
     private static bool CannotMatchInitials( string query )
     {
-        return query.Length < 2 || query.Any( static character => !char.IsLetterOrDigit( character ) );
+        if ( query.Length < 2 )
+        {
+            return true;
+        }
+
+        foreach ( var character in query )
+        {
+            if ( !char.IsLetterOrDigit( character ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsOutsideWord( string value, int index )

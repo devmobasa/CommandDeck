@@ -212,25 +212,16 @@ public sealed class ContentExtractor : IDisposable
             .ReadPrefixAsync( bytes, cancellationToken )
             .ConfigureAwait( false );
 
-        var probeLength = Math.Min( bytesRead, BinaryProbeBytes );
-        for ( var index = 0; index < probeLength; index++ )
+        if ( bytes
+            .AsSpan( 0, Math.Min( bytesRead, BinaryProbeBytes ) )
+            .Contains( ( byte ) 0 ) )
         {
-            if ( bytes[index] == 0 )
-            {
-                return null;
-            }
+            return null;
         }
 
-        ReadOnlySpan<byte> content = bytes.AsSpan( 0, Math.Min( bytesRead, maximumExtractedBytes ) );
-
-        try
-        {
-            return new UTF8Encoding( encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true ).GetString( content );
-        }
-        catch ( DecoderFallbackException )
-        {
-            return Encoding.UTF8.GetString( content );
-        }
+        // Invalid sequences become U+FFFD. Valid input decodes the same with or
+        // without a strict first pass, so there is no throwing pass to retry.
+        return Encoding.UTF8.GetString( bytes, 0, Math.Min( bytesRead, maximumExtractedBytes ) );
     }
 
     private async ValueTask<ContentExtractionOutcome> RunExtractorAsync( string executable, IReadOnlyList<string> arguments, string input,

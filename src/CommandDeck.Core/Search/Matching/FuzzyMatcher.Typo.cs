@@ -151,7 +151,16 @@ public static partial class FuzzyMatcher
 
     private static int CountLettersOrDigits( string value )
     {
-        return value.Count( static character => char.IsLetterOrDigit( character ) );
+        var count = 0;
+        foreach ( var character in value )
+        {
+            if ( char.IsLetterOrDigit( character ) )
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     // Each query letter the candidate lacks costs at least one edit.
