@@ -60,6 +60,7 @@ QtObject {
     verifyResetRankingRefreshesInPlace(deck)
     verifyHomeBookmarksMoveWithTheKeyboard(deck)
     verifyArgumentPillsInvokeWithTheirValues(deck)
+    verifyHerdrCreateTabAlwaysOpensItsDialog(deck)
 
     if (!wasOpened) deck.close()
   }
@@ -115,6 +116,35 @@ QtObject {
       "submitting pills invokes the action with their values and no form")
     deck.handleMessage({ type: Protocol.Messages.ActionResult, requestId: invoke.requestId,
       actionResult: { succeeded: false, message: "Fixture snippet" } })
+  }
+
+  // A browsed space's "Create tab" row prefills its name, yet Enter opens the
+  // dialog whose heading names the space instead of creating the tab at once.
+  function verifyHerdrCreateTabAlwaysOpensItsDialog(deck) {
+    const create = { id: "create-tab", title: "Create tab: Space 2 · Remote devbox · service", kind: Protocol.ActionKinds.HerdrCreateTab,
+      arguments: { targetId: "s2" }, inputs: [{ name: "Name", defaultValue: "deploy" }] }
+    deck.queryText = "deploy"
+    deck.requestSearch()
+    deliver(deck, [Object.assign(result("herdr:new-tab:app-space:s2", "Create tab \"deploy\""), {
+      sourceId: "herdr", providerId: "herdr", kind: "workspace", actions: [create] })])
+    deck.selectedIndex = deck.navigationController.indexOfResultId("herdr:new-tab:app-space:s2")
+    host.expect(deck.argumentPillTarget === null, "a Herdr Create tab row takes no inline name")
+    let start = deck.sentRequests.length
+    deck.invokeSelectedPrimary()
+    host.expect(lastRequest(deck, start, Protocol.Operations.Invoke) === undefined
+        && deck.part_invocationController.actionInputOpen
+        && deck.part_invocationController.actionInputAction.title.indexOf("Space 2") >= 0,
+      "Enter on a Herdr Create tab row opens its dialog, naming the space, and sends nothing")
+    const selection = deck.part_invocationController.takeInput()
+    start = deck.sentRequests.length
+    deck.invokeAction(selection.result, selection.action, selection.confirmed, { Name: "deploy" })
+    const invoke = lastRequest(deck, start, Protocol.Operations.Invoke)
+    host.expect(invoke !== undefined && invoke.resultId === "herdr:new-tab:app-space:s2" && invoke.inputValues.Name === "deploy",
+      "submitting the Create tab dialog sends one Invoke for that row and name")
+    if (invoke) {
+      deck.handleMessage({ type: Protocol.Messages.ActionResult, requestId: invoke.requestId,
+        actionResult: { succeeded: false, message: "Fixture create" } })
+    }
   }
 
   // Ctrl+Alt+Down on the first Home bookmark trades places with the second

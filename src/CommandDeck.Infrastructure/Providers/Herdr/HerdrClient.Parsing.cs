@@ -226,7 +226,19 @@ public sealed partial class HerdrClient
             .Where( static character => !char.IsControl( character ) )
             .ToArray( ) ).Trim( );
 
-        return clean.Length > MaximumLabelCharacters ? clean[..MaximumLabelCharacters] : clean;
+        return Truncate( clean, MaximumLabelCharacters );
+    }
+
+    // Cuts at a character boundary: a split surrogate pair would leave text
+    // that matching and encoding reject.
+    internal static string Truncate( string value, int maximum )
+    {
+        if ( value.Length <= maximum )
+        {
+            return value;
+        }
+
+        return value[..(char.IsHighSurrogate( value[maximum - 1] ) ? maximum - 1 : maximum)];
     }
 
     private static string ReadAgentStatus( JsonElement element )
@@ -239,17 +251,25 @@ public sealed partial class HerdrClient
     private static long ReadCount( JsonElement element, string property ) =>
         Math.Max( 0, ReadInteger( element, property ) ?? 0 );
 
-    private static string? ReadString( JsonElement element, string property )
+    internal static string? ReadString( JsonElement element, string property )
     {
-        if ( element.ValueKind == JsonValueKind.Object && element.TryGetProperty( property, out var value ) && value.ValueKind == JsonValueKind.String )
+        if ( element.ValueKind != JsonValueKind.Object || !element.TryGetProperty( property, out var value ) || value.ValueKind != JsonValueKind.String )
+        {
+            return null;
+        }
+
+        // An escaped lone surrogate parses but cannot be decoded: it is no text.
+        try
         {
             return value.GetString( );
         }
-
-        return null;
+        catch ( InvalidOperationException )
+        {
+            return null;
+        }
     }
 
-    private static bool? ReadBoolean( JsonElement element, string property )
+    internal static bool? ReadBoolean( JsonElement element, string property )
     {
         if ( TryReadProperty( element, property, out var value ) )
         {
@@ -339,7 +359,7 @@ public sealed partial class HerdrClient
         return "Herdr could not switch to this tab.";
     }
 
-    private static string GetValidAgentStatus( string status )
+    internal static string GetValidAgentStatus( string status )
     {
         if ( IsValidAgentStatus( status ) )
         {

@@ -13,6 +13,13 @@ Rectangle {
   property string errorText: ""
   readonly property alias submitControl: submitButton
   readonly property alias cancelControl: cancelButton
+  // A title "Verb: context" heads the dialog in full; its button says only the
+  // verb, so a long context never pushes the buttons past the dialog's edge.
+  readonly property string submitLabel: {
+    const title = root.action ? String(root.action.title || "") : ""
+    const colon = title.indexOf(": ")
+    return title.length === 0 ? "Continue" : colon > 0 ? title.slice(0, colon) : title
+  }
   signal submitted(var values)
   signal dismissed()
   visible: opened
@@ -125,7 +132,7 @@ Rectangle {
             id: submitButton
             theme: root.theme
             kind: Ui.ButtonVariant.Primary
-            text: root.action ? root.action.title : "Continue"
+            text: root.submitLabel
             KeyNavigation.tab: fields.count ? root.rowAt(0).input : cancelButton
             KeyNavigation.backtab: cancelButton
             onClicked: root.submit()

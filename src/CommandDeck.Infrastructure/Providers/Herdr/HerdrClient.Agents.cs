@@ -2,7 +2,14 @@ using System.Text.Json;
 
 namespace CommandDeck;
 
-public sealed record HerdrAgent( string PaneId, string TabId, string WorkspaceId, string Name, string AgentStatus, bool Focused );
+public sealed record HerdrAgent( string PaneId, string TabId, string WorkspaceId, string Name, string AgentStatus, bool Focused )
+{
+    public bool App { get; init; }
+
+    // A desktop agent's terminal position in its tab, from 1, when the tab has
+    // several terminals; 0 otherwise.
+    public int Position { get; init; }
+}
 
 public sealed partial class HerdrClient
 {
@@ -80,6 +87,6 @@ public sealed partial class HerdrClient
             .Where( static character => !char.IsControl( character ) )
             .ToArray( ) ).Trim( );
 
-        return clean.Length > MaximumAgentNameCharacters ? clean[..MaximumAgentNameCharacters] : clean;
+        return Truncate( clean, MaximumAgentNameCharacters );
     }
 }

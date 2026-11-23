@@ -75,8 +75,10 @@ public sealed partial class SearchCoordinator
     private async Task<SearchOutcome> RunProviderAsync( ICommandProvider provider, ParsedQuery parsed, SearchRequest request,
         CancellationToken requestCancellation )
     {
+        var deadline = ProviderDeadline( parsed );
+        StampProviderDeadline( deadline, request );
         var timeout = CancellationTokenSource.CreateLinkedTokenSource( requestCancellation );
-        timeout.CancelAfter( ProviderDeadline( parsed ) );
+        timeout.CancelAfter( deadline );
         var run = ProviderRun.Start( this, provider, parsed, request, timeout.Token, requestCancellation );
 
         var collection = await CollectWithinDeadlineAsync( [run], timeout, requestCancellation )
@@ -85,6 +87,19 @@ public sealed partial class SearchCoordinator
         return new SearchOutcome( collection
             .Batches.SelectMany( static batch => batch )
             .ToArray( ), collection.IncompleteProviderCount );
+    }
+
+    // Stamped before the timer starts, so a provider that reads it never plans
+    // past the moment its results stop being collected.
+    private static void StampProviderDeadline( int milliseconds, params SearchRequest?[] requests )
+    {
+        // An infinite timeout (Timeout.Infinite) sets no deadline.
+        var deadline = milliseconds < 0 ? 0 : Stopwatch.GetTimestamp( ) + ( long ) (milliseconds * ( double ) Stopwatch.Frequency / 1000);
+
+        foreach ( var request in requests )
+        {
+            request?.ProviderDeadlineTimestamp = deadline;
+        }
     }
 
     // Waits for every provider until the deadline fires, then returns whatever has

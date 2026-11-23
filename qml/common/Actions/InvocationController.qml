@@ -58,13 +58,20 @@ QtObject {
     actionInputConfirmed = false
   }
 
+  // A Herdr tab dialog's heading names the space and tab it acts on; a refresh
+  // that renumbers them makes the open dialog describe another target.
+  function headingChanged(action, fresh) {
+    return (action.kind === Protocol.ActionKinds.HerdrCreateTab || action.kind === Protocol.ActionKinds.HerdrRenameTab)
+      && String(action.title || "") !== String(fresh.title || "")
+  }
+
   function retarget(next) {
     const target = pendingConfirmationResult || actionInputResult
     const action = pendingConfirmationAction || actionInputAction
     if (!target || !action) return true
     const fresh = next && next.id === target.id
       ? (next.actions || []).find(value => value.id === action.id) : null
-    if (!ActionMeaning.same(action, fresh)) {
+    if (!ActionMeaning.same(action, fresh) || headingChanged(action, fresh)) {
       takeConfirmation()
       cancelInput()
       return false

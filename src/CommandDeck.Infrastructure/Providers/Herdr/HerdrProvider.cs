@@ -3,12 +3,13 @@ using System.Diagnostics.CodeAnalysis;
 namespace CommandDeck;
 
 /// <summary>
-/// Opportunistic live search over Herdr spaces (workspaces) and tabs. Runs no
+/// Opportunistic live search over Herdr spaces (workspaces) and tabs, from the
+/// terminal app's default session and the desktop app's open window. Runs no
 /// process unless the Herdr source is enabled, the query can include Herdr
-/// rows, and the CLI is on PATH. Matching and ranking are local; Herdr only
+/// rows, and a CLI is on PATH. Matching and ranking are local; Herdr only
 /// supplies the inventory and, on activation, the focus switch.
 /// </summary>
-public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvider
+public sealed partial class HerdrProvider( HerdrClient client, HerdrAppClient? app = null ) : ICommandProvider
 {
     private const string NameInput = "Name";
     private const string BrowseTabsActionId = "browse-tabs";
@@ -22,6 +23,15 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
     public const string TargetIdMetadata = "herdrTargetId";
     public const string WorkspaceIdMetadata = HerdrSearch.WorkspaceIdMetadata;
     public const string WorkspaceLabelMetadata = "herdrWorkspaceLabel";
+    public const string MachineMetadata = "herdrMachine";
+
+    // A desktop row's space and tab numbers, which lead its subtitle; a compact
+    // row keeps room for them.
+    public const string PositionMetadata = "herdrPosition";
+
+    // A desktop agent row's space, tab, and terminal numbers, which lead its
+    // title; a compact row keeps room for them.
+    public const string TitlePositionMetadata = "herdrTitlePosition";
     public const string FocusedMetadata = "herdrFocused";
     public const string AgentStatusMetadata = HerdrSearch.AgentStatusMetadata;
     public const string UnknownSpaceLabel = "Unknown space";
@@ -46,7 +56,7 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
 
         if ( query.IncludedFilters.Any( static filter => filter.Id == HerdrSearch.AgentsFilterId ) )
         {
-            return request.HerdrWorkspaceId is null || HerdrClient.IsValidIdentifier( request.HerdrWorkspaceId )
+            return request.HerdrWorkspaceId is null || HerdrScopes.TryParse( request.HerdrWorkspaceId, out _, out _ )
                 ? await SearchAgentsAsync( query, request, cancellationToken )
                     .ConfigureAwait( false )
                 : [];
@@ -56,7 +66,7 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
 
         if ( request.HerdrWorkspaceId is not null )
         {
-            if ( !HerdrClient.IsValidIdentifier( request.HerdrWorkspaceId ) )
+            if ( !HerdrScopes.TryParse( request.HerdrWorkspaceId, out _, out _ ) )
             {
                 return [];
             }
@@ -74,13 +84,14 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
         var text = query.Text.Trim( );
         var explicitlyScoped = IsBrowseRequest( query, request );
         var browse = text.Length == 0 && (explicitlyScoped || query.ExcludedFilters.Count == 0);
-        if ( IsEmptySearch( text, browse ) || !client.IsInstalled )
+        if ( IsEmptySearch( text, browse ) || !IsInstalled )
         {
             return [];
         }
 
-        var inventory = await client
-            .ListAsync( cancellationToken )
+        // An early answer ends the wait only if it already shows rows for this query.
+        var inventory = await ListAsync( request,
+                partial => ShowsRows( partial, query, includeSpaces, includeTabs, request.HerdrWorkspaceId ), cancellationToken )
             .ConfigureAwait( false );
 
         cancellationToken.ThrowIfCancellationRequested( );
@@ -90,10 +101,21 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
             return [];
         }
 
-        var results = Project( inventory, query, includeSpaces, includeTabs, request.HerdrWorkspaceId );
+        var context = ContextFor( inventory, request.HerdrWorkspaceId );
+        var results = Project( inventory, query, includeSpaces, includeTabs, request.HerdrWorkspaceId, context );
         var ordered = OrderSearchResults( request, results );
 
-        return CreateTabOffer( inventory, query, request.HerdrWorkspaceId ) is { } offer ? [.. ordered, offer] : ordered;
+        return CreateTabOffer( inventory, query, request.HerdrWorkspaceId, context ) is { } offer ? [.. ordered, offer] : ordered;
+    }
+
+    // The same projection, context included, as the rows returned: a prefix can
+    // decide whether an excluded clause removes a row.
+    private bool ShowsRows( HerdrInventory partial, ParsedQuery query, bool includeSpaces, bool includeTabs, string? scope )
+    {
+        var context = ContextFor( partial, scope );
+
+        return Project( partial, query, includeSpaces, includeTabs, scope, context ).Count > 0 ||
+               CreateTabOffer( partial, query, scope, context ) is not null;
     }
 
     private static (bool Spaces, bool Tabs) IncludedKinds( ParsedQuery query )
@@ -120,7 +142,8 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
         return (spaces, tabs);
     }
 
-    private static List<SearchResult> Project( HerdrInventory inventory, ParsedQuery query, bool includeSpaces, bool includeTabs, string? workspaceId )
+    private static List<SearchResult> Project( HerdrInventory inventory, ParsedQuery query, bool includeSpaces, bool includeTabs, string? scope,
+        RowContext context )
     {
         var browse = query.Text.Trim( )
                          .Length ==
@@ -139,7 +162,7 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
         {
             foreach ( var workspace in inventory.Workspaces )
             {
-                var result = MatchClauses( SpaceResult( workspace, inventory.Tabs, 0 ), clauses, workspace.Focused );
+                var result = MatchClauses( SpaceResult( workspace, inventory.Tabs, 0, context ), clauses, workspace.Focused );
                 if ( result is not null )
                 {
                     candidates.Add( CreateWorkspaceCandidate( workspace, result ) );
@@ -151,14 +174,14 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
         {
             foreach ( var tab in inventory.Tabs )
             {
-                if ( IsOutsideWorkspace( workspaceId, tab ) )
+                if ( IsOutsideWorkspace( scope, tab ) )
                 {
                     continue;
                 }
 
-                var parentLabel = labels.GetValueOrDefault( tab.WorkspaceId );
-                var parent = inventory.Workspaces.FirstOrDefault( workspace => workspace.Id == tab.WorkspaceId );
-                var result = MatchClauses( TabResult( tab, parentLabel, 0 ), clauses, tab.Focused );
+                var parentLabel = labels.GetValueOrDefault( HerdrScopes.Of( tab.App, tab.WorkspaceId ) );
+                var parent = inventory.Workspaces.FirstOrDefault( workspace => workspace.App == tab.App && workspace.Id == tab.WorkspaceId );
+                var result = MatchClauses( TabResult( tab, parentLabel, 0, context, parent ), clauses, tab.Focused );
                 if ( MatchesTabAttention( query, result ) )
                 {
                     candidates.Add( CreateTabCandidate( tab, parent, result ) );
@@ -219,7 +242,12 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
             var title = LabelScore( clause.Text, result.Title );
             var parent = GetParentSpaceScore( result, clause );
 
-            return Math.Max( title, parent );
+            // A remote desktop space's machine matches like its space name.
+            var machine = result.Metadata.GetValueOrDefault( MachineMetadata ) is { Length: > 0 } name
+                ? LabelScore( clause.Text, name ) * ParentSpaceWeight
+                : 0;
+
+            return Math.Max( Math.Max( title, parent ), machine );
         }
 
         // Field constraints and exclusions use the same literal values as the
@@ -280,7 +308,7 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
     private static Dictionary<string, string> IndexWorkspaces( HerdrInventory inventory )
     {
         return inventory
-            .Workspaces.GroupBy( static workspace => workspace.Id, StringComparer.Ordinal )
+            .Workspaces.GroupBy( static workspace => HerdrScopes.Of( workspace.App, workspace.Id ), StringComparer.Ordinal )
             .ToDictionary( static group => group.Key, static group => group.First( )
                 .Label, StringComparer.Ordinal );
     }
@@ -291,9 +319,9 @@ public sealed partial class HerdrProvider( HerdrClient client ) : ICommandProvid
             Orphan: false );
     }
 
-    private static bool IsOutsideWorkspace( string? workspaceId, HerdrTab tab )
+    private static bool IsOutsideWorkspace( string? scope, HerdrTab tab )
     {
-        return workspaceId is not null && tab.WorkspaceId != workspaceId;
+        return scope is not null && HerdrScopes.Of( tab.App, tab.WorkspaceId ) != scope;
     }
 
     private static bool MatchesTabAttention( ParsedQuery query, [NotNullWhen( true )] SearchResult? result )

@@ -606,20 +606,115 @@ Herdr rows. Status badges show working, idle, or needs attention; missing or
 unknown status does not imply an idle agent. Space details preview up to eight
 tabs with pane counts and reported status.
 
+### Herdr desktop app
+
+When a `herdr-app` executable (0.1.16 or later, whose `tab.new` accepts
+`focus`) is on the daemon PATH, the same source also lists
+the spaces, tabs, and agents shown in the Herdr desktop app's open window, read
+through one bounded `herdr-app ls` process per query (250 ms, 1 MiB) and matched
+by the same rules. The CLI talks only to a running window and never opens one, so
+a closed app yields no rows. Both apps are read at once, and rows from both
+merge; either one missing, stopped, closed, or failing hides none of the
+other's rows. The coordinator passes its deadline to the source: from shortly
+before it, as soon as one app has answered, its rows are listed and the other's
+unfinished list is stopped. A browsed space reads only the app it belongs to.
+
+The two apps can use the same IDs, so a desktop row says which app it came
+from wherever an ID alone would not:
+
+- Space and tab rows have `herdr:app-space:` and `herdr:app-tab:` IDs and typed
+  `app-space` and `app-tab` focus targets.
+- A browsed desktop space's scope, its rows' `herdrWorkspaceId`, is its ID after
+  `app-space:`, and its **Create tab** row is `herdr:new-tab:app-space:<id>`.
+- Desktop agent rows are `herdr:agent:app-pane:<pane>`.
+- Agents take their tab and space names from their own app's lists.
+
+Terminal-app spaces and agents whose IDs start with `app-space:` or
+`app-pane:` are not listed, so every scope and row ID names one app. When both
+apps are listed, each space, tab, and agent row's subtitle starts with **Herdr
+app** or **Herdr terminal**; a desktop row's subtitle first names its position,
+`Space 2` or `Space 2 · Tab 1`, and a compact row keeps room for it. When a
+desktop space runs on another machine, the
+desktop rows' subtitles then say **This computer** or **Remote <machine>**, and
+a machine's name finds its spaces, tabs, and agents like a space name. The **Rename tab**,
+**New tab**, and **Create tab** dialogs repeat that context, after a desktop
+row's position, before the space name (`Rename tab: Space 2 · Tab 1 · Remote
+devbox · service`), also in a browsed space while both apps are installed; the dialog's
+button shows only the part before the colon, such as **Rename tab**. A name comes last,
+so it cannot imitate another app or machine, and rows with equal names stay
+apart. Spaces and tabs are
+numbered by position from 1. A tab is focused when it is the shown space's
+selected tab, and a space or tab carries its most urgent agent status in the
+app's order: blocked, done, working, idle. Settled tabs are listed too; they
+keep running in the app.
+
+Accepting a space runs `herdr-app do space.select`, accepting a tab runs
+`tab.select`, and accepting an agent runs `pane.focus` on the agent's own
+pane, which also shows a zoomed tab's chosen pane. Each shows its target's own
+tab and space and changes nothing when the target has closed, and none starts
+once the action is cancelled. Every
+command passes its arguments as one JSON object, so a name is never read as an
+option or a JSON value. **New tab in this space** runs `tab.new` with
+`focus: false`, and **Rename tab** runs `tab.rename`.
+
+A change succeeds only when Herdr acknowledges it with exit 0: `{"ok":true}`,
+or for `tab.new` the IDs it created. A refusal (exit 1 with an `error`
+string), such as a tab that has closed, shows Herdr's reason, and a
+`herdr-app` that never started is a plain failure. Exit 2 with `no Herdr
+window` means the CLI could not connect, so nothing was sent. A reply that
+times out, overflows, hangs up after sending, says `the window did not answer`,
+or ends any other way may hide a change that happened, so it is reported once
+as unconfirmed and never retried. Submitting **Rename tab** with the name it
+opened with, give or take surrounding spaces, sends nothing, so a tab's automatic number or a shortened long name
+is never stored as its own name. `tab.new` waits for its terminal to start, so
+it gets 6 seconds, past the window's own 5-second reply limit; other commands
+get 1 second.
+
+On Hyprland, CommandDeck then focuses the most recently focused shown window of
+the process listening on the default home's socket, whatever its window class
+(a custom `HERDR_APP_ID` changes it), switching to its workspace; no terminal
+title is marked. It learns that process by connecting to the socket and reading
+the kernel's peer credentials, then closes the connection without sending
+anything. It reads that process before the switch and again before raising;
+when it cannot be verified, or another process has taken over the socket
+meanwhile, no window is raised, and the switch is reported as partial. In
+`agents:`, every terminal that reports a status or an agent is an agent row.
+The listing does not say which pane has focus, so no desktop agent row is
+marked focused. Desktop space and tab rows count terminals, which the listing
+reports, rather than all panes, so a board or other mod pane is not counted. **Open in Herdr** for projects and folders
+still uses the terminal app's default session, and runtime health and
+`commanddeck doctor` report only the terminal app.
+
 `agents:` lists every agent Herdr knows about, one row per agent pane, across
 all spaces: blocked agents first, then working, done, idle, and unknown status.
 Each row names its tab, with the agent, its status, and its space in the
-subtitle, under an **Agents** heading; Enter switches to the agent's tab with
-the ordinary tab focus action. Text narrows the list by agent, tab, or space
-name without changing the urgency order, and a browsed space lists only its
-own agents. The rows come from `herdr agent list` together with the space and
-tab lists, under the same bounds; Herdr reports no timestamps, so rows show no
-elapsed time. A failed or malformed agent list shows no rows.
+subtitle, under an **Agents** heading. Enter on a terminal-app agent switches
+to its tab with the ordinary tab focus action; Enter on a desktop-app agent
+focuses its own pane (see above). A desktop agent's name includes its
+terminal's own name when that differs from the agent's, as in `codex (billing)`.
+A desktop agent's title starts with its space and tab numbers, then its
+terminal's position when the tab has several terminals, then the tab's name
+unless that is only its number (`Space 1 · Tab 2 · Terminal 2 · pair`). A
+terminal-app agent's title is its tab's name, numbered when another tab in its
+space has the same name (`Tab 2 · Codex`). A narrow row that cuts the subtitle
+still tells two agents apart: a compact row keeps room in the title for a desktop
+agent's numbers, hides a subtitle that would be squeezed below a few
+characters, and shows the numbers alone when even they and an ellipsis do not
+fit. Text narrows the list by agent, tab, or
+space name without changing the urgency order, and a browsed space lists only
+its own agents. Terminal-app rows come from `herdr agent list` together with
+the space and tab lists, under the same bounds, and desktop rows from
+`herdr-app ls`; Herdr reports no timestamps, so rows show no elapsed time. A
+failed or malformed agent list shows no rows.
 
 In a browsed space, text that no tab is named exactly offers **Create tab
-"<text>"** after the matching tabs. It opens the same name dialog as **New tab in
-this space**, with the text filled in. A filter, a field or excluded clause, or a
-name Herdr would refuse offers nothing.
+"<text>"** after the matching tabs. It always opens the same name dialog as
+**New tab in this space**, with the text filled in, rather than taking the name
+inline, so the dialog's heading shows which space gets the tab. A refresh that
+changes an open Herdr tab dialog's heading, such as a renumbered tab, closes the
+dialog and asks you to review the row again. The Herdr tabs filter that browsing
+applies keeps the offer; any other filter, a field or excluded clause, or a name
+Herdr would refuse offers nothing.
 
 Spaces offer **New tab in this space**; tabs offer **Rename tab**. The name
 dialog accepts up to 512 characters without control characters. The daemon

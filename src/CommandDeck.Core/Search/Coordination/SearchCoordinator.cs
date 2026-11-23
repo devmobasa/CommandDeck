@@ -69,8 +69,10 @@ public sealed partial class SearchCoordinator
                 home.IncompleteProviderCount );
         }
 
+        var deadline = ProviderDeadline( parsed );
+        StampProviderDeadline( deadline, plan.ProviderRequest, plan.FolderRequest );
         var timeout = CancellationTokenSource.CreateLinkedTokenSource( cancellationToken );
-        timeout.CancelAfter( ProviderDeadline( parsed ) );
+        timeout.CancelAfter( deadline );
         List<ProviderRun> runs = [];
         foreach ( var provider in plan.SelectedProviders )
         {
@@ -160,7 +162,7 @@ public sealed partial class SearchCoordinator
             return false;
         }
 
-        if ( IsOutsideIncludedFilters( result, query ) )
+        if ( IsOutsideIncludedFilters( result, query ) && !HerdrSearch.IsCreateOfferInView( result, request.HerdrWorkspaceId, query ) )
         {
             return false;
         }

@@ -22,6 +22,14 @@ public static class HerdrSearch
         result is { SourceId: SourceIds.Herdr, Kind: ResultKinds.Tab } && result.Metadata.GetValueOrDefault( WorkspaceIdMetadata ) == workspaceId ||
         result is { SourceId: SourceIds.Herdr, Kind: ResultKinds.Workspace } && result.Id == NewTabResultPrefix + workspaceId;
 
+    // Browsing a space applies the Herdr tabs filter, and the space's create
+    // offer belongs to that view even though it is not a tab row.
+    public static bool IsCreateOfferInView( SearchResult result, string? workspaceId, ParsedQuery query ) =>
+        workspaceId is not null &&
+        result is { SourceId: SourceIds.Herdr, Kind: ResultKinds.Workspace } &&
+        result.Id == NewTabResultPrefix + workspaceId &&
+        query.IncludedFilters.All( static filter => filter.Id == SearchFilterIds.HerdrTabs );
+
     public static bool MatchesAttention( ParsedQuery query, SearchResult result ) =>
         (query.IncludedFilters.Count == 0 ||
          query.IncludedFilters.Any( filter =>

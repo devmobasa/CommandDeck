@@ -269,6 +269,68 @@ QtObject {
       "a Herdr tab row shows a Herdr cue, announces it, and keeps its parent space subtitle")
     host.expect(host.part_kindCueRow.statusBadgeText === "Needs attention" && host.part_kindCueRow.accessibilityName.indexOf("Needs attention") >= 0,
       "blocked Herdr tabs show and announce a Needs attention badge")
+
+    // A compact desktop Herdr row keeps its leading space and tab numbers even
+    // when a long tab name and a long machine name crowd its subtitle.
+    host.part_kindCueRow.compactLayout = true
+    host.part_kindCueRow.visible = true
+    for (const tab of [1, 2]) {
+      host.part_kindCueRow.result = ({
+        title: "customer-billing-reconciliation-worktrees-authentication",
+        subtitle: "Space 3 · Tab " + tab + " · Herdr app · Remote devbox-eu-west-build-01 · In service · 1 terminal",
+        sourceId: "herdr", kind: "tab", metadata: { herdrPosition: "Space 3 · Tab " + tab }
+      })
+      const shown = Qt.createQmlObject("import QtQuick; TextMetrics { elide: Text.ElideRight }", host.part_kindCueRow)
+      shown.font = host.part_kindCueRow.subtitleControl.font
+      shown.text = host.part_kindCueRow.subtitleControl.text
+      shown.elideWidth = host.part_kindCueRow.subtitleControl.width
+      // The fixture row is hidden, so its labels report invisible; the width says what would show.
+      host.expect(host.part_kindCueRow.subtitleControl.visible && shown.elidedText.indexOf("Space 3 · Tab " + tab) === 0,
+        "a compact Herdr row keeps its space and tab numbers visible (tab " + tab + ")")
+      shown.destroy()
+    }
+
+    // Two agents in one split tab differ by terminal number at the start of
+    // the title; a visible compact row keeps it beside a long subtitle.
+    for (const terminal of [1, 2]) {
+      const position = "Space 1 · Tab 1 · Terminal " + terminal
+      host.part_kindCueRow.result = ({
+        title: position + " · customer-billing-reconciliation-worktrees",
+        subtitle: "Herdr app · Remote devbox-eu-west-build-01 · codex · Needs attention · service",
+        sourceId: "herdr", kind: "tab", metadata: { herdrTitlePosition: position, herdrAgentStatus: "blocked" }
+      })
+      const title = Qt.createQmlObject("import QtQuick; TextMetrics { elide: Text.ElideRight }", host.part_kindCueRow)
+      title.font = host.part_kindCueRow.titleControl.font
+      title.text = host.part_kindCueRow.titleText
+      title.elideWidth = host.part_kindCueRow.titleControl.width
+      host.expect(host.part_kindCueRow.subtitleControl.visible && title.elidedText.indexOf("Terminal " + terminal) > 0,
+        "a compact Herdr agent row keeps its terminal number visible (terminal " + terminal + ")")
+      title.destroy()
+    }
+    host.part_kindCueRow.visible = false
+    host.part_kindCueRow.compactLayout = false
+
+    // Above the subtitle cutoff but with no room for a subtitle beside the
+    // title's numbers, the subtitle hides and the title keeps "Terminal 2".
+    const narrow = host.part_herdrNarrowRow
+    const narrowTitle = Qt.createQmlObject("import QtQuick; TextMetrics { elide: Text.ElideRight }", narrow)
+    narrowTitle.font = narrow.titleControl.font
+    narrowTitle.text = narrow.titleText
+    narrowTitle.elideWidth = narrow.titleControl.width
+    const narrowFacts = "title width " + narrow.titleControl.width + ", reserve " + narrow.compactTitleReserve
+      + ", subtitle " + narrow.subtitleControl.visible + ", shown [" + narrowTitle.elidedText + "]"
+    host.expect(narrow.titleControl.width >= 180 * narrow.theme.scale && !narrow.subtitleControl.visible
+        && !narrow.compactPositionOnly && narrowTitle.elidedText.indexOf("Terminal 2") > 0,
+      "a compact Herdr agent row too narrow for a subtitle gives the title the room (" + narrowFacts + ")")
+    narrowTitle.destroy()
+
+    // Narrower than the numbers with an ellipsis: the title shows the numbers alone.
+    const tight = host.part_herdrTightRow
+    host.expect(tight.compactPositionOnly && !tight.subtitleControl.visible
+        && tight.titleControl.text === "Space 1 · Tab 1 · Terminal 2" && !tight.titleControl.truncated
+        && tight.accessibilityName.indexOf("customer-billing") >= 0,
+      "a compact Herdr agent row narrower than its numbers shows the numbers alone (title width "
+        + tight.titleControl.width + ", reserve " + tight.compactTitleReserve + ", truncated " + tight.titleControl.truncated + ")")
     for (const state of ["working", "idle", "unknown", ""]) {
       host.part_kindCueRow.result = { title: "tests", sourceId: "herdr", kind: "tab", metadata: { herdrAgentStatus: state } }
       host.expect(host.part_kindCueRow.statusBadgeText === (state === "working" ? "Working" : state === "idle" ? "Idle" : ""),

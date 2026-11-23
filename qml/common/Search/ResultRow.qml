@@ -61,6 +61,22 @@ Rectangle {
     || root.kind === Protocol.ResultKinds.Application || root.kind === Protocol.ResultKinds.CustomCommand
   readonly property string herdrStatus: sourceId === Protocol.SourceIds.Herdr && result.metadata
     ? String(result.metadata.herdrAgentStatus || "") : ""
+  // A desktop Herdr row's space and tab numbers lead its subtitle; a compact
+  // row keeps room for them, so rows that target different tabs never read alike.
+  readonly property string herdrPosition: sourceId === Protocol.SourceIds.Herdr && result.metadata
+    ? String(result.metadata.herdrPosition || "") : ""
+  // A desktop Herdr agent's numbers lead its title instead; the compact
+  // subtitle leaves the title room for them.
+  readonly property string herdrTitlePosition: sourceId === Protocol.SourceIds.Herdr && result.metadata
+    ? String(result.metadata.herdrTitlePosition || "") : ""
+  // The title width a compact row keeps for that position and an ellipsis
+  // (bold match highlights get a margin), plus the gap to the subtitle.
+  readonly property real compactTitleReserve: root.compact && root.herdrTitlePosition.length > 0
+    ? Math.ceil(titlePositionMetrics.advanceWidth * 1.1) + root.compactLabelGap : 0
+  // Too narrow for the position with an ellipsis: the title shows the position
+  // alone, so the numbers that tell two rows apart are not the part cut.
+  readonly property bool compactPositionOnly: root.compactTitleReserve > 0
+    && labels.width < root.compactTitleReserve - root.compactLabelGap
   readonly property string statusBadgeText: herdrStatus === "blocked" ? "Needs attention"
     : herdrStatus === "working" ? "Working" : herdrStatus === "idle" ? "Idle" : ""
   readonly property var aliases: root.result && root.result.aliases ? root.result.aliases : []
@@ -232,6 +248,19 @@ Rectangle {
         : titleLabel.implicitHeight + (subtitleLabel.visible ? subtitleLabel.implicitHeight + 2 : 0)
 
       TextMetrics {
+        id: positionMetrics
+        text: root.herdrPosition.length > 0 ? root.herdrPosition + " · …" : ""
+        font.family: root.theme.fontFamily
+        font.pixelSize: root.theme.fontSmall
+      }
+
+      TextMetrics {
+        id: titlePositionMetrics
+        text: root.herdrTitlePosition.length > 0 ? root.herdrTitlePosition + " · …" : ""
+        font: titleLabel.font
+      }
+
+      TextMetrics {
         id: subtitleMetrics
         text: root.subtitleText
         font.family: root.theme.fontFamily
@@ -247,7 +276,9 @@ Rectangle {
         // The daemon computes matched ranges against the title on every search.
         text: root.isCalc
           ? "= " + MatchHighlight.escapeMarkup(root.titleText)
-          : MatchHighlight.highlighted(root.titleText, root.result ? root.result.matchedRanges : null, root.theme.accent)
+          : root.compactPositionOnly
+            ? MatchHighlight.escapeMarkup(root.herdrTitlePosition)
+            : MatchHighlight.highlighted(root.titleText, root.result ? root.result.matchedRanges : null, root.theme.accent)
         textFormat: Text.StyledText
         color: root.isCalc && !root.selected
           ? root.theme.accent
@@ -265,11 +296,16 @@ Rectangle {
         id: subtitleLabel
         width: root.compact
           ? Math.min(subtitleMetrics.advanceWidth, Math.max(labels.width * 0.35,
-            labels.width - titleLabel.implicitWidth - root.compactLabelGap))
+            Math.min(labels.width, Math.ceil(positionMetrics.advanceWidth)),
+            labels.width - titleLabel.implicitWidth - root.compactLabelGap),
+            root.compactTitleReserve > 0 ? Math.max(0, labels.width - root.compactTitleReserve) : labels.width)
           : labels.width
         x: root.compact ? labels.width - width : 0
         y: root.compact ? (labels.height - height) / 2 : titleLabel.height + 2
+        // A subtitle squeezed below a few characters by the title's reserve is
+        // hidden, so it no longer takes the gap from the title.
         visible: text.length > 0 && (!root.compact || labels.width >= 180 * root.theme.scale)
+          && !(root.compactTitleReserve > 0 && labels.width - root.compactTitleReserve < Math.round(32 * root.theme.scale))
         textFormat: Text.PlainText
         text: root.subtitleText
         color: root.theme.textMuted

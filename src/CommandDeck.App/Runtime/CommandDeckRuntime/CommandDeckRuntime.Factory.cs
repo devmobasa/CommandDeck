@@ -120,6 +120,7 @@ public sealed partial class CommandDeckRuntime
 
                 resources.Own( extensionSearch );
                 HerdrClient herdr = new( log: AppLog.Warning );
+                HerdrAppClient herdrApp = new( log: AppLog.Warning );
                 HeyClient hey = new( );
 
                 // Settings can turn the menu state on or off at run time.
@@ -137,7 +138,7 @@ public sealed partial class CommandDeckRuntime
                     new ExtensionCommandProvider( extensions, catalog.LauncherPreferences ),
                     extensionSearch,
                     new HyprlandProvider( catalog ),
-                    new HerdrProvider( herdr ),
+                    new HerdrProvider( herdr, herdrApp ),
                     new HeyProvider( hey ),
                     new AiCommandProvider( ( ) => runtime?.EffectiveAiOptions ?? options.Ai, ( ) => runtime?.SelectedAnswerBackendId( ) ),
                     new AgentCommandProvider( ( ) => runtime?.AgentRowState( ) ),
@@ -185,7 +186,7 @@ public sealed partial class CommandDeckRuntime
                 AiGenerationCoordinator generations = new( preflights );
                 resources.OwnDisposable( generations );
 
-                LinuxActionExecutor actions = new( catalog, clipboardProvider, herdr, new HerdrWindowActivator( herdr ), hey: hey );
+                LinuxActionExecutor actions = new( catalog, clipboardProvider, herdr, new HerdrWindowActivator( herdr ), hey: hey, herdrApp: herdrApp );
 
                 AiOutputService outputs = new( generations, actions,
                     additionalOutputSource: ( owner, generation ) => runtime?.TryGetAgentOutput( owner, generation ) );

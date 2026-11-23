@@ -387,8 +387,9 @@ omarchy plugin validate ./qml
 ```
 
 A failed Herdr command logs `event=herdr.command_failed` with its exit code and
-first error line. Read those with
-`journalctl --user -u commanddeck.service -g herdr.command_failed`.
+first error line; a failed Herdr desktop app command logs
+`event=herdr_app.command_failed`. Read those with
+`journalctl --user -u commanddeck.service -g 'herdr(_app)?.command_failed'`.
 
 `commanddeck doctor` also reads the desktop wiring without changing it. It
 checks that the plugin is installed and enabled in `~/.config/omarchy/shell.json`,

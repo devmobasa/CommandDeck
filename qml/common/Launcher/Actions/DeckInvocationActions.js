@@ -201,10 +201,12 @@ function selectFile(root, result, enabled) {
 }
 
 // The primary action that takes its inputs inline: one to three of them, and
-// no confirmation, which would ask again without the entered values.
+// no confirmation, which would ask again without the entered values. Creating
+// a Herdr tab always opens its dialog, whose heading names the space it goes to.
 function pillTarget(root, result) {
   const action = result && result.actions && result.actions.length > 0 ? result.actions[0] : null
-  if (!action || action.requiresConfirmation === true || result.kind === Protocol.ResultKinds.ExtensionCommand) return null
+  if (!action || action.requiresConfirmation === true || result.kind === Protocol.ResultKinds.ExtensionCommand
+    || action.kind === Protocol.ActionKinds.HerdrCreateTab) return null
   const inputs = action.inputs || []
   return inputs.length >= 1 && inputs.length <= 3 ? { result: result, action: action } : null
 }

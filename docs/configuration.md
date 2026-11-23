@@ -546,9 +546,13 @@ Production should use per-provider deadlines rather than one linked timeout.
 
 The Herdr space and tab source has no JSONC keys. It is controlled only by the
 `herdr` entry under **Settings → Search sources** (search on by default, Home
-off by default) and by whether a `herdr` executable is on the daemon PATH. The
-daemon always targets Herdr's default session and forwards none of its own
-`HERDR_*` environment; named sessions and socket overrides are not configurable.
+off by default) and by whether a `herdr` or `herdr-app` executable is on the
+daemon PATH. The daemon always targets Herdr's default session and the desktop
+app's default window, whose home is `$XDG_CONFIG_HOME/herdr-app` when
+`XDG_CONFIG_HOME` is an absolute path and `~/.config/herdr-app` otherwise; a
+relative `XDG_CONFIG_HOME` is not passed to `herdr-app`. It forwards none of
+its own `HERDR_*` or `HERDR_APP_HOME` environment; named sessions, socket
+overrides, and other app homes are not configurable.
 
 ## `indexing`
 

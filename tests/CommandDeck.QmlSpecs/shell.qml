@@ -73,6 +73,8 @@ ShellRoot {
   readonly property alias part_hostEvents: hostEvents
   readonly property alias part_staleActivationJourney: staleActivationJourney
   readonly property alias part_kindCueRow: kindCueRow
+  readonly property alias part_herdrNarrowRow: herdrNarrowRow
+  readonly property alias part_herdrTightRow: herdrTightRow
   readonly property alias part_liveCheckTimer: liveCheckTimer
   readonly property alias part_narrowSettingsRow: narrowSettingsRow
   readonly property alias part_noResultsSpec: discovery.noResultsSpecControl
@@ -219,6 +221,39 @@ ShellRoot {
       isFavorite: true,
       section: { id: "applications", title: "Applications", order: 2 },
       matchedRanges: []
+    })
+  }
+
+  // Visible compact desktop Herdr agent rows, sized statically so their
+  // layout has run before the assertions read it: one leaves no room for a
+  // subtitle beside the title's numbers, one has room for the numbers alone.
+  CommandDeck.ResultRow {
+    id: herdrNarrowRow
+    width: 330
+    parent: host
+    visible: true
+    theme: theme
+    selected: false
+    compactLayout: true
+    result: ({
+      title: "Space 1 · Tab 1 · Terminal 2 · customer-billing-reconciliation-worktrees",
+      subtitle: "Herdr app · Remote devbox-eu-west-build-01 · codex · service",
+      sourceId: "herdr", kind: "tab", metadata: { herdrTitlePosition: "Space 1 · Tab 1 · Terminal 2" }
+    })
+  }
+
+  CommandDeck.ResultRow {
+    id: herdrTightRow
+    width: 300
+    parent: host
+    visible: true
+    theme: theme
+    selected: false
+    compactLayout: true
+    result: ({
+      title: "Space 1 · Tab 1 · Terminal 2 · customer-billing-reconciliation-worktrees",
+      subtitle: "Herdr app · Remote devbox-eu-west-build-01 · codex · service",
+      sourceId: "herdr", kind: "tab", metadata: { herdrTitlePosition: "Space 1 · Tab 1 · Terminal 2" }
     })
   }
 

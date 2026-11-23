@@ -134,6 +134,8 @@ QtObject {
       && previous.icon === next.icon && previous.isFavorite === next.isFavorite
       && previousSection.title === nextSection.title
       && previousMetadata.herdrAgentStatus === nextMetadata.herdrAgentStatus
+      && previousMetadata.herdrPosition === nextMetadata.herdrPosition
+      && previousMetadata.herdrTitlePosition === nextMetadata.herdrTitlePosition
       && previousMetadata[Protocol.ResultMetadataKeys.OmarchyChecked]
         === nextMetadata[Protocol.ResultMetadataKeys.OmarchyChecked]
       && previousMetadata[Protocol.ResultMetadataKeys.OmarchyUnavailable]

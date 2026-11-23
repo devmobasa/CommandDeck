@@ -62,14 +62,12 @@ public sealed partial class HerdrClient
     private readonly BoundedProcessRunner _run;
     private readonly Func<bool> _available;
     private readonly Func<string, string?> _environment;
-    private readonly Action<string>? _log;
-    private readonly TimeProvider _time;
+    private readonly HerdrCommandLog _failures;
 
     public HerdrClient( BoundedProcessRunner? runner = null, Func<bool>? available = null, Func<string, string?>? environment = null,
         Action<string>? log = null, TimeProvider? time = null )
     {
-        _log = log;
-        _time = time ?? TimeProvider.System;
+        _failures = new( "herdr.command_failed", log, time ?? TimeProvider.System );
         _run = runner ?? DefaultRunAsync;
         _available = available ?? (static ( ) => ProcessRunner.ExistsOnPath( Executable ));
         _environment = environment ?? Environment.GetEnvironmentVariable;

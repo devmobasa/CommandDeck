@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace CommandDeck;
@@ -21,6 +22,7 @@ public sealed class HerdrWindowActivator
     private readonly ExternalProcessRunner _run;
     private readonly Func<bool> _hyprlandAvailable;
     private readonly Func<string> _marker;
+    private readonly Func<int?> _appListener;
 
     public HerdrWindowActivator( HerdrClient herdr ) : this( herdr, HerdrWindowTitleClient.SendAsync, DefaultRunAsync, DefaultHyprlandAvailable,
         static ( ) => $"commanddeck-herdr-{Guid.NewGuid( ):N}" )
@@ -28,8 +30,9 @@ public sealed class HerdrWindowActivator
     }
 
     internal HerdrWindowActivator( HerdrClient herdr, HerdrWindowTitleRequest titleRequest, ExternalProcessRunner runner, Func<bool> hyprlandAvailable,
-        Func<string> marker )
+        Func<string> marker, Func<int?>? appListener = null )
     {
+        _appListener = appListener ?? HerdrAppWindows.ReadListener;
         _herdr = herdr;
         _titleRequest = titleRequest;
         _run = runner;
@@ -51,6 +54,62 @@ public sealed class HerdrWindowActivator
         try
         {
             return await ActivateCoreAsync( targetKind, cancellationToken )
+                .ConfigureAwait( false );
+        }
+        finally
+        {
+            ActivationGate.Release( );
+        }
+    }
+
+    // The desktop app draws its own window, which Hyprland names by class. The
+    // most recently focused window of the process listening on the CLI's
+    // socket is raised, switching to its workspace. When that process cannot
+    // be verified, or is not the one read before the switch, none is.
+    public async ValueTask<ActionExecutionResult> ActivateAppAsync( string targetKind, int? expectedListener, CancellationToken cancellationToken )
+    {
+        if ( !_hyprlandAvailable( ) )
+        {
+            return ActionExecutionResult.Success( );
+        }
+
+        await ActivationGate
+            .WaitAsync( cancellationToken )
+            .ConfigureAwait( false );
+
+        try
+        {
+            ProcessResult clients;
+
+            try
+            {
+                clients = await _run( ToolExecutables.Hyprctl, ["-j", "clients"], HyprctlTimeout, cancellationToken )
+                    .ConfigureAwait( false );
+            }
+            catch ( Exception exception ) when ( exception is IOException or InvalidOperationException )
+            {
+                return Failure( targetKind, "Hyprland client inspection failed." );
+            }
+
+            if ( ClientInspectionFailed( clients ) )
+            {
+                return Failure( targetKind, "Hyprland client inspection failed." );
+            }
+
+            var listener = _appListener( );
+            var window = HerdrAppWindows.Choose( clients.StandardOutput, listener == expectedListener ? listener : null );
+            if ( window.Unverified )
+            {
+                return Failure( targetKind,
+                    "CommandDeck could not verify which Herdr app window belongs to the app that switched, so it raised none." );
+            }
+
+            if ( !IsValidAddress( window.Address ) )
+            {
+                return Failure( targetKind, "Hyprland did not report the Herdr app window." );
+            }
+
+            return await DispatchFocusAsync( targetKind, window.Address, cancellationToken )
                 .ConfigureAwait( false );
         }
         finally
@@ -205,7 +264,7 @@ public sealed class HerdrWindowActivator
         }
     }
 
-    private static bool IsValidAddress( string? address )
+    private static bool IsValidAddress( [NotNullWhen( true )] string? address )
     {
         if ( address is not { Length: >= MinimumAddressCharacters and <= MaximumAddressCharacters } || !address.StartsWith( "0x", StringComparison.Ordinal ) )
         {
@@ -264,7 +323,7 @@ public sealed class HerdrWindowActivator
 
     private static string GetFocusFailureMessage( string targetKind )
     {
-        if ( targetKind == HerdrTargetKinds.Workspace )
+        if ( HerdrTargetKinds.IsSpace( targetKind ) )
         {
             return "Switched Herdr space, but could not focus its window.";
         }

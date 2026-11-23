@@ -30,9 +30,9 @@ A keyboard-first command palette and launcher for **Omarchy and Hyprland**. Pres
 - **Large Type.** **Ctrl+L** shows your search, or a calculator answer, across the whole screen.
 - **Drag files out.** Drag a file row into a terminal, browser, or chat.
 - **Run programs.** Type `>` and a command, for example `> htop`.
-- **Herdr.** `herdr:` finds [Herdr](docs/search-and-ranking.md#herdr-spaces-and-tabs) spaces and tabs. `htab:` finds
-  tabs only and shows which agent tabs need attention. `agents:` lists every agent, blocked ones first. In a space, a
-  name that no tab has offers **Create tab**.
+- **Herdr.** `herdr:` finds [Herdr](docs/search-and-ranking.md#herdr-spaces-and-tabs) spaces and tabs, in the terminal app and the
+  desktop app. `htab:` finds tabs only and shows which agent tabs need attention. `agents:` lists every agent, blocked ones
+  first. In a space, a name that no tab has offers **Create tab**.
 - **Learn your keys.** A row that has a Hyprland shortcut shows it. Apps and commands offer **Copy Hyprland Binding**, a
   ready-to-paste `hl.bind` line.
 - **Controls that say what they do.** Desktop controls name the next step: **Mute** or **Unmute**, **Turn Wi-Fi Off**,

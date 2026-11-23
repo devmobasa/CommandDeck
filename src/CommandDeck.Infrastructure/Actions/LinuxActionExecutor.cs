@@ -13,7 +13,7 @@ public sealed class LinuxActionExecutor : IActionExecutor
     public LinuxActionExecutor( ILauncherSearchPreferences? preferences = null, ClipboardHistoryProvider? clipboardHistory = null, HerdrClient? herdr = null,
         HerdrWindowActivator? herdrWindowActivator = null, BoundedProcessRunner? systemdRunner = null, ExternalProcessRunner? hyprlandRunner = null,
         BoundedProcessRunner? snippetClipboardRunner = null, HeyClient? hey = null, LinuxProcessTable? processTable = null, ProcessPinner? processPinner = null,
-        TimeProvider? timeProvider = null )
+        TimeProvider? timeProvider = null, HerdrAppClient? herdrApp = null )
     {
         EditorLauncher editor = new( preferences );
 
@@ -23,7 +23,7 @@ public sealed class LinuxActionExecutor : IActionExecutor
             new ClipboardActionHandler( clipboardHistory, snippetClipboardRunner, timeProvider ),
             new SystemdActionHandler( editor, systemdRunner ),
             new HyprlandActionHandler( hyprlandRunner ),
-            new HerdrActionHandler( herdr, herdrWindowActivator ),
+            new HerdrActionHandler( herdr, herdrWindowActivator, herdrApp ),
             new HeyActionHandler( preferences, hey ),
             new ProcessActionHandler( processTable ?? new LinuxProcessTable( ), processPinner ?? LinuxProcessSignals.Pin ),
             new LauncherOwnedActionHandler( )

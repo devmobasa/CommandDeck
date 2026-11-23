@@ -53,6 +53,24 @@ public static partial class Program
         await RunAsync( "herdr window activation clears the title after marking is cancelled", HerdrWindowActivationClearsAfterMarkCancellationAsync );
         await RunAsync( "herdr window activation is inert outside Hyprland", HerdrWindowActivationIsInertOutsideHyprlandAsync );
 
+        await RunAsync( "herdr app client lists the open window's spaces, tabs, and agents", HerdrAppClientListsTheOpenWindowAsync );
+        await RunAsync( "herdr app client yields nothing without a window or on malformed output", HerdrAppClientYieldsNothingWithoutAWindowAsync );
+        await RunAsync( "herdr provider merges the desktop app with the terminal app", HerdrProviderMergesTheAppWithTheTerminalAppAsync );
+        await RunAsync( "herdr app agents join the agent list by urgency", HerdrAppAgentsJoinTheAgentListAsync );
+        await RunAsync( "herdr app focus shows a tab with one command and raises the app window", HerdrAppFocusShowsTheTabThroughItsSpaceAsync );
+        await RunAsync( "herdr app focus reports stale targets and a closed window without retries", HerdrAppFocusReportsStaleAndClosedWindowsAsync );
+        await RunAsync( "herdr app focus rejects forged and cross-app targets", HerdrAppFocusRejectsForgedTargetsAsync );
+        await RunAsync( "herdr app tab edits send one JSON object", HerdrAppTabEditsSendOneJsonObjectAsync );
+        await RunAsync( "herdr app agent rows focus the agent's own pane", HerdrAppAgentFocusesItsOwnPaneAsync );
+        await RunAsync( "herdr app rows that target different panes or tabs never look the same", HerdrAppLookalikeRowsStayApartAsync );
+        await RunAsync( "herdr app rename submitted unchanged sends nothing", HerdrAppUnchangedRenameSendsNothingAsync );
+        await RunAsync( "herdr apps with equal IDs stay apart in scopes, joins, and row IDs", HerdrAppsWithEqualIdsStayApartAsync );
+        await RunAsync( "herdr app labels with broken or split characters cannot break search", HerdrAppLabelsCannotBreakSearchAsync );
+        await RunAsync( "herdr app changes count only when Herdr acknowledges them", HerdrAppRepliesMustAcknowledgeTheChangeAsync );
+        await RunAsync( "herdr provider lists what answered by the search deadline", HerdrProviderListsWhatAnsweredByTheDeadlineAsync );
+        await RunAsync( "herdr app focus sends nothing once cancelled", HerdrAppFocusSendsNothingOnceCancelledAsync );
+        await RunAsync( "herdr app window is raised only for the process verified to own the CLI's socket", HerdrAppWindowBelongsToTheSocketOwnerAsync );
+
         Run( "herdr focus risk is immediate only for a matching Herdr result", HerdrFocusRiskClassification );
 
         await RunAsync( "herdr source preference merges into stored preferences", HerdrPreferenceMergesAsync );

@@ -27,6 +27,12 @@ Item {
     action: invocation.actionInputAction
     onSubmitted: values => { scene.submitted = values; scene.selection = invocation.takeInput() }
   }
+  Deck.ActionInputDialog {
+    id: labelled
+    anchors.fill: parent
+    theme: theme
+    opened: false
+  }
   id: scene
   property bool opened: false
   property var chosen: null
@@ -56,6 +62,15 @@ Item {
       }
     }
     function init() { search.text = ""; scene.opened = false; scene.chosen = null; scene.submitted = null; scene.selection = null; invocation.clear() }
+    function test_submit_button_says_only_the_verb_of_a_titled_context() {
+      labelled.action = {id: "rename-tab", kind: "herdr-rename-tab", inputs: [{name: "Name", defaultValue: "server"}],
+        title: "Rename tab: Space 2 · Tab 1 · Herdr app · Remote devbox · customer-billing-reconciliation-worktrees"}
+      compare(labelled.submitControl.text, "Rename tab")
+      labelled.action = {id: "run", title: "Run", kind: "run-command", inputs: []}
+      compare(labelled.submitControl.text, "Run")
+      labelled.action = null
+      compare(labelled.submitControl.text, "Continue")
+    }
     function test_menu_refresh_preserves_meaning_and_keyboard_focus() {
       scene.opened = true
       panel.openFor(row(action(), "old"))
@@ -121,6 +136,25 @@ Item {
       mouseClick(inputs.submitControl)
       compare(scene.submitted.destination, "keep my draft")
       compare(scene.selection.result.invocationReference, "fresh")
+    }
+    function test_herdr_tab_dialog_closes_when_its_heading_changes() {
+      for (const kind of ["herdr-rename-tab", "herdr-create-tab"]) {
+        invocation.clear()
+        const before = {id: "rename-tab", kind: kind, title: "Rename tab: Space 1 · Tab 1 · Herdr app · Work",
+          arguments: {targetId: "t1"}, inputs: [{name: "Name", defaultValue: "Codex"}]}
+        verify(invocation.requestInput(row(before, "old"), before, false))
+
+        // Same target, arguments, and inputs: the draft stays.
+        verify(invocation.retarget(row(JSON.parse(JSON.stringify(before)), "fresh")))
+        verify(invocation.actionInputOpen)
+
+        // The refresh renumbered the tab: the dialog closes without submitting.
+        const renumbered = JSON.parse(JSON.stringify(before))
+        renumbered.title = "Rename tab: Space 1 · Tab 2 · Herdr app · Work"
+        verify(!invocation.retarget(row(renumbered, "newer")))
+        verify(!invocation.collecting)
+        compare(scene.submitted, null)
+      }
     }
     function test_partial_commit_notice_survives_done() {
       scene.opened = true

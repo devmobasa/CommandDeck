@@ -282,6 +282,12 @@ public sealed class SearchRequest
     [System.Text.Json.Serialization.JsonIgnore]
     public long SearchGeneration { get; set; }
 
+    // The Stopwatch timestamp at which the coordinator stops collecting this
+    // request's provider results, stamped before its timer starts; 0 when no
+    // coordinator set one. A provider with slow parts returns what it has by then.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public long ProviderDeadlineTimestamp { get; set; }
+
     [System.Text.Json.Serialization.JsonIgnore]
 
     // Null preserves direct-provider fallback; an empty snapshot enables no sources.
